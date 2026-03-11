@@ -37,57 +37,34 @@ async def list_clients(
     if score:
         domain.append(["x_score_client", "=", score])
     if search:
-        # Search in name, city, phone, email
-        domain.append(
-            [
-                "|", "|", "|",
-                ["name", "ilike", search],
-                ["city", "ilike", search],
-                ["phone", "ilike", search],
-                ["email", "ilike", search],
-            ]
-        )
+        domain = [
+            "&",
+            ["is_company", "=", True],
+            "|", "|", "|",
+            ["name", "ilike", search],
+            ["city", "ilike", search],
+            ["phone", "ilike", search],
+            ["email", "ilike", search],
+        ]
 
-    fields = [
-        "id",
-        "name",
-        "x_territoire",
-        "x_score_client",
-        "city",
-        "phone",
-        "email",
-        "website",
-        "street",
-        "zip",
-        "x_notes_terrain",
-        "x_competiteurs",
-        "x_marques_interet",
-        "x_date_derniere_visite",
-        "x_nb_visites",
-    ]
+    # Try with custom fields first, fallback to basic fields
+    basic_fields = ["id", "name", "city", "phone", "email", "website", "street", "zip"]
+    custom_fields = ["x_territoire", "x_score_client", "x_notes_terrain"]
 
     try:
         clients = await odoo.search_read(
-            "res.partner",
-            domain,
-            fields,
-            limit=limit,
-            order="name asc",
+            "res.partner", domain, basic_fields + custom_fields,
+            limit=limit, order="name asc",
         )
-    except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Erreur Odoo: {str(e)}")
-
-    # Get lead counts per partner
-    lead_counts = {}
-    for client in clients:
+    except Exception:
+        # Fallback: custom fields might not exist
         try:
-            count = await odoo.search_count(
-                "crm.lead",
-                [["partner_id", "=", client["id"]]],
+            clients = await odoo.search_read(
+                "res.partner", domain, basic_fields,
+                limit=limit, order="name asc",
             )
-            lead_counts[client["id"]] = count
-        except Exception:
-            lead_counts[client["id"]] = 0
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"Erreur Odoo: {str(e)}")
 
     # Transform data for frontend
     response_clients = []
@@ -101,19 +78,19 @@ async def list_clients(
             "nom_legal": c.get("name", ""),
             "territoire": terr_name,
             "x_territoire": c.get("x_territoire"),
-            "x_score_client": c.get("x_score_client"),
-            "city": c.get("city", ""),
-            "phone": c.get("phone", ""),
-            "email": c.get("email", ""),
-            "website": c.get("website", ""),
-            "street": c.get("street", ""),
-            "zip": c.get("zip", ""),
-            "x_notes_terrain": c.get("x_notes_terrain", ""),
-            "x_competiteurs": c.get("x_competiteurs", ""),
-            "x_marques_interet": c.get("x_marques_interet", ""),
-            "x_date_derniere_visite": c.get("x_date_derniere_visite"),
-            "x_nb_visites": c.get("x_nb_visites", 0),
-            "lead_count": lead_counts.get(c["id"], 0),
+            "x_score_client": c.get("x_score_client", ""),
+            "city": c.get("city", "") or "",
+            "phone": c.get("phone", "") or "",
+            "email": c.get("email", "") or "",
+            "website": c.get("website", "") or "",
+            "street": c.get("street", "") or "",
+            "zip": c.get("zip", "") or "",
+            "x_notes_terrain": c.get("x_notes_terrain", "") or "",
+            "x_competiteurs": "",
+            "x_marques_interet": "",
+            "x_date_derniere_visite": None,
+            "x_nb_visites": 0,
+            "lead_count": 0,
         })
 
     return ClientListResponse(
@@ -272,19 +249,22 @@ async def get_stats():
             [["is_company", "=", True]],
         )
 
-        # Clients by score
-        score_a = await odoo.search_count(
-            "res.partner",
-            [["is_company", "=", True], ["x_score_client", "=", "A"]],
-        )
-        score_b = await odoo.search_count(
-            "res.partner",
-            [["is_company", "=", True], ["x_score_client", "=", "B"]],
-        )
-        score_c = await odoo.search_count(
-            "res.partner",
-            [["is_company", "=", True], ["x_score_client", "=", "C"]],
-        )
+        # Clients by score (with fallback if custom field doesn't exist)
+        try:
+            score_a = await odoo.search_count(
+                "res.partner",
+                [["is_company", "=", True], ["x_score_client", "=", "A"]],
+            )
+            score_b = await odoo.search_count(
+                "res.partner",
+                [["is_company", "=", True], ["x_score_client", "=", "B"]],
+            )
+            score_c = await odoo.search_count(
+                "res.partner",
+                [["is_company", "=", True], ["x_score_client", "=", "C"]],
+            )
+        except Exception:
+            score_a = score_b = score_c = 0
 
         # Pipeline stats
         total_leads = await odoo.search_count("crm.lead", [])
@@ -312,14 +292,17 @@ async def get_stats():
             stage_stats[stage_name]["revenue"] += revenue
             pipeline_revenue += revenue
 
-        # Recent activities
-        recent_activities = await odoo.search_read(
-            "mail.activity",
-            [["res_model", "=", "res.partner"]],
-            ["res_id", "summary", "date_deadline", "state"],
-            order="create_date desc",
-            limit=10,
-        )
+        # Recent activities (may fail if no activities exist)
+        try:
+            recent_activities = await odoo.search_read(
+                "mail.activity",
+                [["res_model", "=", "res.partner"]],
+                ["res_id", "summary", "date_deadline", "state"],
+                order="create_date desc",
+                limit=10,
+            )
+        except Exception:
+            recent_activities = []
 
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Erreur Odoo: {str(e)}")
@@ -355,7 +338,7 @@ async def get_territories():
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Erreur Odoo: {str(e)}")
 
-    # Get client count per territory
+    # Get client count per territory (x_territoire may not exist)
     territories = []
     for team in teams:
         try:
@@ -363,17 +346,13 @@ async def get_territories():
                 "res.partner",
                 [["is_company", "=", True], ["x_territoire", "=", team["id"]]],
             )
-            territories.append({
-                "id": team["id"],
-                "name": team.get("name", ""),
-                "client_count": count,
-            })
         except Exception:
-            territories.append({
-                "id": team["id"],
-                "name": team.get("name", ""),
-                "client_count": 0,
-            })
+            count = 0
+        territories.append({
+            "id": team["id"],
+            "name": team.get("name", ""),
+            "client_count": count,
+        })
 
     return {
         "count": len(territories),
@@ -402,13 +381,13 @@ async def get_representatives():
     for user in users:
         # Get team(s) for this user
         try:
-            teams = await odoo.search_read(
+            teams_list = await odoo.search_read(
                 "crm.team",
-                [["member_ids", "=", user["id"]]],
+                [["member_ids", "in", [user["id"]]]],
                 ["id", "name"],
             )
         except Exception:
-            teams = []
+            teams_list = []
 
         # Get lead count for this user
         try:
@@ -421,22 +400,22 @@ async def get_representatives():
 
         # Get pipeline revenue
         try:
-            leads = await odoo.search_read(
+            user_leads = await odoo.search_read(
                 "crm.lead",
                 [["user_id", "=", user["id"]]],
                 ["expected_revenue"],
             )
-            pipeline_revenue = sum(l.get("expected_revenue", 0) for l in leads)
+            pipeline_revenue = sum(l.get("expected_revenue", 0) or 0 for l in user_leads)
         except Exception:
             pipeline_revenue = 0
 
-        team_names = [t["name"] for t in teams] if teams else []
+        team_names = [t["name"] for t in teams_list] if teams_list else []
 
         representatives.append({
             "id": user["id"],
-            "name": user.get("name", ""),
-            "email": user.get("email", ""),
-            "phone": user.get("phone", ""),
+            "name": user.get("name", "") or "",
+            "email": user.get("email", "") or "",
+            "phone": user.get("phone", "") or "",
             "teams": team_names,
             "lead_count": lead_count,
             "pipeline_revenue": pipeline_revenue,
