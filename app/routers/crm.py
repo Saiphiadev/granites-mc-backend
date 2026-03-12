@@ -1,5 +1,6 @@
 """Router CRM — Endpoints pour les données clients, pipeline, et statistiques."""
 
+from datetime import datetime, timedelta
 from fastapi import APIRouter, HTTPException, Query
 from typing import Optional
 from app.models.schemas import (
@@ -13,6 +14,21 @@ from app.models.schemas import (
 from app.services.odoo import get_odoo_client
 
 router = APIRouter(prefix="/api/crm", tags=["CRM"])
+
+# ─── Stage name mapping: Odoo stage names → frontend stage names ───
+STAGE_MAP = {
+    "New": "Soumission",
+    "Nouveau": "Soumission",
+    "Qualification": "En attente",
+    "Qualified": "En attente",
+    "Proposition": "En attente",
+    "Negotiation": "En cours",
+    "Négociation": "En cours",
+    "Won": "Signé",
+    "Gagné": "Signé",
+    "Lost": "Perdu",
+    "Perdu": "Perdu",
+}
 
 
 def _s(val, default=""):
@@ -36,24 +52,51 @@ async def list_clients(
     territoire_id: Optional[int] = Query(None, description="Filter by territory ID"),
     score: Optional[str] = Query(None, description="Filter by score (A, B, C)"),
     search: Optional[str] = Query(None, description="Search by name, city, phone, email"),
+    user_id: Optional[int] = Query(None, description="Filter by salesperson/rep user ID"),
     limit: int = Query(500, ge=1, le=5000, description="Max results"),
 ):
     """
-    Retourne la liste de tous les clients (contacts de type entreprise).
+    Retourne la liste des clients (contacts de type entreprise).
 
-    Supporte les filtres par territoire, score client, et recherche textuelle.
+    Supporte les filtres par territoire, score client, recherche textuelle,
+    et par représentant (user_id → filtre par leads assignés au rep).
     Format flat array compatible AG Grid.
     """
     odoo = get_odoo_client()
 
+    # If user_id is provided, first find partner IDs that have leads assigned to this user
+    partner_ids_for_user = None
+    if user_id:
+        try:
+            user_leads = await odoo.search_read(
+                "crm.lead",
+                [["user_id", "=", user_id]],
+                ["partner_id"],
+                limit=1000,
+            )
+            partner_ids_for_user = list(set(
+                l["partner_id"][0] if isinstance(l.get("partner_id"), (list, tuple)) else l.get("partner_id")
+                for l in user_leads
+                if l.get("partner_id")
+            ))
+        except Exception:
+            partner_ids_for_user = None
+
     domain = [["is_company", "=", True]]
+
+    if partner_ids_for_user is not None:
+        if partner_ids_for_user:
+            domain.append(["id", "in", partner_ids_for_user])
+        else:
+            # No leads for this user, return empty
+            return ClientListResponse(count=0, clients=[])
 
     if territoire_id:
         domain.append(["x_territoire", "=", territoire_id])
     if score:
         domain.append(["x_score_client", "=", score])
     if search:
-        domain = [
+        search_domain = [
             "&",
             ["is_company", "=", True],
             "|", "|", "|",
@@ -62,6 +105,11 @@ async def list_clients(
             ["phone", "ilike", search],
             ["email", "ilike", search],
         ]
+        if partner_ids_for_user:
+            # Combine search with user filter
+            domain = ["&", ["id", "in", partner_ids_for_user]] + search_domain
+        else:
+            domain = search_domain
 
     # Try with custom fields first, fallback to basic fields
     basic_fields = ["id", "name", "city", "phone", "email", "website", "street", "zip"]
@@ -300,12 +348,15 @@ async def get_pipeline(
 
 
 @router.get("/stats", response_model=StatsResponse)
-async def get_stats():
+async def get_stats(
+    user_id: Optional[int] = Query(None, description="Filter stats by user/rep ID"),
+):
     """
     Retourne les statistiques du CRM pour le dashboard.
 
     Total clients, répartition par score, par territoire,
     statistiques du pipeline, et dernière activité.
+    Supporte le filtre par user_id pour stats personnalisées.
     """
     odoo = get_odoo_client()
 
@@ -334,12 +385,13 @@ async def get_stats():
             score_a = score_b = score_c = 0
 
         # Pipeline stats
-        total_leads = await odoo.search_count("crm.lead", [])
+        lead_domain = [["user_id", "=", user_id]] if user_id else []
+        total_leads = await odoo.search_count("crm.lead", lead_domain)
 
         # Get leads grouped by stage with total revenue
         all_leads = await odoo.search_read(
             "crm.lead",
-            [],
+            lead_domain,
             ["stage_id", "expected_revenue", "probability"],
             limit=1000,
         )
@@ -609,4 +661,272 @@ async def list_auth_users():
             }
             for u in filtered
         ],
+    }
+
+
+# ─── NEW: All-in-one dashboard endpoint ───
+
+@router.get("/dashboard", response_model=dict)
+async def get_dashboard(
+    user_id: Optional[int] = Query(None, description="User/rep ID for personalized dashboard"),
+):
+    """
+    Endpoint all-in-one pour le dashboard d'un représentant.
+
+    Retourne en un seul appel: clients, pipeline, stats, activités récentes.
+    Si user_id est fourni, filtre tout par ce représentant.
+    """
+    odoo = get_odoo_client()
+
+    result = {
+        "mode": "live",
+        "clients": [],
+        "pipeline": [],
+        "stats": {},
+        "activities": [],
+        "timeline": [],
+    }
+
+    # ── 1. Get clients for this user (via leads) ──
+    try:
+        lead_domain = [["user_id", "=", user_id]] if user_id else []
+        user_leads = await odoo.search_read(
+            "crm.lead", lead_domain,
+            ["partner_id", "expected_revenue", "probability", "stage_id",
+             "name", "create_date", "date_deadline", "user_id", "description", "tag_ids"],
+            limit=500, order="create_date desc",
+        )
+
+        # Extract unique partner IDs from leads
+        partner_ids = list(set(
+            l["partner_id"][0] if isinstance(l.get("partner_id"), (list, tuple)) else l.get("partner_id")
+            for l in user_leads if l.get("partner_id")
+        ))
+
+        # Get partner details
+        if partner_ids:
+            basic_fields = ["id", "name", "city", "phone", "email", "website", "street", "zip"]
+            custom_fields = [
+                "x_territoire", "x_score_client", "x_notes_terrain",
+                "x_competiteurs", "x_marques_interet", "x_type_client",
+                "x_facebook", "x_instagram", "x_linkedin", "x_google_maps",
+                "x_description", "x_year_founded", "x_employees_estimate",
+                "x_revenue_estimate", "x_req_number", "x_brands",
+                "x_specialties", "x_hours",
+            ]
+            try:
+                clients = await odoo.search_read(
+                    "res.partner",
+                    [["is_company", "=", True], ["id", "in", partner_ids]],
+                    basic_fields + custom_fields,
+                    limit=500, order="name asc",
+                )
+            except Exception:
+                clients = await odoo.search_read(
+                    "res.partner",
+                    [["is_company", "=", True], ["id", "in", partner_ids]],
+                    basic_fields,
+                    limit=500, order="name asc",
+                )
+
+            # Count leads per partner for enrichment
+            leads_per_partner = {}
+            revenue_per_partner = {}
+            for l in user_leads:
+                pid = l["partner_id"][0] if isinstance(l.get("partner_id"), (list, tuple)) else l.get("partner_id")
+                if pid:
+                    leads_per_partner[pid] = leads_per_partner.get(pid, 0) + 1
+                    revenue_per_partner[pid] = revenue_per_partner.get(pid, 0) + (l.get("expected_revenue") or 0)
+
+            for c in clients:
+                terr = c.get("x_territoire")
+                terr_name = terr[1] if isinstance(terr, (list, tuple)) else str(terr or "")
+                result["clients"].append({
+                    "id": c["id"],
+                    "name": c.get("name", ""),
+                    "territoire": terr_name,
+                    "score": c.get("x_score_client", "") or "",
+                    "city": c.get("city", "") or "",
+                    "phone": c.get("phone", "") or "",
+                    "email": c.get("email", "") or "",
+                    "website": c.get("website", "") or "",
+                    "street": c.get("street", "") or "",
+                    "zip": c.get("zip", "") or "",
+                    "description": c.get("x_description", "") or "",
+                    "facebook": c.get("x_facebook", "") or "",
+                    "instagram": c.get("x_instagram", "") or "",
+                    "linkedin": c.get("x_linkedin", "") or "",
+                    "google_maps": c.get("x_google_maps", "") or "",
+                    "type_client": c.get("x_type_client", "") or "",
+                    "notes_terrain": c.get("x_notes_terrain", "") or "",
+                    "lead_count": leads_per_partner.get(c["id"], 0),
+                    "pipeline_revenue": revenue_per_partner.get(c["id"], 0),
+                })
+
+        # ── 2. Transform pipeline leads ──
+        for lead in user_leads:
+            partner = lead.get("partner_id")
+            partner_name = partner[1] if isinstance(partner, (list, tuple)) else ""
+            stage = lead.get("stage_id")
+            stage_name = stage[1] if isinstance(stage, (list, tuple)) else ""
+            user = lead.get("user_id")
+            user_name = user[1] if isinstance(user, (list, tuple)) else ""
+
+            # Map Odoo stage to frontend stage
+            mapped_stage = STAGE_MAP.get(stage_name, stage_name or "Soumission")
+
+            result["pipeline"].append({
+                "id": lead["id"],
+                "name": lead.get("name", ""),
+                "stage_name": mapped_stage,
+                "partner_name": partner_name,
+                "expected_revenue": lead.get("expected_revenue", 0) or 0,
+                "probability": lead.get("probability", 0) or 0,
+                "date_deadline": lead.get("date_deadline"),
+                "create_date": lead.get("create_date"),
+                "user_name": user_name,
+            })
+
+        # ── 3. Compute stats ──
+        total_revenue = sum(l.get("expected_revenue", 0) or 0 for l in user_leads)
+        active_leads = [l for l in user_leads if l.get("probability", 0) > 0]
+        avg_prob = round(sum(l.get("probability", 0) for l in active_leads) / max(len(active_leads), 1))
+
+        # Count by stage
+        stage_counts = {}
+        for l in user_leads:
+            stage = l.get("stage_id")
+            sname = stage[1] if isinstance(stage, (list, tuple)) else str(stage or "")
+            mapped = STAGE_MAP.get(sname, sname or "Soumission")
+            stage_counts[mapped] = stage_counts.get(mapped, 0) + 1
+
+        result["stats"] = {
+            "client_count": len(result["clients"]),
+            "lead_count": len(user_leads),
+            "pipeline_revenue": total_revenue,
+            "avg_probability": avg_prob,
+            "stage_counts": stage_counts,
+            "score_counts": {
+                "A": sum(1 for c in result["clients"] if "A" in (c.get("score") or "")),
+                "B": sum(1 for c in result["clients"] if "B" in (c.get("score") or "")),
+                "C": sum(1 for c in result["clients"] if "C" in (c.get("score") or "")),
+            },
+        }
+
+    except Exception as e:
+        result["mode"] = "error"
+        result["error"] = str(e)
+
+    # ── 4. Get recent activities/messages (timeline) ──
+    try:
+        activity_domain = [["res_model", "=", "res.partner"]]
+        if user_id:
+            activity_domain.append(["user_id", "=", user_id])
+
+        activities = await odoo.search_read(
+            "mail.activity",
+            activity_domain,
+            ["res_id", "summary", "activity_type_id", "date_deadline", "state", "note"],
+            order="date_deadline desc",
+            limit=20,
+        )
+
+        for act in activities:
+            act_type = act.get("activity_type_id")
+            act_type_name = act_type[1] if isinstance(act_type, (list, tuple)) else str(act_type or "")
+            result["activities"].append({
+                "id": act.get("id"),
+                "type": act_type_name,
+                "summary": _s(act.get("summary")),
+                "date": _s(act.get("date_deadline")),
+                "state": _s(act.get("state")),
+                "note": _s(act.get("note")),
+                "partner_id": act.get("res_id"),
+            })
+    except Exception:
+        pass  # Activities may not be available
+
+    # ── 5. Build timeline from recent lead messages ──
+    try:
+        msg_domain = [["model", "=", "crm.lead"], ["message_type", "in", ["comment", "email"]]]
+        if user_id:
+            msg_domain.append(["author_id.user_ids", "in", [user_id]])
+
+        messages = await odoo.search_read(
+            "mail.message",
+            msg_domain,
+            ["date", "subject", "body", "subtype_id", "res_id"],
+            order="date desc",
+            limit=10,
+        )
+
+        for msg in messages:
+            subtype = msg.get("subtype_id")
+            subtype_name = subtype[1] if isinstance(subtype, (list, tuple)) else ""
+            # Clean HTML from body
+            body = _s(msg.get("body", ""))
+            if "<" in body:
+                import re
+                body = re.sub(r"<[^>]+>", "", body).strip()
+            if len(body) > 100:
+                body = body[:97] + "..."
+
+            result["timeline"].append({
+                "date": _s(msg.get("date", "")),
+                "subject": _s(msg.get("subject", "")),
+                "body": body,
+                "type": subtype_name,
+            })
+    except Exception:
+        pass  # Messages may not be accessible
+
+    return result
+
+
+@router.get("/activities", response_model=dict)
+async def get_activities(
+    user_id: Optional[int] = Query(None, description="Filter by user/rep ID"),
+    limit: int = Query(50, ge=1, le=200),
+):
+    """
+    Retourne les activités récentes (mail.activity) pour un représentant.
+    """
+    odoo = get_odoo_client()
+
+    domain = [["res_model", "=", "res.partner"]]
+    if user_id:
+        domain.append(["user_id", "=", user_id])
+
+    try:
+        activities = await odoo.search_read(
+            "mail.activity",
+            domain,
+            ["res_id", "summary", "activity_type_id", "date_deadline", "state", "note", "user_id"],
+            order="date_deadline desc",
+            limit=limit,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Erreur Odoo: {str(e)}")
+
+    formatted = []
+    for act in activities:
+        act_type = act.get("activity_type_id")
+        act_type_name = act_type[1] if isinstance(act_type, (list, tuple)) else str(act_type or "")
+        user = act.get("user_id")
+        user_name = user[1] if isinstance(user, (list, tuple)) else ""
+
+        formatted.append({
+            "id": act.get("id"),
+            "type": act_type_name,
+            "summary": _s(act.get("summary")),
+            "date": _s(act.get("date_deadline")),
+            "state": _s(act.get("state")),
+            "note": _s(act.get("note")),
+            "partner_id": act.get("res_id"),
+            "user_name": user_name,
+        })
+
+    return {
+        "count": len(formatted),
+        "activities": formatted,
     }

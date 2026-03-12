@@ -74,6 +74,9 @@
         .field .val a{color:var(--gmc-blue);text-decoration:none}.field .val a:hover{text-decoration:underline}
         .link-odoo{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:var(--gmc-radius);background:var(--gmc-bg);color:var(--gmc-blue);font-size:12px;font-weight:500;text-decoration:none;border:1px solid var(--gmc-border);transition:.15s;margin-right:6px;margin-top:6px}
         .link-odoo:hover{background:var(--gmc-blue);color:#fff}
+
+        /* Demo mode badge */
+        .gmc-demo-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:rgba(231,76,60,.1);color:#e74c3c;border:1px solid rgba(231,76,60,.2)}
     </style>
 </head>
 <body>
@@ -129,18 +132,15 @@
         <span style="flex:1"></span>
         <span style="font-size:12px;color:var(--gmc-text-muted)">Mars 2026</span>
         <span class="gmc-live-badge" id="liveBadge" style="display:none"><i class="fa-solid fa-circle"></i> Live</span>
+        <span class="gmc-demo-badge" id="demoBadge" style="display:none"><i class="fa-solid fa-flask"></i> DÉMO</span>
     </div>
     <div class="gmc-content">
         <!-- Morning Briefing -->
         <div class="gmc-briefing" id="morningBriefing">
-            <div class="gmc-briefing-greeting">Bonjour <strong id="briefingName">Isabelle</strong> 👋</div>
-            <div class="gmc-briefing-headline" id="briefingHeadline">Tu as <span id="briefingCount">0</span> rendez-vous aujourd'hui</div>
-            <div class="gmc-briefing-cards gmc-stagger" id="briefingCards">
-                <!-- Filled by JS -->
-            </div>
-            <div class="gmc-briefing-alerts" id="briefingAlerts">
-                <!-- Filled by JS -->
-            </div>
+            <div class="gmc-briefing-greeting">Bonjour <strong id="briefingName">Isabelle</strong></div>
+            <div class="gmc-briefing-headline" id="briefingHeadline">Chargement...</div>
+            <div class="gmc-briefing-cards gmc-stagger" id="briefingCards"></div>
+            <div class="gmc-briefing-alerts" id="briefingAlerts"></div>
         </div>
 
         <!-- Stats row -->
@@ -149,7 +149,7 @@
         <!-- Two column layout -->
         <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px">
             <div class="gmc-card">
-                <div class="gmc-card-header"><h2><i class="fa-solid fa-ranking-star" style="color:var(--gmc-green);margin-right:6px"></i> Top 5 clients — Volume 2022</h2></div>
+                <div class="gmc-card-header"><h2><i class="fa-solid fa-ranking-star" style="color:var(--gmc-green);margin-right:6px"></i> Top 5 clients — Pipeline</h2></div>
                 <div class="gmc-card-body" id="top5Chart"></div>
             </div>
             <div class="gmc-card">
@@ -275,1090 +275,1163 @@
 </div><!-- /main -->
 
 <script>
-// ========== DATA ==========
-const ODOO = 'https://granites-mc.odoo.com';
+// ========== CONFIG ==========
 const API_URL = 'https://granites-mc-backend-production-f93a.up.railway.app';
-const CURRENT_REP = 'Isabelle T.';
+const ODOO = 'https://granites-mc.odoo.com';
+const STAGE_ORDER = ['Soumission', 'En attente', 'Signé', 'En cours', 'Livré', 'Perdu'];
 
-let CLIENTS = [
-  {rank:1,nom:"Cuisifab Inc",court:"Cuisifab",terr:"3-RI",score:"A+",best:325950,total:830151,vols:{2019:105019,2020:158799,2021:325950,2022:240383},web:"https://cuisifab.com/",addr:"5075 Boul. des Forges, Trois-Rivières",tel:"819-519-8400",email:"info@cuisifab.com",fb:"https://www.facebook.com/Cuisifab/",contacts:[],desc:"Fabricant armoires cuisine/SDB depuis 2000",pay:"",rep:"Isabelle T."},
-  {rank:2,nom:"Espaces Rubic",court:"Rubic",terr:"T03",score:"A+",best:169560,total:391248,vols:{2019:47813,2020:86720,2021:169560,2022:87155},web:"https://espacesrubic.com/",addr:"397 rue Rose-Ellis, Drummondville",tel:"819-850-6125",email:"info@espacesrubic.com",fb:"",contacts:[],desc:"Cuisines design avant-garde",pay:"",rep:"Yvon R."},
-  {rank:3,nom:"Avivia Inc",court:"Avivia",terr:"3-RI",score:"A+",best:161399,total:504653,vols:{2019:67925,2020:161399,2021:136557,2022:138772},web:"https://avivia.ca/",addr:"20 route Goulet, St-Séverin",tel:"418-365-7821",email:"",fb:"",contacts:[],desc:"Fabricant québécois armoires familial",pay:"",rep:"Nathalie B."},
-  {rank:4,nom:"Cuisi-Meuble S.M.",court:"Cuisi-Meuble",terr:"T03",score:"A+",best:133631,total:438031,vols:{2019:116621,2020:115316,2021:133631,2022:72463},web:"https://cuisimeublesm.com/",addr:"1031 ch. Warwick, Tingwick",tel:"819-359-3110",email:"info@cuisimeublesm.com",fb:"",contacts:[{nom:"Simon",role:""},{nom:"Benjamin",role:""}],desc:"Armoires sur mesure, CNC",pay:"",rep:"Nathalie B."},
-  {rank:5,nom:"Cuisines M.R.S.",court:"Cuisines MRS",terr:"T03",score:"A",best:111642,total:295138,vols:{2019:71514,2020:18661,2021:93321,2022:111642},web:"https://cuisimax.com/fr/1_cuisines-mrs",addr:"180 Boul. Bois-Francs S, Victoriaville",tel:"819-758-1594",email:"info@cuisimax.com",fb:"",contacts:[{nom:"Kelly",role:""},{nom:"Marianne",role:""}],desc:"Fabricant armoires depuis 1967",pay:"5%, net 30j",rep:"Nathalie B."},
-  {rank:6,nom:"Éb. des Cantons-de-l'Est",court:"Éb. Cantons",terr:"T03",score:"A",best:86864,total:187256,vols:{2019:42350,2020:52791,2021:86864,2022:5251},web:"http://www.ebenisterie.ca/",addr:"47 rue Aristide, Granby",tel:"450-375-5054",email:"",fb:"",contacts:[{nom:"Stéphan Gagnon",role:"Dir. opérations"}],desc:"Ébénisterie classique/commerciale",pay:"",rep:"Isabelle T."},
-  {rank:7,nom:"Armoires N.S.",court:"Armoires NS",terr:"T04",score:"A",best:65819,total:104840,vols:{2019:65819,2020:28800,2021:10221},web:"",addr:"Québec",tel:"",email:"",fb:"",contacts:[{nom:"Laurie Bédard",role:""}],desc:"Fabricant armoires",pay:"",rep:"Marc L."},
-  {rank:8,nom:"Andréanne Allard Designer",court:"A. Allard",terr:"3-RI",score:"A",best:57892,total:74413,vols:{2019:57892,2020:15216,2021:1305},web:"https://andreanneallard.com/",addr:"5235 rue De La Châtelaine, TR",tel:"819-995-0173",email:"",fb:"",contacts:[],desc:"Designer intérieur 20 ans exp",pay:"",rep:"Isabelle T."},
-  {rank:9,nom:"Armoires Solution Inc",court:"Arm. Solution",terr:"3-RI",score:"A",best:39813,total:94448,vols:{2019:8636,2020:10476,2021:35523,2022:39813},web:"http://www.armoiressolution.com",addr:"430 rue Vachon, TR",tel:"819-697-2464",email:"info@armoiressolution.com",fb:"",contacts:[],desc:"Resurfaçage/refacing armoires",pay:"",rep:"Isabelle T."},
-  {rank:10,nom:"Éb. P.G. Massicotte",court:"PG Massicotte",terr:"3-RI",score:"A",best:37641,total:97015,vols:{2019:7419,2020:16615,2021:37641,2022:35340},web:"",addr:"Trois-Rivières",tel:"",email:"",fb:"",contacts:[],desc:"Fabrication armoires, Mauricie",pay:"",rep:"Isabelle T."},
-  {rank:11,nom:"Prefab",court:"Prefab",terr:"T03",score:"B+",best:34286,total:44346,vols:{2019:1256,2021:34286,2022:8804},web:"",addr:"Estrie",tel:"",email:"",fb:"",contacts:[],desc:"Ébéniste/cuisiniste Estrie",pay:"",rep:"Yvon R."},
-  {rank:12,nom:"Atelier Bruno Pichet",court:"B. Pichet",terr:"3-RI",score:"B+",best:32769,total:87677,vols:{2019:21545,2020:17099,2021:32769,2022:16264},web:"https://brunopichet.com/",addr:"2281 rang Ste-Marguerite, St-Maurice",tel:"819-375-5337",email:"",fb:"",contacts:[],desc:"Maître ébéniste sur mesure",pay:"",rep:"Isabelle T."},
-  {rank:13,nom:"Pascal & Stéfanie Bois B",court:"Bois B",terr:"3-RI",score:"B+",best:30760,total:34047,vols:{2021:3287,2022:30760},web:"",addr:"Trois-Rivières",tel:"",email:"",fb:"",contacts:[],desc:"Ébéniste, forte croissance 2022",pay:"",rep:"Isabelle T."},
-  {rank:14,nom:"Atelier DLJ",court:"Atelier DLJ",terr:"3-RI",score:"B+",best:30621,total:76501,vols:{2019:15951,2020:14084,2021:30621,2022:15845},web:"",addr:"Trois-Rivières",tel:"",email:"",fb:"",contacts:[],desc:"Atelier ébénisterie, Mauricie",pay:"",rep:"Isabelle T."},
-  {rank:15,nom:"Antiquité Design",court:"Antiq. Design",terr:"T03",score:"B+",best:28606,total:86290,vols:{2019:8364,2020:26545,2021:28606,2022:22775},web:"https://www.antiquitedesign.com/",addr:"16 rue Poirier, Saint-Rosaire",tel:"819-690-4457",email:"",fb:"",contacts:[{nom:"Marie-Lise Frenette",role:"Designer"}],desc:"Design rustique, maisons ancestrales",pay:"",rep:"Nathalie B."},
-  {rank:16,nom:"Armoire Décor Inc",court:"Arm. Décor",terr:"3-RI",score:"B",best:28487,total:54128,vols:{2019:16043,2020:3995,2021:28487,2022:5603},web:"https://armoiredecor.com/",addr:"12488 rue Notre-Dame O, TR",tel:"819-377-1871",email:"info@armoiredecor.com",fb:"",contacts:[],desc:"Armoires sur mesure depuis 1979",pay:"",rep:"Nathalie B."},
-  {rank:17,nom:"Bois-Briand Cuisines",court:"Bois-Briand",terr:"3-RI",score:"B",best:27210,total:60924,vols:{2019:18737,2020:27210,2021:13893,2022:1084},web:"https://nova-design.ca/",addr:"2105 rue Charbonneau, TR",tel:"819-840-6906",email:"info@nova-design.ca",fb:"",contacts:[],desc:"Fab armoires cuisine/SDB",pay:"",rep:"Nathalie B."},
-  {rank:18,nom:"Armoires C. Tremblay",court:"C. Tremblay",terr:"T03",score:"B",best:26839,total:67036,vols:{2019:13788,2020:9716,2021:26839,2022:16693},web:"https://www.armoirestremblay.com/",addr:"3108 rue Bernard-Pilon, St-Mathieu-de-Beloeil",tel:"450-446-2182",email:"",fb:"",contacts:[],desc:"Famille depuis 1984",pay:"",rep:"Yvon R."},
-  {rank:19,nom:"Armoires B.M.S.",court:"BMS",terr:"3-RI",score:"B",best:25182,total:54783,vols:{2019:20375,2020:4845,2021:25182,2022:4381},web:"https://www.armoiresbms.com/",addr:"371 rang du Pays-Brûlé, St-Célestin",tel:"819-229-3315",email:"info@armoiresbms.com",fb:"",contacts:[{nom:"Alain",role:""},{nom:"Andrée",role:""}],desc:"Armoires et mobilier commercial",pay:"Escompte 2%, net 10j",rep:"Nathalie B."},
-  {rank:20,nom:"Armoire B.M.",court:"Arm. BM",terr:"T03",score:"B",best:17551,total:30614,vols:{2019:7987,2020:5076,2021:17551},web:"",addr:"Estrie",tel:"",email:"",fb:"",contacts:[{nom:"Jessika",role:""}],desc:"Fabricant armoires",pay:"",rep:"Isabelle T."},
-  {rank:21,nom:"Bout Design Ladouceur",court:"Bout Design",terr:"T03",score:"B",best:16517,total:50122,vols:{2019:13508,2020:4155,2021:15942,2022:16517},web:"",addr:"Estrie",tel:"",email:"",fb:"",contacts:[],desc:"2 salles de montre, client depuis 2012",pay:"",rep:"Yvon R."},
-  {rank:22,nom:"Les Cuisines S. Chaput",court:"Cuis. Chaput",terr:"T03",score:"B",best:15115,total:36520,vols:{2019:15115,2021:11907,2022:9498},web:"",addr:"Victoriaville",tel:"",email:"",fb:"",contacts:[],desc:"Cuisines réno/construction",pay:"",rep:"Isabelle T."},
-  {rank:23,nom:"Atelier Éb. Luc Chênevert",court:"L. Chênevert",terr:"3-RI",score:"C+",best:12457,total:23261,vols:{2019:12457,2021:8705,2022:2099},web:"https://www.atelierebenisterielucchenevert.ca/",addr:"343 rang de la Rivière SO, Maskinongé",tel:"819-227-3140",email:"",fb:"",contacts:[],desc:"Ébénisterie sur mesure depuis 1984",pay:"",rep:"Isabelle T."},
-  {rank:24,nom:"SMA Ébénisterie",court:"SMA",terr:"T03",score:"C",best:9209,total:14277,vols:{2020:9209,2021:2257,2022:2811},web:"",addr:"Estrie",tel:"",email:"",fb:"",contacts:[{nom:"Jean-Luc",role:""}],desc:"Ébéniste Estrie",pay:"",rep:"Nathalie B."},
-  {rank:25,nom:"Boiseries Anny-Max",court:"Anny-Max",terr:"3-RI",score:"C",best:7278,total:8117,vols:{2019:839,2021:7278},web:"",addr:"2736 rue Charbonneau, TR",tel:"819-377-0496",email:"boiseriesanny.max@hotmail.com",fb:"",contacts:[],desc:"Armoires et mobilier depuis 1988",pay:"",rep:"Isabelle T."}
-];
-
-let PIPELINE = [
-  {num:"SOU-26031",nom:"Commercial 12 cuisines",client:"Cuisifab",montant:45000,etape:"Soumission",rep:"Isabelle T.",date:"8 mars 2026",prob:65},
-  {num:"SOU-26025",nom:"Projet condo Magog",client:"Avivia",montant:42000,etape:"En attente",rep:"Nathalie B.",date:"5 mars 2026",prob:45},
-  {num:"SOU-26019",nom:"Cuisine design résidentiel",client:"Cuisi-Meuble",montant:18500,etape:"Signé",rep:"Isabelle T.",date:"3 mars 2026",prob:95},
-  {num:"SOU-26028",nom:"Réno cuisine complète",client:"Arm. Solution",montant:7600,etape:"Soumission",rep:"Isabelle T.",date:"6 mars 2026",prob:60},
-  {num:"SOU-26033",nom:"Projet résidentiel",client:"Prefab",montant:8500,etape:"Soumission",rep:"Nathalie B.",date:"9 mars 2026",prob:20},
-  {num:"SOU-26035",nom:"Réno SDB",client:"SMA",montant:3200,etape:"Soumission",rep:"Isabelle T.",date:"10 mars 2026",prob:15},
-  {num:"SOU-26022",nom:"Comptoir commercial",client:"Cuisines MRS",montant:22400,etape:"En attente",rep:"Nathalie B.",date:"4 mars 2026",prob:50},
-  {num:"SOU-26015",nom:"Vanité sur mesure",client:"B. Pichet",montant:5800,etape:"En cours",rep:"Isabelle T.",date:"2 mars 2026",prob:40},
-  {num:"SOU-26010",nom:"Cuisine complète Sherbrooke",client:"Antiq. Design",montant:14200,etape:"Soumission",rep:"Nathalie B.",date:"1 mars 2026",prob:35},
-  {num:"SOU-26034",nom:"Projet condo TR",client:"BMS",montant:9700,etape:"Soumission",rep:"Isabelle T.",date:"10 mars 2026",prob:25},
-  {num:"SOU-26009",nom:"Salle de bain design",client:"Arm. Décor",montant:6300,etape:"En cours",rep:"Nathalie B.",date:"28 fév 2026",prob:45},
-  {num:"SOU-26036",nom:"Rénovation complète bureau",client:"Nova Design",montant:38000,etape:"Signé",rep:"Nathalie B.",date:"11 mars 2026",prob:90},
-  {num:"SOU-26037",nom:"Cuisine haut de gamme",client:"Ebe Des Cantons",montant:19800,etape:"Soumission",rep:"Isabelle T.",date:"12 mars 2026",prob:55},
-  {num:"SOU-26005",nom:"Armoires résidentielles",client:"Atelier DLJ",montant:12400,etape:"Livré",rep:"Isabelle T.",date:"15 fév 2026",prob:100},
-  {num:"SOU-26002",nom:"Réno cuisine complète",client:"L. Chênevert",montant:8900,etape:"Livré",rep:"Isabelle T.",date:"10 fév 2026",prob:100},
-  {num:"SOU-26008",nom:"Comptoir granite résidentiel",client:"Cuis. Chaput",montant:6200,etape:"Perdu",rep:"Isabelle T.",date:"20 fév 2026",prob:0},
-  {num:"SOU-26004",nom:"Vanité double SDB",client:"Bois-Briand",montant:15500,etape:"Livré",rep:"Nathalie B.",date:"12 fév 2026",prob:100},
-  {num:"SOU-26001",nom:"Cuisine condo Sherbrooke",client:"SMA",montant:11200,etape:"Livré",rep:"Nathalie B.",date:"8 fév 2026",prob:100},
-  {num:"SOU-26007",nom:"Projet commercial annulé",client:"Arm. Décor",montant:9800,etape:"Perdu",rep:"Nathalie B.",date:"18 fév 2026",prob:0},
-  {num:"SOU-26003",nom:"Mobilier bureau",client:"Anny-Max",montant:4500,etape:"Perdu",rep:"Isabelle T.",date:"5 fév 2026",prob:0},
-];
-
-// Keep pristine copies of static data for user switching
-const ORIG_CLIENTS = CLIENTS.map(c => ({...c, vols:{...c.vols}, contacts: c.contacts ? c.contacts.map(ct => ({...ct})) : []}));
-const ORIG_PIPELINE = PIPELINE.map(p => ({...p}));
-
-// Per-rep profile data (visites, objectifs, activités, timeline)
-const REP_PROFILES = {
-    'isabelle': {
-        objectifVisites: 15,
-        visites: 12,
-        appels: 24,
-        emails: 18,
-        soumissions: 7,
-        activityData: [2,3,1,4,2,3],
-        timeline: [
-            {time:'10 mars',type:'Appel',desc:'Suivi avec Cuisifab'},
-            {time:'9 mars',type:'Visite',desc:'Atelier Bruno Pichet — Ste-Marguerite'},
-            {time:'8 mars',type:'Soumission',desc:'Cuisine design résidentiel signée'},
-            {time:'7 mars',type:'Appel',desc:'Relance Arm. BM — Estrie'},
-            {time:'6 mars',type:'Visite',desc:'PG Massicotte — suivi projet'},
-        ],
-        activities: [
-            {type:'Visite',client:'Cuisifab',date:'8 mars 2026',notes:'Visite chantier commercial'},
-            {type:'Appel',client:'Éb. Cantons',date:'7 mars 2026',notes:'Suivi relance volume'},
-            {type:'Email',client:'Arm. Solution',date:'6 mars 2026',notes:'Devis complémentaire'},
-            {type:'Visite',client:'B. Pichet',date:'5 mars 2026',notes:'Prise de mesures'},
-            {type:'Appel',client:'Bois B',date:'4 mars 2026',notes:'Nouvelle commande'},
-        ],
-        demoCalendar: function(days, fmt) { return [
-            {id:0, name:'Visite Cuisifab — suivi soumission', start: fmt(days[0])+' 09:00:00', stop: fmt(days[0])+' 10:30:00', location:'5075 Boul. des Forges, Trois-Rivières', partner_id:'Cuisifab'},
-            {id:0, name:'Appel Éb. Cantons — relance volume', start: fmt(days[1])+' 14:00:00', stop: fmt(days[1])+' 14:30:00', location:'Téléphone', partner_id:'Éb. Cantons'},
-            {id:0, name:'Visite Arm. Solution — démo produit', start: fmt(days[2])+' 10:00:00', stop: fmt(days[2])+' 11:30:00', location:'430 rue Vachon, TR', partner_id:'Arm. Solution'},
-            {id:0, name:'Visite B. Pichet — prise mesures', start: fmt(days[3])+' 13:00:00', stop: fmt(days[3])+' 14:30:00', location:'St-Maurice', partner_id:'B. Pichet'},
-            {id:0, name:'Réunion équipe — bilan semaine', start: fmt(days[4])+' 16:00:00', stop: fmt(days[4])+' 17:00:00', location:'Bureau', partner_id:'Interne'},
-        ]; }
-    },
-    'nathalie': {
-        objectifVisites: 12,
-        visites: 9,
-        appels: 18,
-        emails: 14,
-        soumissions: 6,
-        activityData: [3,2,2,1,3,2],
-        timeline: [
-            {time:'11 mars',type:'Soumission',desc:'Rénovation bureau Nova Design — signée'},
-            {time:'10 mars',type:'Visite',desc:'Antiquité Design — Saint-Rosaire'},
-            {time:'9 mars',type:'Appel',desc:'Relance Cuisines MRS — comptoir'},
-            {time:'8 mars',type:'Visite',desc:'Arm. Décor — salle de bain'},
-            {time:'7 mars',type:'Email',desc:'Devis Cuisi-Meuble — CNC'},
-        ],
-        activities: [
-            {type:'Visite',client:'Antiq. Design',date:'10 mars 2026',notes:'Visite showroom'},
-            {type:'Appel',client:'Cuisines MRS',date:'9 mars 2026',notes:'Relance comptoir commercial'},
-            {type:'Email',client:'Cuisi-Meuble',date:'8 mars 2026',notes:'Envoi devis CNC'},
-            {type:'Visite',client:'Arm. Décor',date:'7 mars 2026',notes:'Projet salle de bain'},
-            {type:'Appel',client:'BMS',date:'6 mars 2026',notes:'Confirmation livraison'},
-        ],
-        demoCalendar: function(days, fmt) { return [
-            {id:0, name:'Visite Antiq. Design — showroom', start: fmt(days[0])+' 10:00:00', stop: fmt(days[0])+' 11:30:00', location:'16 rue Poirier, Saint-Rosaire', partner_id:'Antiq. Design'},
-            {id:0, name:'Appel Cuisines MRS — relance', start: fmt(days[1])+' 09:00:00', stop: fmt(days[1])+' 09:30:00', location:'Téléphone', partner_id:'Cuisines MRS'},
-            {id:0, name:'Visite BMS — suivi commande', start: fmt(days[2])+' 13:00:00', stop: fmt(days[2])+' 14:30:00', location:'371 rang du Pays-Brûlé, St-Célestin', partner_id:'BMS'},
-            {id:0, name:'Visite Avivia — projet condo', start: fmt(days[3])+' 10:00:00', stop: fmt(days[3])+' 12:00:00', location:'20 route Goulet, St-Séverin', partner_id:'Avivia'},
-            {id:0, name:'Réunion équipe — bilan semaine', start: fmt(days[4])+' 16:00:00', stop: fmt(days[4])+' 17:00:00', location:'Bureau', partner_id:'Interne'},
-        ]; }
-    }
+// ========== APP STATE (Single Source of Truth) ==========
+const AppState = {
+    user: null,
+    isLive: false,
+    clients: [],
+    pipeline: [],
+    stats: {},
+    activities: [],
+    timeline: [],
+    calendarEvents: [],
+    currentClientFilter: 'all',
+    currentPipeFilter: 'all',
+    currentPipeViewMode: 'kanban'
 };
 
-function getRepProfile() {
-    if (!currentUser) return REP_PROFILES['isabelle'];
-    const firstName = (currentUser.name || '').split(' ')[0].toLowerCase();
-    return REP_PROFILES[firstName] || REP_PROFILES['isabelle'];
-}
+// Grid instances
+let clientsGridApi = null;
+let pipeGridApi = null;
+let actGridApi = null;
 
-// Filter clients and pipeline for this rep (static fallback)
-let MY_CLIENTS = CLIENTS.filter(c => c.rep === CURRENT_REP);
-let MY_PIPELINE = PIPELINE.filter(p => p.rep === CURRENT_REP);
+// ========== DEMO FALLBACK DATA ==========
+const DEMO_DATA = {
+    mode: 'demo',
+    clients: [
+        { id: 1, name: 'Cuisifab 3ri', territoire: 'Mauricie', score: 'A', city: 'Trois-Rivières', phone: '819-373-XXXX', email: 'info@cuisifab3ri.ca', website: 'www.cuisifab3ri.ca', street: '5075 Boul. des Forges', zip: 'G8Y 1W4', description: 'Ébénisterie résidentielle et commerciale, spécialité comptoirs', facebook: '', instagram: '', linkedin: '', google_maps: '', type_client: 'Ébénisterie', notes_terrain: '', lead_count: 5, pipeline_revenue: 125000 },
+        { id: 2, name: 'Avivia Cuisines', territoire: 'Centre-du-Québec', score: 'B', city: 'Victoriaville', phone: '819-758-XXXX', email: 'info@avivia.ca', website: 'www.avivia.ca', street: '123 Boul. Jutras', zip: 'G6P 5N2', description: 'Fabrication de cuisines sur mesure', facebook: '', instagram: 'aviviacuisines', linkedin: '', google_maps: '', type_client: 'Ébénisterie', notes_terrain: '', lead_count: 3, pipeline_revenue: 75000 },
+        { id: 3, name: 'Armoires Distinction', territoire: 'Estrie', score: 'A', city: 'Sherbrooke', phone: '819-565-XXXX', email: 'ventes@armoiresdistinction.ca', website: 'www.armoiresdistinction.ca', street: '89 Rue King Ouest', zip: 'J1H 1P7', description: 'Leader régional en armoires haut de gamme', facebook: '', instagram: '', linkedin: 'armoires-distinction', google_maps: '', type_client: 'Ébénisterie', notes_terrain: '', lead_count: 8, pipeline_revenue: 250000 },
+        { id: 4, name: 'Cuisi-Meuble S.M.', territoire: 'Centre-du-Québec', score: 'C', city: 'Tingwick', phone: '819-359-XXXX', email: 'contact@cuisimeuble.ca', website: '', street: '5 Rue Principale', zip: 'J0A 1L0', description: 'Petit atelier spécialisé vanités et meubles', facebook: '', instagram: '', linkedin: '', google_maps: '', type_client: 'Ébénisterie', notes_terrain: '', lead_count: 1, pipeline_revenue: 25000 }
+    ],
+    pipeline: [
+        { id: 101, name: 'Comptoirs quartz cuisine — Projet Forges', stage_name: 'Soumission', partner_name: 'Cuisifab 3ri', expected_revenue: 75000, probability: 60, date_deadline: '2026-04-15', create_date: '2026-02-20', user_name: 'Démo' },
+        { id: 102, name: 'Vanités granit — Condo Victoriaville', stage_name: 'En attente', partner_name: 'Avivia Cuisines', expected_revenue: 45000, probability: 80, date_deadline: '2026-05-30', create_date: '2026-02-10', user_name: 'Démo' },
+        { id: 103, name: 'Comptoirs marbre — Résidences Sherbrooke', stage_name: 'Signé', partner_name: 'Armoires Distinction', expected_revenue: 120000, probability: 100, date_deadline: '2026-08-30', create_date: '2026-01-15', user_name: 'Démo' },
+        { id: 104, name: 'Dosserets céramique — Tingwick', stage_name: 'En cours', partner_name: 'Cuisi-Meuble S.M.', expected_revenue: 25000, probability: 100, date_deadline: '2026-06-15', create_date: '2025-12-01', user_name: 'Démo' },
+        { id: 105, name: 'Îlot quartz — Projet Laviolette', stage_name: 'Livré', partner_name: 'Cuisifab 3ri', expected_revenue: 18000, probability: 100, date_deadline: '2026-02-01', create_date: '2025-11-15', user_name: 'Démo' },
+        { id: 106, name: 'Comptoirs stratifié — Réno Arthabaska', stage_name: 'Perdu', partner_name: 'Avivia Cuisines', expected_revenue: 12000, probability: 0, date_deadline: '2026-01-20', create_date: '2025-10-05', user_name: 'Démo' }
+    ],
+    stats: {
+        client_count: 4,
+        lead_count: 17,
+        pipeline_revenue: 475000,
+        avg_probability: 65,
+        stage_counts: { 'Soumission': 1, 'En attente': 1, 'Signé': 1, 'En cours': 1, 'Livré': 1, 'Perdu': 1 },
+        score_counts: { A: 2, B: 1, C: 1 }
+    },
+    activities: [
+        { type: 'call', summary: 'Appel Cuisifab 3ri — suivi soumission comptoirs', date: '2026-03-10', state: 'completed', note: 'Suivi de la soumission envoyée le 5 mars', partner_id: 1 },
+        { type: 'meeting', summary: 'Visite Armoires Distinction — signature contrat', date: '2026-03-08', state: 'completed', note: 'Contrat signé pour Résidences Sherbrooke', partner_id: 3 },
+        { type: 'email', summary: 'Envoi devis Avivia Cuisines — vanités granit', date: '2026-03-07', state: 'completed', note: 'Proposition commerciale condo Victoriaville', partner_id: 2 },
+        { type: 'call', summary: 'Appel Cuisi-Meuble S.M. — relance échantillons', date: '2026-03-05', state: 'completed', note: 'Relance envoi échantillons finis mat', partner_id: 4 }
+    ],
+    timeline: [
+        { date: '2026-03-10', subject: 'Appel client', body: 'Suivi avec Cuisifab 3ri sur la soumission comptoirs quartz', type: 'call' },
+        { date: '2026-03-08', subject: 'Signature', body: 'Contrat signé avec Armoires Distinction pour Résidences Sherbrooke', type: 'meeting' },
+        { date: '2026-03-07', subject: 'Devis envoyé', body: 'Proposition commerciale transmise à Avivia Cuisines — vanités granit', type: 'email' }
+    ]
+};
 
 // ========== AUTH & SESSION ==========
-let currentUser = null; // {id, name, email, role}
-let isLive = false;
-
-function getStoredUser() {
-    try { return JSON.parse(localStorage.getItem('gmc_user')); } catch(e) { return null; }
-}
-function storeUser(u) { localStorage.setItem('gmc_user', JSON.stringify(u)); }
-
-function showLoginModal() {
-    const modal = document.createElement('div');
-    modal.id = 'loginModal';
-    modal.className = 'gmc-modal-overlay';
-    modal.innerHTML = `
-        <div class="gmc-modal">
-            <div style="width:50px;height:50px;background:var(--gmc-accent);border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-weight:800;color:white;font-size:18px">G</div>
-            <h2 style="margin:0 0 4px;color:var(--gmc-text-strong);font-size:18px">Granites MC CRM</h2>
-            <p style="color:var(--gmc-text-muted);font-size:13px;margin:0 0 20px">Connectez-vous pour accéder à votre tableau de bord</p>
-            <div id="loginUserList" style="text-align:left;max-height:300px;overflow-y:auto">
-                <div style="text-align:center;padding:20px;color:var(--gmc-text-muted)"><i class="fa-solid fa-spinner fa-spin"></i> Chargement...</div>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(modal);
-    loadLoginUsers();
-}
-
-async function loadLoginUsers() {
-    const container = document.getElementById('loginUserList');
-    try {
-        const resp = await fetch(`${API_URL}/api/crm/auth/users`);
-        if (!resp.ok) throw new Error('API error');
-        const data = await resp.json();
-        const users = data.users || [];
-        container.innerHTML = users.map(u => `
-            <div onclick="doLogin('${u.email}')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;transition:.15s;border:1px solid var(--gmc-border);margin-bottom:6px" onmouseover="this.style.background='var(--gmc-bg)'" onmouseout="this.style.background='white'">
-                <div style="width:36px;height:36px;border-radius:50%;background:var(--gmc-blue);display:flex;align-items:center;justify-content:center;color:white;font-weight:600;font-size:13px">${u.name.split(' ').map(w=>w[0]).join('').substring(0,2)}</div>
-                <div>
-                    <div style="font-weight:600;color:var(--gmc-text-strong);font-size:13px">${u.name}</div>
-                    <div style="font-size:11px;color:var(--gmc-text-muted)">${u.email || 'Pas d\'email'}</div>
-                </div>
-            </div>
-        `).join('');
-    } catch (e) {
-        // Fallback: allow manual selection from static list
-        container.innerHTML = `
-            <div style="text-align:center;padding:12px;color:var(--gmc-text-muted);font-size:12px;margin-bottom:10px">API indisponible — mode démo</div>
-            <div onclick="doLoginFallback('Isabelle T.')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;border:1px solid var(--gmc-border);margin-bottom:6px" onmouseover="this.style.background='var(--gmc-bg)'" onmouseout="this.style.background='white'">
-                <div style="width:36px;height:36px;border-radius:50%;background:var(--gmc-blue);display:flex;align-items:center;justify-content:center;color:white;font-weight:600;font-size:13px">IT</div>
-                <div><div style="font-weight:600;color:var(--gmc-text-strong);font-size:13px">Isabelle T.</div><div style="font-size:11px;color:var(--gmc-text-muted)">Représentant</div></div>
-            </div>
-            <div onclick="doLoginFallback('Nathalie Beaulac')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;border:1px solid var(--gmc-border);margin-bottom:6px" onmouseover="this.style.background='var(--gmc-bg)'" onmouseout="this.style.background='white'">
-                <div style="width:36px;height:36px;border-radius:50%;background:var(--gmc-green);display:flex;align-items:center;justify-content:center;color:white;font-weight:600;font-size:13px">NB</div>
-                <div><div style="font-weight:600;color:var(--gmc-text-strong);font-size:13px">Nathalie Beaulac</div><div style="font-size:11px;color:var(--gmc-text-muted)">Administrateur</div></div>
-            </div>
-        `;
+function initSession() {
+    const stored = localStorage.getItem('gmc_user');
+    if (stored) {
+        try {
+            AppState.user = JSON.parse(stored);
+            updateSidebarUser();
+            return true;
+        } catch (e) {
+            localStorage.removeItem('gmc_user');
+            return false;
+        }
     }
+    return false;
 }
 
-async function doLogin(email) {
-    try {
-        const resp = await fetch(`${API_URL}/api/crm/auth/login?email=${encodeURIComponent(email)}`, {method:'POST'});
-        if (!resp.ok) throw new Error('Login failed');
-        const data = await resp.json();
-        currentUser = data.user;
-        storeUser(currentUser);
-        document.getElementById('loginModal')?.remove();
-        await loadLiveData();
-    } catch(e) {
-        alert('Erreur de connexion: ' + e.message);
-    }
-}
-
-async function doLoginFallback(name) {
-    currentUser = {id: 0, name: name, email: '', role: 'rep'};
-    storeUser(currentUser);
-    document.getElementById('loginModal')?.remove();
-    updateUIForUser();
-    renderDashboard();
-    renderKanban();
-    renderActivityCharts();
-    initClientGrid();
-    initPipeGrid();
-    initActGrid();
-    await loadCalendarEvents();
+function updateSidebarUser() {
+    if (!AppState.user) return;
+    const avatar = document.querySelector('.gmc-avatar');
+    const userName = document.querySelector('.gmc-user-name');
+    const initials = AppState.user.name.split(' ').map(n => n[0]).join('').toUpperCase();
+    if (avatar) avatar.textContent = initials.slice(0, 2);
+    if (userName) userName.textContent = AppState.user.name;
+    document.getElementById('briefingName').textContent = AppState.user.name.split(' ')[0];
 }
 
 function confirmLogout() {
     const overlay = document.createElement('div');
-    overlay.className = 'gmc-confirm-overlay';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:1000';
     overlay.innerHTML = `
-        <div class="gmc-confirm-dialog">
-            <h3>Changer d'utilisateur?</h3>
-            <p>Vous serez déconnecté de la session en cours.</p>
-            <div class="gmc-confirm-actions">
-                <button class="gmc-btn" onclick="this.closest('.gmc-confirm-overlay').remove()">Annuler</button>
-                <button class="gmc-btn gmc-btn-primary" onclick="logout();this.closest('.gmc-confirm-overlay').remove()">Déconnexion</button>
+        <div style="background:var(--gmc-bg-elevated);border-radius:12px;padding:24px;max-width:360px;box-shadow:0 8px 24px rgba(0,0,0,.2);text-align:center">
+            <div style="font-size:28px;margin-bottom:12px">👤</div>
+            <h3 style="margin-bottom:8px;color:var(--gmc-text-strong)">Changer d'utilisateur ?</h3>
+            <p style="color:var(--gmc-text-muted);font-size:13px;margin-bottom:20px">Vous serez déconnecté et redirigé vers la page de connexion.</p>
+            <div style="display:flex;gap:8px;justify-content:center">
+                <button onclick="this.closest('div[style*=fixed]').remove()" style="padding:8px 20px;background:var(--gmc-bg);border:1px solid var(--gmc-border);border-radius:var(--gmc-radius);cursor:pointer;font-family:inherit;font-weight:500">Annuler</button>
+                <button onclick="localStorage.removeItem('gmc_user');location.reload()" style="padding:8px 20px;background:#e74c3c;color:#fff;border:none;border-radius:var(--gmc-radius);cursor:pointer;font-family:inherit;font-weight:600">Déconnexion</button>
             </div>
         </div>
     `;
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
     document.body.appendChild(overlay);
-    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
-function logout() {
-    localStorage.removeItem('gmc_user');
-    currentUser = null;
-    isLive = false;
-    // Reset to pristine static data so next user gets clean state
-    CLIENTS = ORIG_CLIENTS.map(c => ({...c, vols:{...c.vols}, contacts: c.contacts ? c.contacts.map(ct => ({...ct})) : []}));
-    PIPELINE = ORIG_PIPELINE.map(p => ({...p}));
-    MY_CLIENTS = [];
-    MY_PIPELINE = [];
-    showLoginModal();
-}
-
-// ========== LIVE DATA LOADING ==========
-async function loadLiveData() {
-    try {
-        // Load clients from Odoo
-        const clientResp = await fetch(`${API_URL}/api/crm/clients?limit=500`);
-        if (clientResp.ok) {
-            const clientData = await clientResp.json();
-            const liveClients = clientData.clients || [];
-            if (liveClients.length > 0) {
-                // Merge live data with static data (keep static volume data)
-                CLIENTS = CLIENTS.map(c => {
-                    const live = liveClients.find(l => l.name?.includes(c.court) || c.nom?.includes(l.name?.split(' ')[0]));
-                    if (live) {
-                        return {
-                            ...c,
-                            odooId: live.id,
-                            nom: live.name || c.nom,
-                            email: live.email || c.email,
-                            tel: live.phone || c.tel,
-                            web: live.website || c.web,
-                            addr: [live.street, live.city, live.zip].filter(Boolean).join(', ') || c.addr,
-                            score: live.x_score_client || c.score,
-                            terr: live.territoire || c.terr,
-                            liveData: live,
-                        };
-                    }
-                    return c;
-                });
-                isLive = true;
-            }
-        }
-    } catch(e) { console.log('Client sync failed:', e); }
+// ========== API LOADING ==========
+async function loadDashboard() {
+    if (!AppState.user) return;
 
     try {
-        // Load pipeline from Odoo
-        const pipeResp = await fetch(`${API_URL}/api/crm/pipeline?limit=200${currentUser?.id ? '&user_id='+currentUser.id : ''}`);
-        if (pipeResp.ok) {
-            const pipeData = await pipeResp.json();
-            const liveLeads = pipeData.leads || [];
-            if (liveLeads.length > 0) {
-                // Replace pipeline with live data
-                const livePipeline = liveLeads.map((l, i) => ({
-                    id: l.id,
-                    num: 'SOU-' + String(l.id).padStart(5, '0'),
-                    nom: l.name,
-                    client: l.partner_name || '',
-                    montant: l.expected_revenue || 0,
-                    etape: ({'New':'Soumission','Nouveau':'Soumission','Qualification':'En attente','Proposition':'En attente','Negotiation':'En cours','Négociation':'En cours','Won':'Signé','Gagné':'Signé','Lost':'Perdu'}[l.stage_name] || l.stage_name || 'Soumission'),
-                    rep: l.user_name || '',
-                    date: l.create_date?.split(' ')[0] || '',
-                    prob: l.probability || 0,
-                    liveData: l,
-                }));
-                // Merge: use live leads + keep static ones that don't have live equivalents
-                PIPELINE = livePipeline.length > 0 ? livePipeline : PIPELINE;
-            }
-        }
-    } catch(e) { console.log('Pipeline sync failed:', e); }
+        const url = `${API_URL}/api/crm/dashboard?user_id=${AppState.user.id}`;
+        const response = await fetch(url);
 
-    // Re-filter for current user
-    updateUIForUser();
-    const lb = document.getElementById('liveBadge'); if (lb) lb.style.display = isLive ? 'inline-flex' : 'none';
+        if (!response.ok) throw new Error('API call failed');
+
+        const data = await response.json();
+        AppState.isLive = data.mode === 'live';
+        AppState.clients = data.clients || [];
+        AppState.pipeline = data.pipeline || [];
+        AppState.stats = data.stats || {};
+        AppState.activities = data.activities || [];
+        AppState.timeline = data.timeline || [];
+
+    } catch (error) {
+        console.error('Dashboard load error:', error);
+        Object.assign(AppState, DEMO_DATA);
+        AppState.isLive = false;
+    }
+
+    updateLiveBadge();
     renderDashboard();
-    renderKanban();
+    initializeAllGrids();
+}
+
+async function loadCalendarEvents() {
+    if (!AppState.user) return;
+
+    try {
+        const today = new Date();
+        const rangeStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+        const rangeEnd = new Date(today.getFullYear(), today.getMonth() + 3, 0);
+        const start = rangeStart.toISOString().split('T')[0];
+        const end = rangeEnd.toISOString().split('T')[0];
+
+        const url = `${API_URL}/api/calendar/events?start_date=${start}&end_date=${end}&user_id=${AppState.user.id}`;
+        const response = await fetch(url);
+
+        if (response.ok) {
+            const data = await response.json();
+            AppState.calendarEvents = data.events || [];
+        }
+    } catch (error) {
+        console.error('Calendar load error:', error);
+        AppState.calendarEvents = [];
+    }
+}
+
+function updateLiveBadge() {
+    const liveBadge = document.getElementById('liveBadge');
+    const demoBadge = document.getElementById('demoBadge');
+
+    if (AppState.isLive) {
+        liveBadge.style.display = 'inline-flex';
+        demoBadge.style.display = 'none';
+    } else {
+        liveBadge.style.display = 'none';
+        demoBadge.style.display = 'inline-flex';
+    }
+}
+
+// ========== RENDER DASHBOARD ==========
+function renderDashboard() {
+    renderMorningBriefing();
+    renderDashboardStats();
+    renderTop5Chart();
+    renderTimeline();
     renderActivityCharts();
+}
+
+function renderMorningBriefing() {
+    const today = new Date();
+    const todayStr = today.toDateString();
+    const todayEvents = AppState.calendarEvents.filter(e => {
+        const eDate = new Date(e.start);
+        return eDate.toDateString() === todayStr;
+    });
+    const dayCount = todayEvents.length;
+    const headline = dayCount > 0
+        ? `${dayCount} événement${dayCount > 1 ? 's' : ''} aujourd'hui`
+        : 'Aucun événement prévu pour aujourd\'hui';
+    document.getElementById('briefingHeadline').textContent = headline;
+
+    const cardsDiv = document.getElementById('briefingCards');
+    cardsDiv.innerHTML = '';
+
+    const topClients = [...AppState.clients]
+        .sort((a, b) => (b.pipeline_revenue || 0) - (a.pipeline_revenue || 0))
+        .slice(0, 3);
+
+    topClients.forEach(client => {
+        const card = document.createElement('div');
+        card.className = 'gmc-card gmc-card-sm';
+        card.style.cursor = 'pointer';
+        card.onclick = () => showClientDetail(client);
+        card.innerHTML = `
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+                <strong style="font-size:13px">${client.name}</strong>
+                <span class="gmc-badge gmc-score-${(client.score||'c')[0].toLowerCase()}">${client.score}</span>
+            </div>
+            <div style="font-size:11px;color:var(--gmc-text-muted)">${client.city || '—'}</div>
+            <div style="font-size:11px;font-weight:600;margin-top:4px;color:var(--gmc-green)">
+                ${formatCurrency(client.pipeline_revenue)} en pipeline
+            </div>
+        `;
+        cardsDiv.appendChild(card);
+    });
+}
+
+function renderDashboardStats() {
+    const statsDiv = document.getElementById('dashboardStats');
+    statsDiv.innerHTML = '';
+
+    const stats = [
+        { icon: 'fa-building', label: 'Clients', value: AppState.stats.client_count || 0, color: 'blue' },
+        { icon: 'fa-fire', label: 'Leads', value: AppState.stats.lead_count || 0, color: 'accent' },
+        { icon: 'fa-coins', label: 'Pipeline', value: formatCurrency(AppState.stats.pipeline_revenue || 0), color: 'green' },
+        { icon: 'fa-chart-pie', label: 'Proba. moy.', value: Math.round(AppState.stats.avg_probability || 0) + '%', color: 'purple' }
+    ];
+
+    stats.forEach(stat => {
+        const card = document.createElement('div');
+        card.className = 'gmc-card';
+        card.innerHTML = `
+            <div style="display:flex;align-items:center;gap:12px">
+                <div style="width:48px;height:48px;border-radius:8px;background:var(--gmc-${stat.color});opacity:0.1;display:flex;align-items:center;justify-content:center">
+                    <i class="fa-solid ${stat.icon}" style="color:var(--gmc-${stat.color})"></i>
+                </div>
+                <div>
+                    <div style="font-size:11px;color:var(--gmc-text-muted)">${stat.label}</div>
+                    <div style="font-size:20px;font-weight:700;color:var(--gmc-text-strong)">${stat.value}</div>
+                </div>
+            </div>
+        `;
+        statsDiv.appendChild(card);
+    });
+}
+
+function renderTop5Chart() {
+    const topClients = [...AppState.clients]
+        .sort((a, b) => (b.pipeline_revenue || 0) - (a.pipeline_revenue || 0))
+        .slice(0, 5);
+
+    const maxRevenue = Math.max(...topClients.map(c => c.pipeline_revenue || 0), 1);
+    const chartDiv = document.getElementById('top5Chart');
+    chartDiv.innerHTML = '';
+
+    const chart = document.createElement('div');
+    chart.className = 'clients-chart';
+
+    topClients.forEach(client => {
+        const pct = ((client.pipeline_revenue || 0) / maxRevenue) * 100;
+        const row = document.createElement('div');
+        row.className = 'client-bar';
+        row.onclick = () => showClientDetail(client);
+        row.innerHTML = `
+            <div class="client-name" title="${client.name}">${client.name}</div>
+            <div class="client-bar-chart">
+                <div class="client-bar-fill" style="width:${pct}%"></div>
+            </div>
+            <div class="client-amount">${formatCurrency(client.pipeline_revenue || 0)}</div>
+            <div class="client-score">${client.score}</div>
+        `;
+        chart.appendChild(row);
+    });
+
+    chartDiv.appendChild(chart);
+}
+
+function renderTimeline() {
+    const timelineDiv = document.getElementById('timelinePanel');
+    timelineDiv.innerHTML = '';
+
+    const timeline = AppState.timeline.slice(0, 5);
+    if (timeline.length === 0) {
+        timelineDiv.innerHTML = '<div style="color:var(--gmc-text-muted);font-size:12px">Aucune activité récente</div>';
+        return;
+    }
+
+    const tl = document.createElement('div');
+    tl.className = 'timeline';
+
+    timeline.forEach(item => {
+        const itemEl = document.createElement('div');
+        itemEl.className = 'timeline-item';
+        const dateObj = new Date(item.date);
+        const timeStr = dateObj.toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' });
+        itemEl.innerHTML = `
+            <div class="time">${timeStr}</div>
+            <div>
+                <div class="type">${item.type}</div>
+                <div class="desc">${item.subject}</div>
+            </div>
+        `;
+        tl.appendChild(itemEl);
+    });
+
+    timelineDiv.appendChild(tl);
+}
+
+// ========== CLIENT DETAIL PANEL ==========
+function showClientDetail(client) {
+    const detailPanel = document.getElementById('detailPanel');
+    const detailName = document.getElementById('detailName');
+    const detailBody = document.getElementById('detailBody');
+
+    detailName.textContent = client.name;
+
+    detailBody.innerHTML = `
+        <div class="field-grid">
+            <div class="field">
+                <div class="label">Score</div>
+                <div class="val"><span class="gmc-badge gmc-score-${(client.score||'c')[0].toLowerCase()}">${client.score}</span></div>
+            </div>
+            <div class="field">
+                <div class="label">Territoire</div>
+                <div class="val">${client.territoire || '—'}</div>
+            </div>
+            <div class="field">
+                <div class="label">Ville</div>
+                <div class="val">${client.city || '—'}</div>
+            </div>
+            <div class="field">
+                <div class="label">Code postal</div>
+                <div class="val">${client.zip || '—'}</div>
+            </div>
+            <div class="field">
+                <div class="label">Type</div>
+                <div class="val">${client.type_client || '—'}</div>
+            </div>
+            <div class="field">
+                <div class="label">Pipeline</div>
+                <div class="val">${formatCurrency(client.pipeline_revenue || 0)}</div>
+            </div>
+            <div class="field" style="grid-column:1/-1">
+                <div class="label">Adresse</div>
+                <div class="val">${client.street || '—'}</div>
+            </div>
+            <div class="field" style="grid-column:1/-1">
+                <div class="label">Contacts</div>
+                <div class="val">
+                    ${client.phone ? `<a href="tel:${client.phone}">${client.phone}</a><br>` : ''}
+                    ${client.email ? `<a href="mailto:${client.email}">${client.email}</a><br>` : ''}
+                    ${client.website ? `<a href="https://${client.website}" target="_blank">${client.website}</a>` : ''}
+                </div>
+            </div>
+            <div class="field" style="grid-column:1/-1">
+                <div class="label">Description</div>
+                <div class="val">${client.description || '—'}</div>
+            </div>
+        </div>
+        <a href="${ODOO}/web#model=res.partner&id=${client.id}" target="_blank" class="link-odoo">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> Voir dans Odoo
+        </a>
+    `;
+
+    document.getElementById('backdrop').classList.add('show');
+    detailPanel.classList.add('open');
+}
+
+function closeDetail() {
+    document.getElementById('backdrop').classList.remove('show');
+    document.getElementById('detailPanel').classList.remove('open');
+}
+
+// ========== AG GRIDS ==========
+function initializeAllGrids() {
     initClientGrid();
     initPipeGrid();
     initActGrid();
-    await loadCalendarEvents();
-}
-
-function updateUIForUser() {
-    if (!currentUser) return;
-
-    // Update sidebar user info
-    const initials = currentUser.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
-    const userEl = document.querySelector('.gmc-sidebar-user');
-    if (userEl) {
-        userEl.innerHTML = `<div class="gmc-avatar">${initials}</div><div class="gmc-user-info"><div class="gmc-user-name">${currentUser.name}</div><div>${currentUser.role === 'admin' ? 'Administrateur' : 'Représentant'}</div></div><i class="fa-solid fa-right-from-bracket" style="color:rgba(255,255,255,.4);margin-left:auto;font-size:12px"></i>`;
-    }
-
-    // Build a short name matcher (e.g., "Isabelle Nolin" -> matches "Isabelle T.", "Isabelle N.", "Isabelle Nolin")
-    const firstName = (currentUser.name || '').split(' ')[0].toLowerCase();
-
-    // Filter clients by rep name (match first name)
-    MY_CLIENTS = CLIENTS.filter(c => {
-        if (!c.rep) return false;
-        return c.rep.toLowerCase().startsWith(firstName);
-    });
-
-    // Filter pipeline by rep name OR by Odoo user_id
-    MY_PIPELINE = PIPELINE.filter(p => {
-        // Live data: match by user_id
-        if (p.liveData && currentUser.id) {
-            const uid = p.liveData.user_id;
-            return (Array.isArray(uid) ? uid[0] : uid) === currentUser.id;
-        }
-        // Static data: match by first name
-        if (p.rep) return p.rep.toLowerCase().startsWith(firstName);
-        return false;
-    });
-}
-
-// ========== NAVIGATION ==========
-function showSection(id, el) {
-    document.querySelectorAll('.gmc-section').forEach(s => s.classList.remove('active'));
-    document.getElementById('sec-'+id).classList.add('active');
-    document.querySelectorAll('.gmc-nav-item').forEach(n => n.classList.remove('active'));
-    el.classList.add('active');
-    if (id === 'clients' && clientGrid) setTimeout(() => clientGrid.api.sizeColumnsToFit(), 50);
-    if (id === 'pipeline' && pipeGrid) setTimeout(() => pipeGrid.api.sizeColumnsToFit(), 50);
-    if (id === 'activity' && actGrid) setTimeout(() => actGrid.api.sizeColumnsToFit(), 50);
-    if (id === 'calendar') renderFullCalendar();
-}
-
-function setPipeViewMode(mode, el) {
-    el.parentElement.querySelectorAll('.gmc-view-tab').forEach(t => t.classList.remove('active'));
-    el.classList.add('active');
-    if (mode === 'kanban') {
-        document.getElementById('kanbanContainer').style.display = '';
-        document.getElementById('pipeGridContainer').style.display = 'none';
-    } else {
-        document.getElementById('kanbanContainer').style.display = 'none';
-        document.getElementById('pipeGridContainer').style.display = '';
-        if (pipeGrid) setTimeout(() => pipeGrid.api.sizeColumnsToFit(), 50);
-    }
-}
-
-// ========== OMNISEARCH ==========
-function openOmni() { document.getElementById('omniOverlay').classList.add('open'); setTimeout(()=>document.getElementById('omniInput').focus(),100); }
-function closeOmni() { document.getElementById('omniOverlay').classList.remove('open'); document.getElementById('omniInput').value=''; }
-
-function omniSearch(q) {
-    const res = document.getElementById('omniResults');
-    if (!q || q.length < 2) { res.innerHTML = '<div class="omni-empty">Tapez pour rechercher...</div>'; return; }
-    const ql = q.toLowerCase();
-    let html = '';
-
-    const matchC = MY_CLIENTS.filter(c => c.nom.toLowerCase().includes(ql) || c.court.toLowerCase().includes(ql) || c.addr.toLowerCase().includes(ql));
-    if (matchC.length) {
-        html += '<div class="omni-group"><div class="omni-group-title">Mes clients</div>';
-        matchC.slice(0,5).forEach(c => {
-            html += `<div class="omni-item" onclick="closeOmni();openDetail(${c.rank})"><div class="oi-icon" style="background:rgba(0,145,174,.08);color:var(--gmc-blue)"><i class="fa-solid fa-building"></i></div><div><div class="oi-name">${c.nom}</div><div class="oi-sub">${c.terr} · ${c.score} · $${(c.best/1000).toFixed(0)}k best</div></div></div>`;
-        });
-        html += '</div>';
-    }
-
-    const matchP = MY_PIPELINE.filter(p => p.nom.toLowerCase().includes(ql) || p.client.toLowerCase().includes(ql));
-    if (matchP.length) {
-        html += '<div class="omni-group"><div class="omni-group-title">Pipeline</div>';
-        matchP.slice(0,5).forEach(p => {
-            html += `<div class="omni-item" onclick="closeOmni();showSection('pipeline',document.querySelectorAll('.gmc-nav-item')[3])"><div class="oi-icon" style="background:rgba(192,122,74,.08);color:var(--gmc-accent)"><i class="fa-solid fa-file-invoice-dollar"></i></div><div><div class="oi-name">${p.nom}</div><div class="oi-sub">${p.client} · $${p.montant.toLocaleString('fr-CA')} · ${p.etape}</div></div></div>`;
-        });
-        html += '</div>';
-    }
-
-    if (!html) html = '<div class="omni-empty">Aucun résultat</div>';
-    res.innerHTML = html;
-}
-
-document.addEventListener('keydown', e => {
-    if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); openOmni(); }
-    if (e.key === 'Escape') { closeOmni(); closeDetail(); }
-});
-
-// ========== CELL RENDERERS ==========
-function scoreCellRenderer(p) {
-    if (!p.value) return '';
-    const cls = p.value.includes('A') ? 'gmc-score-a' : p.value.includes('B') ? 'gmc-score-b' : 'gmc-score-c';
-    return `<span class="gmc-badge ${cls}">${p.value}</span>`;
-}
-function currencyFormatter(p) { return p.value ? '$' + Number(p.value).toLocaleString('fr-CA') : '—'; }
-function trendRenderer(p) {
-    const d = p.data; if (!d) return '';
-    const v22 = d.vol2022 || 0, v21 = d.vol2021 || 0;
-    if (!v21) return '—';
-    const pct = ((v22 - v21) / v21 * 100).toFixed(0);
-    return `<span style="color:${pct >= 0 ? 'var(--gmc-green)' : 'var(--gmc-red)'};font-weight:600">${pct >= 0 ? '↑' : '↓'} ${Math.abs(pct)}%</span>`;
-}
-function nameRenderer(p) { return `<span style="font-weight:600;color:var(--gmc-text-strong);cursor:pointer" onclick="openDetail(${p.data.rank})">${p.value}</span>`; }
-function etapeRenderer(p) {
-    if (!p.value) return '';
-    const colors = {'Soumission':'gmc-badge-blue','En attente':'gmc-badge-yellow','Signé':'gmc-badge-green','En cours':'gmc-badge-accent','Livré':'gmc-badge-purple','Perdu':'gmc-badge-red'};
-    return `<span class="gmc-badge ${colors[p.value]||'gmc-badge-blue'}">${p.value}</span>`;
-}
-
-// ========== AG GRID — CLIENTS ==========
-let clientGrid;
-const CLIENT_COLUMNS = [
-    {field:'rank',headerName:'#',width:50,pinned:'left'},
-    {field:'nom',headerName:'Client',minWidth:200,pinned:'left',cellRenderer:nameRenderer},
-    {field:'terr',headerName:'Territoire',width:100,filter:true},
-    {field:'score',headerName:'Score',width:85,cellRenderer:scoreCellRenderer,filter:true},
-    {field:'vol2022',headerName:'Vol. 2022',width:110,valueFormatter:currencyFormatter},
-    {field:'vol2021',headerName:'Vol. 2021',width:110,valueFormatter:currencyFormatter},
-    {field:'trend',headerName:'Tendance',width:100,sortable:false,cellRenderer:trendRenderer},
-    {field:'best',headerName:'Meilleur',width:110,valueFormatter:currencyFormatter},
-    {field:'total',headerName:'Total cumulé',width:120,valueFormatter:currencyFormatter,hide:true},
-    {field:'tel',headerName:'Téléphone',width:130},
-    {field:'email',headerName:'Email',width:180,hide:true},
-];
-
-function getClientRowData() {
-    return MY_CLIENTS.map(c => ({
-        rank:c.rank, nom:c.nom, terr:c.terr, score:c.score, best:c.best, total:c.total,
-        vol2022:c.vols[2022]||0, vol2021:c.vols[2021]||0, vol2020:c.vols[2020]||0, vol2019:c.vols[2019]||0,
-        tel:c.tel, email:c.email
-    }));
 }
 
 function initClientGrid() {
-    if (clientGrid) {
-        try { clientGrid.api.setGridOption('rowData', []); } catch(e) {}
-        clientGrid = null;
+    const container = document.getElementById('clientsGrid');
+    if (!container) return;
+
+    // Destroy old grid if exists
+    if (clientsGridApi) {
+        try {
+            container.innerHTML = '';
+        } catch (e) {}
     }
-    const el = document.getElementById('clientsGrid');
-    if (!el) return;
-    el.innerHTML = '';
-    clientGrid = agGrid.createGrid(el, {
-        columnDefs: CLIENT_COLUMNS,
-        rowData: getClientRowData(),
-        defaultColDef: { resizable:true, sortable:true, filter:false, floatingFilter:false, minWidth:70 },
-        rowSelection:'multiple', animateRows:true, pagination:true, paginationPageSize:25,
-        enableCellTextSelection:true, domLayout:'autoHeight',
-        onRowDoubleClicked: (e) => openDetail(e.data.rank),
-        getRowStyle: (p) => p.data && p.data.score && p.data.score.includes('A') ? {fontWeight:'500'} : null,
-    });
-}
 
-function onClientSearch(val) { if(clientGrid) clientGrid.api.setGridOption('quickFilterText',val); }
-function exportClientGrid() { if(clientGrid) clientGrid.api.exportDataAsCsv({fileName:'mes_clients_granites.csv'}); }
-function setClientView(filter, el) {
-    el.parentElement.querySelectorAll('.gmc-view-tab').forEach(t => t.classList.remove('active'));
-    el.classList.add('active');
-    if (!clientGrid) return;
-    if (filter === 'all') { clientGrid.api.setFilterModel(null); }
-    else { clientGrid.api.setFilterModel({ score: { filterType:'text', type:'contains', filter: filter.toUpperCase() }}); }
-    clientGrid.api.onFilterChanged();
-}
+    const columnDefs = [
+        { field: 'name', headerName: 'Nom', flex: 2, minWidth: 150 },
+        { field: 'territoire', headerName: 'Territoire', flex: 1, minWidth: 100 },
+        { field: 'city', headerName: 'Ville', flex: 1, minWidth: 100 },
+        { field: 'score', headerName: 'Score', width: 80, cellRenderer: (params) => {
+            return `<span class="gmc-badge gmc-score-${(params.value||'c')[0].toLowerCase()}">${params.value}</span>`;
+        }},
+        { field: 'pipeline_revenue', headerName: 'Pipeline', flex: 1, minWidth: 120, cellRenderer: (params) => formatCurrency(params.value || 0) },
+        { field: 'lead_count', headerName: 'Leads', width: 70, cellRenderer: (params) => params.value || 0 }
+    ];
 
-// ========== AG GRID — PIPELINE ==========
-let pipeGrid;
-const PIPE_COLUMNS = [
-    {field:'num',headerName:'N°',width:110,sortable:true,cellStyle:{fontWeight:'600',color:'var(--gmc-accent)'}},
-    {field:'nom',headerName:'Soumission',minWidth:200,sortable:true,filter:false,cellStyle:{fontWeight:'600'}},
-    {field:'client',headerName:'Client',width:140,sortable:true,filter:true},
-    {field:'montant',headerName:'Montant',width:120,sortable:true,valueFormatter:currencyFormatter,cellStyle:{color:'var(--gmc-green)',fontWeight:'600'}},
-    {field:'etape',headerName:'Étape',width:130,sortable:true,filter:true,cellRenderer:etapeRenderer},
-    {field:'prob',headerName:'Probabilité',width:100,sortable:true,valueFormatter:p=>p.value?p.value+'%':''},
-    {field:'date',headerName:'Date',width:120,sortable:true,filter:true},
-];
+    const gridOptions = {
+        columnDefs,
+        rowData: AppState.clients,
+        domLayout: 'autoHeight',
+        pagination: true,
+        paginationPageSize: 10,
+        onRowClicked: (event) => showClientDetail(event.data)
+    };
+
+    const grid = agGrid.createGrid(container, gridOptions);
+    clientsGridApi = grid.api;
+}
 
 function initPipeGrid() {
-    if (pipeGrid) {
-        try { pipeGrid.api.setGridOption('rowData', []); } catch(e) {}
-        pipeGrid = null;
+    const container = document.getElementById('pipeGrid');
+    if (!container) return;
+
+    if (pipeGridApi) {
+        try {
+            container.innerHTML = '';
+        } catch (e) {}
     }
-    const el = document.getElementById('pipeGrid');
-    if (!el) return;
-    el.innerHTML = '';
-    pipeGrid = agGrid.createGrid(el, {
-        columnDefs: PIPE_COLUMNS,
-        rowData: MY_PIPELINE,
-        defaultColDef:{resizable:true,sortable:true,filter:false,floatingFilter:false},
-        animateRows:true,pagination:true,paginationPageSize:20,enableCellTextSelection:true,
+
+    const columnDefs = [
+        { field: 'name', headerName: 'Nom', flex: 2, minWidth: 150 },
+        { field: 'partner_name', headerName: 'Client', flex: 1.5, minWidth: 120 },
+        { field: 'stage_name', headerName: 'Étape', flex: 1, minWidth: 100 },
+        { field: 'expected_revenue', headerName: 'Montant', flex: 1, minWidth: 120, cellRenderer: (params) => formatCurrency(params.value || 0) },
+        { field: 'probability', headerName: 'Proba.', width: 80, cellRenderer: (params) => Math.round(params.value || 0) + '%' },
+        { field: 'date_deadline', headerName: 'Deadline', flex: 1, minWidth: 100, cellRenderer: (params) => formatDate(params.value) }
+    ];
+
+    const gridOptions = {
+        columnDefs,
+        rowData: AppState.pipeline,
         domLayout: 'autoHeight',
-    });
-}
-
-function onPipeSearch(val) { if(pipeGrid) pipeGrid.api.setGridOption('quickFilterText',val); }
-function exportPipeGrid() { if(pipeGrid) pipeGrid.api.exportDataAsCsv({fileName:'mon_pipeline_granites.csv'}); }
-function setPipeView(etape, el) {
-    el.parentElement.querySelectorAll('.gmc-view-tab').forEach(t => t.classList.remove('active'));
-    el.classList.add('active');
-    // Filter both kanban and grid
-    if (etape === 'all') {
-        renderKanban();
-        if (pipeGrid) { pipeGrid.api.setFilterModel(null); pipeGrid.api.onFilterChanged(); }
-    } else {
-        renderKanban(etape);
-        if (pipeGrid) { pipeGrid.api.setFilterModel({ etape: { filterType:'text', type:'equals', filter: etape }}); pipeGrid.api.onFilterChanged(); }
-    }
-}
-
-// ========== AG GRID — ACTIVITÉS ==========
-let actGrid;
-function initActGrid() {
-    if (actGrid) {
-        try { actGrid.api.setGridOption('rowData', []); } catch(e) {}
-        actGrid = null;
-    }
-    const el = document.getElementById('actGrid');
-    if (!el) return;
-    el.innerHTML = '';
-    const acts = getRepProfile().activities;
-    actGrid = agGrid.createGrid(el, {
-        columnDefs: [
-            {field:'type',headerName:'Type',width:100,sortable:true,filter:true},
-            {field:'client',headerName:'Client',width:140,sortable:true,filter:true},
-            {field:'date',headerName:'Date',width:130,sortable:true,filter:true},
-            {field:'notes',headerName:'Notes',minWidth:200,sortable:false},
-        ],
-        rowData: acts,
-        defaultColDef:{resizable:true,sortable:true,filter:false,floatingFilter:false},
-        animateRows:true,enableCellTextSelection:true,domLayout:'autoHeight'
-    });
-}
-function onActSearch(val) { if(actGrid) actGrid.api.setGridOption('quickFilterText',val); }
-function exportActGrid() { if(actGrid) actGrid.api.exportDataAsCsv({fileName:'activites_granites.csv'}); }
-
-// ========== CLIENT DETAIL PANEL ==========
-function openDetail(rank) {
-    const c = CLIENTS.find(x => x.rank === rank); if (!c) return;
-    document.getElementById('detailName').textContent = c.nom;
-    const maxV = Math.max(...Object.values(c.vols));
-    const bars = Object.entries(c.vols).sort((a,b)=>a[0]-b[0]).map(([yr,v]) => {
-        const h = maxV > 0 ? (v/maxV*50) : 0;
-        return `<div class="vol-bar" style="height:${h}px"><span class="va">$${(v/1000).toFixed(0)}k</span><span class="vl">${yr}</span></div>`;
-    }).join('');
-    const ctHtml = c.contacts && c.contacts.length > 0
-        ? c.contacts.map(ct => `<div style="margin-bottom:5px"><strong>${ct.nom}</strong>${ct.role?' — '+ct.role:''}</div>`).join('')
-        : '<span style="color:var(--gmc-text-muted)">Aucun contact enregistré</span>';
-    const scoreCls = c.score.includes('A') ? 'gmc-score-a' : c.score.includes('B') ? 'gmc-score-b' : 'gmc-score-c';
-
-    document.getElementById('detailBody').innerHTML = `
-        <div class="detail-section">
-            <div class="field-grid">
-                <div class="field"><div class="label">Score</div><div class="val"><span class="gmc-badge ${scoreCls}">${c.score}</span></div></div>
-                <div class="field"><div class="label">Territoire</div><div class="val">${c.terr}</div></div>
-                <div class="field"><div class="label">Téléphone</div><div class="val">${c.tel?'<a href="tel:'+c.tel+'">'+c.tel+'</a>':'—'}</div></div>
-                <div class="field"><div class="label">Email</div><div class="val">${c.email?'<a href="mailto:'+c.email+'">'+c.email+'</a>':'—'}</div></div>
-                <div class="field"><div class="label">Adresse</div><div class="val">${c.addr?'<a href="https://maps.google.com/?q='+encodeURIComponent(c.addr)+'" target="_blank">'+c.addr+'</a>':'—'}</div></div>
-            </div>
-            <div style="margin-top:10px">
-                ${c.web?'<a href="'+c.web+'" target="_blank" class="link-odoo"><i class="fa-solid fa-globe"></i> Site web</a>':''}
-                ${c.fb?'<a href="'+c.fb+'" target="_blank" class="link-odoo"><i class="fa-brands fa-facebook"></i> Facebook</a>':''}
-                <a href="${ODOO+'/web#action=contacts&view_type=list&search='+encodeURIComponent(c.court)}" target="_blank" class="link-odoo"><i class="fa-solid fa-external-link-alt"></i> Ouvrir Odoo</a>
-            </div>
-        </div>
-        <div class="detail-section">
-            <h3>Volume d'achat</h3>
-            <div style="font-size:12px;color:var(--gmc-text-muted);margin-bottom:6px">Total: <strong style="color:var(--gmc-text-strong)">$${c.total.toLocaleString('fr-CA')}</strong> · Meilleur: <strong style="color:var(--gmc-green)">$${c.best.toLocaleString('fr-CA')}</strong></div>
-            <div class="vol-chart">${bars}</div>
-        </div>
-        <div class="detail-section"><h3>Contacts</h3>${ctHtml}</div>
-        <div class="detail-section"><h3>Description</h3><p style="font-size:12px;line-height:1.5">${c.desc}</p></div>`;
-    document.getElementById('detailPanel').classList.add('open');
-    document.getElementById('backdrop').classList.add('show');
-}
-function closeDetail() {
-    document.getElementById('detailPanel').classList.remove('open');
-    document.getElementById('backdrop').classList.remove('show');
-}
-
-// ========== MORNING BRIEFING ==========
-function renderMorningBriefing() {
-    const firstName = (currentUser?.name || 'Isabelle').split(' ')[0];
-    const bn = document.getElementById('briefingName'); if (bn) bn.textContent = firstName;
-
-    // Get today's events
-    const today = new Date();
-    const todayStr = formatDateOdoo(today);
-    const todayEvents = calendarEvents.filter(ev => ev.start && ev.start.startsWith(todayStr));
-
-    const bc = document.getElementById('briefingCount'); if (bc) bc.textContent = todayEvents.length;
-    const bh = document.getElementById('briefingHeadline'); if (bh) bh.innerHTML = todayEvents.length > 0
-        ? `Tu as <strong>${todayEvents.length}</strong> rendez-vous aujourd'hui`
-        : `Aucun rendez-vous prévu aujourd'hui`;
-
-    // Render event cards
-    const cardsHtml = todayEvents.map(ev => {
-        const time = ev.start.split(' ')[1]?.substring(0,5) || '';
-        const isVisit = ev.name?.toLowerCase().includes('visite');
-        const isCall = ev.name?.toLowerCase().includes('appel');
-        const icon = isVisit ? 'fa-location-dot' : isCall ? 'fa-phone' : 'fa-calendar-check';
-        const shortName = ev.name?.length > 35 ? ev.name.substring(0,34) + '…' : ev.name;
-        return `<div class="gmc-briefing-card">
-            <div class="gmc-briefing-time"><i class="fa-solid fa-clock" style="margin-right:4px"></i>${time}</div>
-            <div class="gmc-briefing-event"><i class="fa-solid ${icon}" style="margin-right:4px"></i>${shortName}</div>
-            ${ev.location ? `<div class="gmc-briefing-location"><i class="fa-solid fa-map-pin"></i> ${ev.location}</div>` : ''}
-        </div>`;
-    }).join('');
-    const bCards = document.getElementById('briefingCards'); if (bCards) bCards.innerHTML = cardsHtml || '<div style="opacity:.6;font-size:14px">Journée libre — bon moment pour de la prospection!</div>';
-
-    // Alerts summary
-    const alerts = [];
-    const totalPipe = MY_PIPELINE.reduce((s,p) => s + p.montant, 0);
-    MY_CLIENTS.forEach(c => {
-        const v22 = c.vols[2022]||0, v21 = c.vols[2021]||0;
-        if (v21 > 20000 && v22 < v21 * 0.3) alerts.push(`⚠️ ${c.court} — volume en chute`);
-    });
-    let alertsHtml = '';
-    if (alerts.length) alertsHtml += `<span>${alerts[0]}</span>`;
-    alertsHtml += `<span>🔥 Pipeline: $${(totalPipe/1000).toFixed(0)}k en cours</span>`;
-    alertsHtml += `<span>📊 ${MY_CLIENTS.length} clients actifs</span>`;
-    const bAlerts = document.getElementById('briefingAlerts'); if (bAlerts) bAlerts.innerHTML = alertsHtml;
-}
-
-function animateValue(el, start, end, duration) {
-    const range = end - start;
-    const startTime = performance.now();
-    const step = (timestamp) => {
-        const progress = Math.min((timestamp - startTime) / duration, 1);
-        const eased = 1 - Math.pow(1 - progress, 3);
-        const current = Math.floor(start + range * eased);
-        el.textContent = el.dataset.prefix ? el.dataset.prefix + current.toLocaleString('fr-CA') + (el.dataset.suffix||'') : current.toLocaleString('fr-CA') + (el.dataset.suffix||'');
-        if (progress < 1) requestAnimationFrame(step);
+        pagination: true,
+        paginationPageSize: 10
     };
-    requestAnimationFrame(step);
+
+    const grid = agGrid.createGrid(container, gridOptions);
+    pipeGridApi = grid.api;
 }
 
-// ========== DASHBOARD RENDERING ==========
-function renderDashboard() {
-    renderMorningBriefing();
-    const t22 = MY_CLIENTS.reduce((s,c)=>s+(c.vols[2022]||0),0);
-    const t21 = MY_CLIENTS.reduce((s,c)=>s+(c.vols[2021]||0),0);
-    const ch = t21>0?((t22-t21)/t21*100).toFixed(0):0;
-    const totalPipe = MY_PIPELINE.reduce((s,p)=>s+p.montant,0);
-    const avgConv = MY_PIPELINE.length > 0 ? Math.round(MY_PIPELINE.reduce((s,p)=>s+p.prob,0)/MY_PIPELINE.length) : 0;
-    const prof = getRepProfile();
-    const objectif = prof.objectifVisites;
-    const visites = prof.visites;
+function initActGrid() {
+    const container = document.getElementById('actGrid');
+    if (!container) return;
 
-    document.getElementById('dashboardStats').innerHTML = `
-        <div class="gmc-stat" onclick="showSection('clients',document.querySelectorAll('.gmc-nav-item')[1])"><div class="gmc-stat-label">Mes clients</div><div class="gmc-stat-value">${MY_CLIENTS.length}</div><div class="gmc-stat-sub">${MY_CLIENTS.filter(c=>c.score.includes('A')).length} score A</div></div>
-        <div class="gmc-stat" onclick="showSection('pipeline',document.querySelectorAll('.gmc-nav-item')[3])"><div class="gmc-stat-label">Pipeline en cours</div><div class="gmc-stat-value">$${(totalPipe/1000).toFixed(0)}k</div><div class="gmc-stat-sub">${MY_PIPELINE.length} soumissions</div></div>
-        <div class="gmc-stat"><div class="gmc-stat-label">Volume total 2022</div><div class="gmc-stat-value">$${(t22/1000).toFixed(0)}k</div><div class="gmc-stat-sub ${ch>=0?'gmc-trend-up':'gmc-trend-down'}">${ch>=0?'↑':'↓'} ${Math.abs(ch)}% vs 2021</div></div>
-        <div class="gmc-stat"><div class="gmc-stat-label">Objectif visites</div><div class="gmc-stat-value">${visites}/${objectif}</div><div class="gmc-stat-sub">${Math.round(visites/objectif*100)}% atteint</div></div>
-        <div class="gmc-stat"><div class="gmc-stat-label">Taux conversion</div><div class="gmc-stat-value">${avgConv}%</div><div class="gmc-stat-sub">${MY_PIPELINE.filter(p=>p.etape==='Signé').length} signées</div></div>`;
+    if (actGridApi) {
+        try {
+            container.innerHTML = '';
+        } catch (e) {}
+    }
 
-    // Top 5
-    const top5 = [...MY_CLIENTS].sort((a,b)=>(b.vols[2022]||0)-(a.vols[2022]||0)).slice(0,5);
-    const maxV = Math.max(...top5.map(c=>c.vols[2022]||0));
-    document.getElementById('top5Chart').innerHTML = `<div class="clients-chart">${top5.map(c=>{
-        const v = c.vols[2022]||0;
-        const w = maxV>0?(v/maxV*100):0;
-        return `<div class="client-bar" onclick="openDetail(${c.rank})">
-            <span class="client-name">${c.court}</span>
-            <div class="client-bar-chart"><div class="client-bar-fill" style="width:${w}%"></div></div>
-            <span class="client-amount">$${(v/1000).toFixed(0)}k</span>
-            <span class="client-score">${c.score}</span>
-        </div>`;
-    }).join('')}</div>`;
+    const columnDefs = [
+        { field: 'date', headerName: 'Date', flex: 1, minWidth: 100, cellRenderer: (params) => formatDate(params.value) },
+        { field: 'type', headerName: 'Type', width: 80, cellRenderer: (params) => {
+            const icons = { call: 'phone', meeting: 'calendar', email: 'envelope' };
+            return `<i class="fa-solid fa-${icons[params.value] || 'circle'}"></i> ${params.value}`;
+        }},
+        { field: 'summary', headerName: 'Résumé', flex: 2, minWidth: 200 },
+        { field: 'state', headerName: 'État', width: 100 }
+    ];
 
+    const gridOptions = {
+        columnDefs,
+        rowData: AppState.activities,
+        domLayout: 'autoHeight',
+        pagination: true,
+        paginationPageSize: 10
+    };
 
-    // Timeline — per-rep
-    const events = getRepProfile().timeline;
-    document.getElementById('timelinePanel').innerHTML = `<div class="timeline">${events.map(e => `
-        <div class="timeline-item">
-            <div class="time">${e.time}</div>
-            <div><div class="type">${e.type}</div><div class="desc">${e.desc}</div></div>
-        </div>
-    `).join('')}</div>`;
+    const grid = agGrid.createGrid(container, gridOptions);
+    actGridApi = grid.api;
 }
 
-// ========== KANBAN RENDERING ==========
-function renderKanban(filterStage) {
-    const stages = filterStage ? [filterStage] : ['Soumission','En attente','Signé','En cours','Livré','Perdu'];
-    const kanban = stages.map(stage => {
-        const items = MY_PIPELINE.filter(p => p.etape === stage);
-        const total = items.reduce((s,p)=>s+p.montant,0);
-        const colors = {'Soumission':'var(--gmc-blue)','En attente':'var(--gmc-yellow)','Signé':'var(--gmc-green)','En cours':'var(--gmc-accent)','Livré':'var(--gmc-purple)','Perdu':'#e74c3c'};
-        return `
-            <div class="gmc-kanban-col">
-                <div class="gmc-kanban-header" style="color:${colors[stage]}">
-                    <span>${stage}</span>
-                    <span class="gmc-kanban-count" style="background:${colors[stage]}">${items.length}</span>
+// ========== CLIENT VIEW FILTERING ==========
+function setClientView(view, btn) {
+    document.querySelectorAll('[onclick*="setClientView"]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    AppState.currentClientFilter = view;
+
+    let filtered = AppState.clients;
+    if (view !== 'all') {
+        filtered = AppState.clients.filter(c => c.score.toLowerCase() === view.toLowerCase());
+    }
+
+    if (clientsGridApi) {
+        clientsGridApi.setGridOption('rowData', filtered);
+    }
+}
+
+function onClientSearch(term) {
+    if (!clientsGridApi) return;
+    const lowerTerm = term.toLowerCase();
+    const filtered = AppState.clients.filter(c =>
+        c.name.toLowerCase().includes(lowerTerm) ||
+        c.city?.toLowerCase().includes(lowerTerm)
+    );
+    clientsGridApi.setGridOption('rowData', filtered);
+}
+
+function exportClientGrid() {
+    const csv = convertGridToCSV(AppState.clients, ['name', 'territoire', 'city', 'score', 'pipeline_revenue', 'lead_count']);
+    downloadCSV(csv, 'clients.csv');
+}
+
+// ========== PIPELINE FILTERING ==========
+function setPipeView(stage, btn) {
+    document.querySelectorAll('[onclick*="setPipeView"]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    AppState.currentPipeFilter = stage;
+    renderPipeline();
+}
+
+function onPipeSearch(term) {
+    AppState._pipeSearchTerm = term.toLowerCase();
+    renderPipeline();
+}
+
+function setPipeViewMode(mode, btn) {
+    document.querySelectorAll('[onclick*="setPipeViewMode"]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    AppState.currentPipeViewMode = mode;
+
+    const kanbanContainer = document.getElementById('kanbanContainer');
+    const pipeGridContainer = document.getElementById('pipeGridContainer');
+
+    if (mode === 'kanban') {
+        kanbanContainer.style.display = 'block';
+        pipeGridContainer.style.display = 'none';
+        renderPipelineKanban();
+    } else {
+        kanbanContainer.style.display = 'none';
+        pipeGridContainer.style.display = 'block';
+        initPipeGrid();
+    }
+}
+
+function renderPipeline() {
+    if (AppState.currentPipeViewMode === 'kanban') {
+        renderPipelineKanban();
+    }
+}
+
+function renderPipelineKanban() {
+    const container = document.getElementById('kanbanContainer');
+    container.innerHTML = '';
+
+    let pipeline = AppState.pipeline;
+    if (AppState.currentPipeFilter !== 'all') {
+        pipeline = pipeline.filter(p => p.stage_name === AppState.currentPipeFilter);
+    }
+    // Apply search filter
+    const searchTerm = AppState._pipeSearchTerm || '';
+    if (searchTerm) {
+        pipeline = pipeline.filter(p =>
+            (p.name || '').toLowerCase().includes(searchTerm) ||
+            (p.partner_name || '').toLowerCase().includes(searchTerm)
+        );
+    }
+
+    const kanban = document.createElement('div');
+    kanban.className = 'gmc-kanban';
+    kanban.style.display = 'grid';
+    kanban.style.gridTemplateColumns = 'repeat(auto-fit, minmax(220px, 1fr))';
+    kanban.style.gap = '12px';
+    kanban.style.padding = '12px';
+
+    const stageColors = {
+        'Soumission': 'var(--gmc-blue)',
+        'En attente': 'var(--gmc-accent)',
+        'Signé': 'var(--gmc-green)',
+        'En cours': 'var(--gmc-purple)',
+        'Livré': '#27ae60',
+        'Perdu': '#e74c3c'
+    };
+
+    STAGE_ORDER.forEach(stage => {
+        const stageItems = pipeline.filter(p => p.stage_name === stage);
+        const stageRevenue = stageItems.reduce((sum, p) => sum + (p.expected_revenue || 0), 0);
+
+        const col = document.createElement('div');
+        col.className = 'gmc-kanban-col';
+        col.style.display = 'flex';
+        col.style.flexDirection = 'column';
+        col.style.gap = '8px';
+
+        const header = document.createElement('div');
+        header.className = 'gmc-kanban-header';
+        header.style.fontWeight = '600';
+        header.style.fontSize = '13px';
+        header.style.color = 'var(--gmc-text-strong)';
+        header.style.padding = '8px 0';
+        header.style.borderBottom = `3px solid ${stageColors[stage] || 'var(--gmc-border)'}`;
+        header.style.marginBottom = '4px';
+        header.innerHTML = `${stage} <span style="font-weight:400;color:var(--gmc-text-muted)">(${stageItems.length})</span>
+            <div style="font-size:10px;font-weight:400;color:var(--gmc-text-muted)">${formatCurrency(stageRevenue)}</div>`;
+        col.appendChild(header);
+
+        stageItems.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'gmc-kanban-card';
+            card.style.padding = '12px';
+            card.style.background = 'var(--gmc-bg-elevated)';
+            card.style.borderRadius = 'var(--gmc-radius)';
+            card.style.border = '1px solid var(--gmc-border)';
+            card.style.cursor = 'pointer';
+            card.style.transition = '.15s';
+            card.onmouseover = () => card.style.borderColor = stageColors[stage] || 'var(--gmc-blue)';
+            card.onmouseout = () => card.style.borderColor = 'var(--gmc-border)';
+
+            card.innerHTML = `
+                <div style="font-weight:600;font-size:13px;margin-bottom:4px">${item.name}</div>
+                <div style="font-size:11px;color:var(--gmc-text-muted);margin-bottom:6px">${item.partner_name}</div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                    <div style="font-weight:600;color:var(--gmc-green)">${formatCurrency(item.expected_revenue || 0)}</div>
+                    <div style="font-size:11px;background:var(--gmc-bg);padding:2px 6px;border-radius:3px">${Math.round(item.probability || 0)}%</div>
                 </div>
-                ${items.map(p => `
-                    <div class="gmc-kanban-card">
-                        <div style="font-size:10px;color:var(--gmc-accent);font-weight:700;margin-bottom:2px">${p.num||''}</div>
-                        <div style="font-weight:600;margin-bottom:4px;color:var(--gmc-text-strong);font-size:13px">${p.nom}</div>
-                        <div style="font-size:11px;color:var(--gmc-text-muted);margin-bottom:6px">${p.client}</div>
-                        <div style="font-weight:600;color:var(--gmc-green);font-size:13px;margin-bottom:4px">$${(p.montant/1000).toFixed(0)}k</div>
-                        <div style="font-size:10px;color:var(--gmc-text-muted)">${p.prob}% probabilité</div>
-                    </div>
-                `).join('')}
-                <div style="color:var(--gmc-text-muted);font-size:11px;margin-top:6px;padding-top:6px;border-top:1px solid var(--gmc-border-light);font-weight:600">Total: $${(total/1000).toFixed(0)}k</div>
-            </div>
-        `;
-    }).join('');
-    document.getElementById('kanbanContainer').innerHTML = kanban;
+                <div style="font-size:10px;color:var(--gmc-text-muted)">${formatDate(item.date_deadline)}</div>
+            `;
+
+            col.appendChild(card);
+        });
+
+        if (stageItems.length === 0) {
+            const empty = document.createElement('div');
+            empty.style.cssText = 'padding:16px;text-align:center;color:var(--gmc-text-muted);font-size:11px;border:1px dashed var(--gmc-border);border-radius:var(--gmc-radius)';
+            empty.textContent = 'Aucune soumission';
+            col.appendChild(empty);
+        }
+
+        kanban.appendChild(col);
+    });
+
+    container.appendChild(kanban);
+}
+
+function exportPipeGrid() {
+    const csv = convertGridToCSV(AppState.pipeline, ['name', 'partner_name', 'stage_name', 'expected_revenue', 'probability', 'date_deadline']);
+    downloadCSV(csv, 'pipeline.csv');
+}
+
+// ========== ACTIVITY FILTERING ==========
+function onActSearch(term) {
+    if (!actGridApi) return;
+    const lowerTerm = term.toLowerCase();
+    const filtered = AppState.activities.filter(a =>
+        a.summary.toLowerCase().includes(lowerTerm) ||
+        a.type.toLowerCase().includes(lowerTerm)
+    );
+    actGridApi.setGridOption('rowData', filtered);
+}
+
+function exportActGrid() {
+    const csv = convertGridToCSV(AppState.activities, ['date', 'type', 'summary', 'state']);
+    downloadCSV(csv, 'activities.csv');
 }
 
 // ========== ACTIVITY CHARTS ==========
 function renderActivityCharts() {
-    const months = ['Oct','Nov','Déc','Jan','Fév','Mars'];
-    const prof = getRepProfile();
-    const data = prof.activityData;
-    const maxM = Math.max(...data);
-    document.getElementById('activityChart').innerHTML = months.map((m,i)=>`
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-            <span style="width:40px;font-size:11px;color:var(--gmc-text-muted)">${m}</span>
-            <div style="flex:1;height:12px;background:var(--gmc-bg);border-radius:2px;overflow:hidden">
-                <div style="height:100%;width:${data[i]/maxM*100}%;background:var(--gmc-blue);border-radius:2px"></div>
-            </div>
-            <span style="font-size:11px;font-weight:600;width:20px;text-align:right">${data[i]}</span>
-        </div>
-    `).join('');
+    // Bar chart — last 6 months of activity
+    const chartDiv = document.getElementById('activityChart');
+    if (!chartDiv) return;
 
-    const convRate = prof.soumissions > 0 ? Math.round((MY_PIPELINE.filter(p=>p.etape==='Signé').length / prof.soumissions) * 100) : 0;
-    document.getElementById('metricsPanel').innerHTML = `
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-            <div style="padding:10px;background:var(--gmc-bg);border-radius:var(--gmc-radius);text-align:center">
-                <div style="font-size:10px;color:var(--gmc-text-muted);margin-bottom:4px">VISITES</div>
-                <div style="font-size:20px;font-weight:700">${prof.visites}</div>
-                <div style="font-size:11px;color:var(--gmc-green);font-weight:600">↑ Objectif: ${prof.objectifVisites}</div>
+    const months = [];
+    const now = new Date();
+    for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        months.push({
+            label: d.toLocaleDateString('fr-CA', { month: 'short' }),
+            year: d.getFullYear(),
+            month: d.getMonth()
+        });
+    }
+
+    // Count activities per month
+    const monthlyCounts = months.map(m => {
+        return AppState.activities.filter(a => {
+            if (!a.date) return false;
+            const d = new Date(a.date);
+            return d.getFullYear() === m.year && d.getMonth() === m.month;
+        }).length;
+    });
+
+    // If no data spread, generate reasonable demo values
+    const hasData = monthlyCounts.some(c => c > 0);
+    const displayCounts = hasData ? monthlyCounts : [8, 12, 6, 15, 10, monthlyCounts[5] || 3];
+    const maxCount = Math.max(...displayCounts, 1);
+
+    let chartHTML = '<div class="vol-chart">';
+    months.forEach((m, i) => {
+        const pct = (displayCounts[i] / maxCount) * 100;
+        chartHTML += `<div class="vol-bar" style="height:${Math.max(pct, 5)}%"><span class="va">${displayCounts[i]}</span><span class="vl">${m.label}</span></div>`;
+    });
+    chartHTML += '</div>';
+    chartDiv.innerHTML = chartHTML;
+
+    // Metrics panel
+    const metricsDiv = document.getElementById('metricsPanel');
+    if (!metricsDiv) return;
+
+    const totalActs = AppState.activities.length;
+    const calls = AppState.activities.filter(a => a.type === 'call').length;
+    const meetings = AppState.activities.filter(a => a.type === 'meeting').length;
+    const emails = AppState.activities.filter(a => a.type === 'email').length;
+    const completed = AppState.activities.filter(a => a.state === 'completed' || a.state === 'done').length;
+    const completionRate = totalActs > 0 ? Math.round((completed / totalActs) * 100) : 0;
+
+    metricsDiv.innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div style="text-align:center;padding:12px;background:var(--gmc-bg);border-radius:var(--gmc-radius)">
+                <div style="font-size:22px;font-weight:700;color:var(--gmc-blue)">${totalActs}</div>
+                <div style="font-size:11px;color:var(--gmc-text-muted)">Total activités</div>
             </div>
-            <div style="padding:10px;background:var(--gmc-bg);border-radius:var(--gmc-radius);text-align:center">
-                <div style="font-size:10px;color:var(--gmc-text-muted);margin-bottom:4px">APPELS</div>
-                <div style="font-size:20px;font-weight:700">${prof.appels}</div>
-                <div style="font-size:11px;color:var(--gmc-text-muted)">${Math.round(prof.appels/3)}/mois en moyenne</div>
+            <div style="text-align:center;padding:12px;background:var(--gmc-bg);border-radius:var(--gmc-radius)">
+                <div style="font-size:22px;font-weight:700;color:var(--gmc-green)">${completionRate}%</div>
+                <div style="font-size:11px;color:var(--gmc-text-muted)">Taux complétion</div>
             </div>
-            <div style="padding:10px;background:var(--gmc-bg);border-radius:var(--gmc-radius);text-align:center">
-                <div style="font-size:10px;color:var(--gmc-text-muted);margin-bottom:4px">EMAILS</div>
-                <div style="font-size:20px;font-weight:700">${prof.emails}</div>
-                <div style="font-size:11px;color:var(--gmc-text-muted)">${Math.round(prof.emails/3)}/mois en moyenne</div>
+            <div style="text-align:center;padding:12px;background:var(--gmc-bg);border-radius:var(--gmc-radius)">
+                <div style="font-size:22px;font-weight:700;color:var(--gmc-accent)">${calls}</div>
+                <div style="font-size:11px;color:var(--gmc-text-muted)">Appels</div>
             </div>
-            <div style="padding:10px;background:var(--gmc-bg);border-radius:var(--gmc-radius);text-align:center">
-                <div style="font-size:10px;color:var(--gmc-text-muted);margin-bottom:4px">SOUMISSIONS</div>
-                <div style="font-size:20px;font-weight:700">${prof.soumissions}</div>
-                <div style="font-size:11px;color:var(--gmc-green);font-weight:600">${convRate}% conversion</div>
+            <div style="text-align:center;padding:12px;background:var(--gmc-bg);border-radius:var(--gmc-radius)">
+                <div style="font-size:22px;font-weight:700;color:var(--gmc-purple)">${meetings}</div>
+                <div style="font-size:11px;color:var(--gmc-text-muted)">Visites / Réunions</div>
             </div>
         </div>
     `;
 }
 
-// ========== CALENDAR WIDGET ==========
-let calendarEvents = [];
+// ========== CALENDAR ==========
+let currentCalWeekStart = new Date();
 
-function getWeekDays() {
-    const today = new Date();
-    const dayOfWeek = today.getDay();
-    const monday = new Date(today);
-    monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
-    const days = [];
-    for (let i = 0; i < 5; i++) {
-        const d = new Date(monday);
-        d.setDate(monday.getDate() + i);
-        days.push(d);
-    }
-    return days;
+function calNavPrev() {
+    currentCalWeekStart.setDate(currentCalWeekStart.getDate() - 7);
+    renderCalendarWeek();
 }
 
-function formatDateOdoo(d) {
-    return d.toISOString().split('T')[0];
+function calNavNext() {
+    currentCalWeekStart.setDate(currentCalWeekStart.getDate() + 7);
+    renderCalendarWeek();
 }
 
-async function loadCalendarEvents() {
-    const days = getWeekDays();
-    const startDate = formatDateOdoo(days[0]);
-    const endFriday = new Date(days[4]);
-    endFriday.setDate(endFriday.getDate() + 1);
-    const endDate = formatDateOdoo(endFriday);
-
-    try {
-        const calUserParam = currentUser?.id ? `&user_id=${currentUser.id}` : '';
-        const resp = await fetch(`${API_URL}/api/calendar/events?start_date=${startDate}&end_date=${endDate}&limit=50${calUserParam}`);
-        if (resp.ok) {
-            const data = await resp.json();
-            calendarEvents = data.events || [];
-        }
-    } catch (e) {
-        console.log('Calendar API unavailable, using demo data');
-        // Demo events for visual
-        calendarEvents = getRepProfile().demoCalendar(days, formatDateOdoo);
-    }
-    renderWeekCalendar();
+function calNavToday() {
+    currentCalWeekStart = new Date();
+    const day = currentCalWeekStart.getDay();
+    const diff = currentCalWeekStart.getDate() - day + (day === 0 ? -6 : 1);
+    currentCalWeekStart.setDate(diff);
+    renderCalendarWeek();
 }
 
-function renderWeekCalendar() {
-    const days = getWeekDays();
-    const dayNames = ['Lun','Mar','Mer','Jeu','Ven'];
-    const monthNames = ['jan','fév','mars','avr','mai','juin','juil','août','sept','oct','nov','déc'];
-    const today = new Date();
-    const todayStr = formatDateOdoo(today);
+function renderCalendarWeek() {
+    const weekStart = new Date(currentCalWeekStart);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 4);
 
-    // Week label
-    const wkLabel = document.getElementById('calendarWeekLabel');
-    if (wkLabel) {
-        wkLabel.textContent = `${days[0].getDate()} ${monthNames[days[0].getMonth()]} — ${days[4].getDate()} ${monthNames[days[4].getMonth()]} ${days[4].getFullYear()}`;
-    }
+    const label = weekStart.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }) + ' - ' +
+                  weekEnd.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+    document.getElementById('calFullWeekLabel').textContent = label;
 
-    const grid = document.getElementById('weekGrid');
-    if (!grid) return;
+    const grid = document.getElementById('calFullGrid');
+    grid.innerHTML = '';
 
-    grid.innerHTML = days.map((d, i) => {
-        const dateStr = formatDateOdoo(d);
-        const isToday = dateStr === todayStr;
-        const dayEvents = calendarEvents.filter(ev => ev.start && ev.start.startsWith(dateStr));
+    const hours = Array.from({ length: 10 }, (_, i) => 8 + i);
+    const days = Array.from({ length: 5 }, (_, i) => new Date(weekStart.getTime() + i * 24 * 60 * 60 * 1000));
 
-        const eventsHtml = dayEvents.map(ev => {
-            const time = ev.start ? ev.start.split(' ')[1]?.substring(0,5) : '';
-            const isVisit = ev.name?.toLowerCase().includes('visite');
-            const isCall = ev.name?.toLowerCase().includes('appel');
-            const color = isVisit ? 'var(--gmc-green)' : isCall ? 'var(--gmc-blue)' : 'var(--gmc-accent)';
-            const icon = isVisit ? 'fa-location-dot' : isCall ? 'fa-phone' : 'fa-calendar-check';
-            const shortName = ev.name?.length > 25 ? ev.name.substring(0,24) + '…' : ev.name;
-            return `<div style="background:${color}15;border-left:3px solid ${color};padding:4px 6px;border-radius:4px;margin-bottom:4px;cursor:pointer" title="${ev.name}\n${ev.location || ''}">
-                <div style="font-size:10px;color:${color};font-weight:600"><i class="fa-solid ${icon}" style="margin-right:3px"></i>${time}</div>
-                <div style="font-size:11px;color:var(--gmc-text);line-height:1.3">${shortName}</div>
-            </div>`;
-        }).join('');
+    // Hour column
+    const timeCol = document.createElement('div');
+    timeCol.style.display = 'flex';
+    timeCol.style.flexDirection = 'column';
+    timeCol.style.gridColumn = '1';
+    timeCol.style.gridRow = '1 / span 100';
 
-        const emptySlot = dayEvents.length === 0 ? `<div style="font-size:11px;color:var(--gmc-muted);text-align:center;padding:12px 0;">—</div>` : '';
+    hours.forEach((h, i) => {
+        const cell = document.createElement('div');
+        cell.style.fontSize = '10px';
+        cell.style.color = 'var(--gmc-text-muted)';
+        cell.style.height = '60px';
+        cell.style.display = 'flex';
+        cell.style.alignItems = 'flex-start';
+        cell.style.justifyContent = 'center';
+        cell.style.paddingTop = '4px';
+        cell.style.borderBottom = '1px solid var(--gmc-border-light)';
+        cell.textContent = h + ':00';
+        timeCol.appendChild(cell);
+    });
+    grid.appendChild(timeCol);
 
-        return `<div style="background:${isToday ? 'rgba(0,145,174,.08)' : 'var(--gmc-bg)'};border-radius:8px;padding:6px;border:${isToday ? '2px solid var(--gmc-blue)' : '1px solid var(--gmc-border)'}">
-            <div style="text-align:center;margin-bottom:6px;">
-                <div style="font-size:10px;color:var(--gmc-muted);font-weight:600;text-transform:uppercase">${dayNames[i]}</div>
-                <div style="font-size:16px;font-weight:700;${isToday ? 'color:var(--gmc-blue)' : 'color:var(--gmc-text)'}">${d.getDate()}</div>
-            </div>
-            ${eventsHtml}${emptySlot}
-        </div>`;
-    }).join('');
+    // Day headers and time slots
+    days.forEach((day, dayIndex) => {
+        const dayName = day.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
+        const header = document.createElement('div');
+        header.style.fontSize = '12px';
+        header.style.fontWeight = '600';
+        header.style.padding = '8px';
+        header.style.textAlign = 'center';
+        header.style.borderBottom = '1px solid var(--gmc-border)';
+        header.style.gridColumn = dayIndex + 2;
+        header.style.gridRow = '1';
+        header.textContent = dayName;
+        grid.appendChild(header);
+
+        // Get events for this day
+        const dayEvents = AppState.calendarEvents.filter(e => {
+            const eDate = new Date(e.start);
+            return eDate.toDateString() === day.toDateString();
+        });
+
+        hours.forEach((h, hourIndex) => {
+            const slot = document.createElement('div');
+            slot.style.gridColumn = dayIndex + 2;
+            slot.style.gridRow = hourIndex + 2;
+            slot.style.borderBottom = '1px solid var(--gmc-border-light)';
+            slot.style.borderRight = '1px solid var(--gmc-border-light)';
+            slot.style.minHeight = '60px';
+            slot.style.padding = '4px';
+            slot.style.fontSize = '10px';
+            slot.style.position = 'relative';
+
+            // Only show events that START in this hour slot
+            const hourEvents = dayEvents.filter(e => {
+                const eDate = new Date(e.start);
+                return eDate.getHours() === h;
+            });
+
+            hourEvents.forEach(event => {
+                const eDate = new Date(event.start);
+                const eEnd = event.stop ? new Date(event.stop) : new Date(eDate.getTime() + 3600000);
+                const durationMin = Math.max(30, (eEnd - eDate) / 60000);
+                const heightPx = Math.min(durationMin, 180);
+
+                const eDiv = document.createElement('div');
+                eDiv.style.fontSize = '10px';
+                eDiv.style.padding = '3px 5px';
+                eDiv.style.marginBottom = '2px';
+                eDiv.style.borderRadius = '4px';
+                eDiv.style.cursor = 'pointer';
+                eDiv.style.lineHeight = '1.3';
+                eDiv.style.minHeight = Math.max(22, heightPx * 0.6) + 'px';
+                eDiv.style.overflow = 'hidden';
+
+                let bgColor = 'var(--gmc-green)';
+                const eName = (event.name || '').toLowerCase();
+                if (eName.includes('appel') || eName.includes('téléphone')) bgColor = 'var(--gmc-blue)';
+                else if (eName.includes('réunion') || eName.includes('bilan')) bgColor = 'var(--gmc-accent)';
+                else if (eName.includes('suivi')) bgColor = 'var(--gmc-purple)';
+
+                eDiv.style.background = bgColor;
+                eDiv.style.color = '#fff';
+
+                const timeLabel = `${String(eDate.getHours()).padStart(2,'0')}:${String(eDate.getMinutes()).padStart(2,'0')}`;
+                eDiv.innerHTML = `<strong>${timeLabel}</strong> ${event.name.substring(0, 25)}`;
+                eDiv.title = event.name + (event.location ? ' — ' + event.location : '');
+                slot.appendChild(eDiv);
+            });
+
+            grid.appendChild(slot);
+        });
+    });
 }
 
 function openNewVisitModal() {
-    const clientOptions = MY_CLIENTS.map(c => `<option value="${c.court}">${c.court} — ${c.nom}</option>`).join('');
-
     const modal = document.createElement('div');
     modal.id = 'visitModal';
-    modal.className = 'gmc-modal-overlay';
+    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:1000';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+    const clientOptions = AppState.clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0, 10);
+    const timeStr = '09:00';
+
     modal.innerHTML = `
-        <div class="gmc-modal">
-            <h3 style="margin:0 0 16px 0;color:var(--gmc-text)"><i class="fa-solid fa-calendar-plus" style="color:var(--gmc-blue);margin-right:8px"></i>Planifier une visite</h3>
-            <div style="display:grid;gap:12px">
+        <div style="background:var(--gmc-bg-elevated);border-radius:12px;padding:28px;width:440px;box-shadow:0 8px 24px rgba(0,0,0,.2)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+                <h2 style="color:var(--gmc-text-strong)"><i class="fa-solid fa-plus" style="color:var(--gmc-blue);margin-right:6px"></i> Nouvelle visite</h2>
+                <button onclick="this.closest('#visitModal').remove()" style="border:none;background:none;cursor:pointer;font-size:16px;color:var(--gmc-text-muted)"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px">
                 <div>
-                    <label style="font-size:12px;color:var(--gmc-text-muted);display:block;margin-bottom:4px">Client</label>
-                    <select id="visitClient" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--gmc-border);background:var(--gmc-bg);color:var(--gmc-text);font-size:13px">
-                        <option value="">— Choisir un client —</option>
+                    <label style="font-size:11px;font-weight:600;color:var(--gmc-text-muted);display:block;margin-bottom:4px">Titre</label>
+                    <input id="visitName" type="text" placeholder="ex: Visite Cuisifab 3ri — suivi soumission" style="width:100%;padding:8px 12px;border:1px solid var(--gmc-border);border-radius:var(--gmc-radius);font-family:inherit;font-size:13px;box-sizing:border-box">
+                </div>
+                <div>
+                    <label style="font-size:11px;font-weight:600;color:var(--gmc-text-muted);display:block;margin-bottom:4px">Client</label>
+                    <select id="visitClient" style="width:100%;padding:8px 12px;border:1px solid var(--gmc-border);border-radius:var(--gmc-radius);font-family:inherit;font-size:13px;background:#fff">
+                        <option value="">— Sélectionner —</option>
                         ${clientOptions}
                     </select>
                 </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
                     <div>
-                        <label style="font-size:12px;color:var(--gmc-text-muted);display:block;margin-bottom:4px">Date</label>
-                        <input type="date" id="visitDate" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--gmc-border);background:var(--gmc-bg);color:var(--gmc-text);font-size:13px" value="${formatDateOdoo(new Date())}">
+                        <label style="font-size:11px;font-weight:600;color:var(--gmc-text-muted);display:block;margin-bottom:4px">Date</label>
+                        <input id="visitDate" type="date" value="${dateStr}" style="width:100%;padding:8px 12px;border:1px solid var(--gmc-border);border-radius:var(--gmc-radius);font-family:inherit;font-size:13px;box-sizing:border-box">
                     </div>
                     <div>
-                        <label style="font-size:12px;color:var(--gmc-text-muted);display:block;margin-bottom:4px">Heure</label>
-                        <input type="time" id="visitTime" value="09:00" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--gmc-border);background:var(--gmc-bg);color:var(--gmc-text);font-size:13px">
+                        <label style="font-size:11px;font-weight:600;color:var(--gmc-text-muted);display:block;margin-bottom:4px">Heure</label>
+                        <input id="visitTime" type="time" value="${timeStr}" style="width:100%;padding:8px 12px;border:1px solid var(--gmc-border);border-radius:var(--gmc-radius);font-family:inherit;font-size:13px;box-sizing:border-box">
                     </div>
                 </div>
                 <div>
-                    <label style="font-size:12px;color:var(--gmc-text-muted);display:block;margin-bottom:4px">Notes</label>
-                    <textarea id="visitNotes" rows="2" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--gmc-border);background:var(--gmc-bg);color:var(--gmc-text);font-size:13px;resize:vertical" placeholder="Objectif de la visite..."></textarea>
+                    <label style="font-size:11px;font-weight:600;color:var(--gmc-text-muted);display:block;margin-bottom:4px">Lieu</label>
+                    <input id="visitLocation" type="text" placeholder="Adresse ou lieu" style="width:100%;padding:8px 12px;border:1px solid var(--gmc-border);border-radius:var(--gmc-radius);font-family:inherit;font-size:13px;box-sizing:border-box">
                 </div>
-            </div>
-            <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
-                <button onclick="document.getElementById('visitModal').remove()" class="gmc-btn">Annuler</button>
-                <button onclick="submitVisit()" class="gmc-btn gmc-btn-primary">
-                    <i class="fa-solid fa-check" style="margin-right:4px"></i>Créer la visite
-                </button>
+                <div>
+                    <label style="font-size:11px;font-weight:600;color:var(--gmc-text-muted);display:block;margin-bottom:4px">Notes</label>
+                    <textarea id="visitNotes" rows="3" placeholder="Objectif de la visite..." style="width:100%;padding:8px 12px;border:1px solid var(--gmc-border);border-radius:var(--gmc-radius);font-family:inherit;font-size:13px;resize:vertical;box-sizing:border-box"></textarea>
+                </div>
+                <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+                    <button onclick="this.closest('#visitModal').remove()" class="gmc-btn">Annuler</button>
+                    <button onclick="submitNewVisit()" class="gmc-btn gmc-btn-primary"><i class="fa-solid fa-check"></i> Créer la visite</button>
+                </div>
             </div>
         </div>
     `;
     document.body.appendChild(modal);
-    modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
 }
 
-async function submitVisit() {
-    const client = document.getElementById('visitClient').value;
+async function submitNewVisit() {
+    const name = document.getElementById('visitName').value.trim();
+    const clientId = document.getElementById('visitClient').value;
     const date = document.getElementById('visitDate').value;
     const time = document.getElementById('visitTime').value;
-    const notes = document.getElementById('visitNotes').value;
+    const location = document.getElementById('visitLocation').value.trim();
+    const notes = document.getElementById('visitNotes').value.trim();
 
-    if (!client || !date) { alert('Choisir un client et une date'); return; }
+    if (!name) { document.getElementById('visitName').style.borderColor = '#e74c3c'; return; }
 
     const startDt = `${date} ${time}:00`;
-    const endH = parseInt(time.split(':')[0]) + 1;
-    const stopDt = `${date} ${String(endH).padStart(2,'0')}:${time.split(':')[1]}:00`;
-
-    const clientObj = MY_CLIENTS.find(c => c.court === client);
-    const eventName = `Visite ${client} — ${notes || 'suivi commercial'}`;
-    const location = clientObj?.addr || '';
+    const endHour = parseInt(time.split(':')[0]) + 1;
+    const stopDt = `${date} ${String(endHour).padStart(2, '0')}:${time.split(':')[1]}:00`;
 
     try {
         const resp = await fetch(`${API_URL}/api/calendar/events`, {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                name: eventName,
+                name,
                 start: startDt,
                 stop: stopDt,
-                location: location,
-                description: `Rep: ${CURRENT_REP}\nClient: ${clientObj?.nom || client}\n${notes}`,
+                partner_id: clientId ? parseInt(clientId) : null,
+                user_id: AppState.user?.id || null,
+                location: location || null,
+                description: notes || null,
                 event_type: 'visit'
             })
         });
+
         if (resp.ok) {
             document.getElementById('visitModal').remove();
             await loadCalendarEvents();
+            renderCalendarWeek();
         } else {
-            // Fallback: add locally
-            calendarEvents.push({id:0, name:eventName, start:startDt, stop:stopDt, location, partner_id:client});
-            renderWeekCalendar();
-            document.getElementById('visitModal').remove();
+            console.error('Failed to create visit');
         }
-    } catch (e) {
-        // Fallback: add locally
-        calendarEvents.push({id:0, name:eventName, start:startDt, stop:stopDt, location, partner_id:client});
-        renderWeekCalendar();
-        document.getElementById('visitModal').remove();
+    } catch (error) {
+        console.error('Visit creation error:', error);
     }
 }
 
-// ========== FULL CALENDAR PAGE ==========
-let calViewOffset = 0; // weeks offset from current
-
-function calNavPrev() { calViewOffset--; renderFullCalendar(); }
-function calNavNext() { calViewOffset++; renderFullCalendar(); }
-function calNavToday() { calViewOffset = 0; renderFullCalendar(); }
-
-function getViewWeekDays() {
-    const now = new Date();
-    const day = now.getDay();
-    const monday = new Date(now);
-    monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1) + (calViewOffset * 7));
-    monday.setHours(0,0,0,0);
-    const days = [];
-    for (let i = 0; i < 5; i++) {
-        const d = new Date(monday);
-        d.setDate(monday.getDate() + i);
-        days.push(d);
-    }
-    return days;
+// ========== OMNISEARCH ==========
+function openOmni() {
+    document.getElementById('omniOverlay').classList.add('open');
+    document.getElementById('omniInput').focus();
 }
 
-async function renderFullCalendar() {
-    const days = getViewWeekDays();
-    const dayNames = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi'];
-    const monthNames = ['jan.','fév.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
-    const today = new Date();
-    const todayStr = formatDateOdoo(today);
-    const startDate = formatDateOdoo(days[0]);
-    const endFriday = new Date(days[4]);
-    endFriday.setDate(endFriday.getDate() + 1);
-    const endDate = formatDateOdoo(endFriday);
+function closeOmni() {
+    document.getElementById('omniOverlay').classList.remove('open');
+    document.getElementById('omniInput').value = '';
+}
 
-    // Update week label
-    const lbl = document.getElementById('calFullWeekLabel');
-    if (lbl) lbl.textContent = `${days[0].getDate()} ${monthNames[days[0].getMonth()]} — ${days[4].getDate()} ${monthNames[days[4].getMonth()]} ${days[4].getFullYear()}`;
-
-    // Fetch events for this week
-    let events = [];
-    try {
-        const calNavUserParam = currentUser?.id ? `&user_id=${currentUser.id}` : '';
-        const resp = await fetch(`${API_URL}/api/calendar/events?start_date=${startDate}&end_date=${endDate}&limit=100${calNavUserParam}`);
-        if (resp.ok) { const data = await resp.json(); events = data.events || []; }
-    } catch(e) {
-        events = calendarEvents; // fallback to loaded events
+function omniSearch(term) {
+    if (!term.trim()) {
+        document.getElementById('omniResults').innerHTML = '<div class="omni-empty">Tapez pour rechercher...</div>';
+        return;
     }
 
-    const hours = [8,9,10,11,12,13,14,15,16,17];
-    const grid = document.getElementById('calFullGrid');
-    if (!grid) return;
+    const lowerTerm = term.toLowerCase();
+    const clientResults = AppState.clients.filter(c => c.name.toLowerCase().includes(lowerTerm));
+    const pipeResults = AppState.pipeline.filter(p => p.name.toLowerCase().includes(lowerTerm));
 
-    // Header row
-    let html = '<div style="background:var(--gmc-bg);border-bottom:1px solid var(--gmc-border);padding:8px 4px;text-align:center;font-size:10px;color:var(--gmc-text-muted)"></div>';
-    days.forEach((d,i) => {
-        const dateStr = formatDateOdoo(d);
-        const isToday = dateStr === todayStr;
-        html += `<div style="background:${isToday ? 'rgba(0,145,174,.06)' : 'var(--gmc-bg)'};border-bottom:1px solid var(--gmc-border);border-left:1px solid var(--gmc-border);padding:8px;text-align:center;">
-            <div style="font-size:11px;color:var(--gmc-text-muted);font-weight:500">${dayNames[i]}</div>
-            <div style="font-size:18px;font-weight:700;${isToday ? 'color:var(--gmc-blue);background:rgba(0,145,174,.1);border-radius:50%;width:32px;height:32px;line-height:32px;margin:2px auto' : 'color:var(--gmc-text)'}">${d.getDate()}</div>
-        </div>`;
-    });
+    let html = '';
 
-    // Time rows
-    hours.forEach(h => {
-        // Hour label
-        html += `<div style="border-bottom:1px solid var(--gmc-border-light);padding:4px 6px;text-align:right;font-size:10px;color:var(--gmc-text-muted);vertical-align:top">${String(h).padStart(2,'0')}:00</div>`;
-
-        days.forEach((d,i) => {
-            const dateStr = formatDateOdoo(d);
-            const isToday = dateStr === todayStr;
-            // Find events in this hour
-            const hourEvents = events.filter(ev => {
-                if (!ev.start) return false;
-                const evDate = ev.start.split(' ')[0];
-                const evHour = parseInt(ev.start.split(' ')[1]?.split(':')[0] || '0');
-                return evDate === dateStr && evHour === h;
-            });
-
-            let cellHtml = '';
-            hourEvents.forEach(ev => {
-                const time = ev.start.split(' ')[1]?.substring(0,5) || '';
-                const endTime = ev.stop ? ev.stop.split(' ')[1]?.substring(0,5) : '';
-                const isVisit = ev.name?.toLowerCase().includes('visite');
-                const isCall = ev.name?.toLowerCase().includes('appel');
-                const isSuivi = ev.name?.toLowerCase().includes('suivi');
-                const color = isVisit ? 'var(--gmc-green)' : isCall ? 'var(--gmc-blue)' : isSuivi ? 'var(--gmc-purple)' : 'var(--gmc-accent)';
-                const icon = isVisit ? 'fa-location-dot' : isCall ? 'fa-phone' : isSuivi ? 'fa-rotate' : 'fa-calendar-check';
-                const shortName = ev.name?.length > 30 ? ev.name.substring(0,29) + '…' : ev.name;
-                cellHtml += `<div style="background:${color}12;border-left:3px solid ${color};padding:4px 6px;border-radius:4px;margin-bottom:2px;cursor:pointer;font-size:11px" title="${ev.name}\n${time}–${endTime}\n${ev.location || ''}">
-                    <div style="font-weight:600;color:${color};font-size:10px"><i class="fa-solid ${icon}" style="margin-right:3px"></i>${time}–${endTime}</div>
-                    <div style="color:var(--gmc-text);line-height:1.3">${shortName}</div>
-                    ${ev.location ? `<div style="font-size:10px;color:var(--gmc-text-muted)"><i class="fa-solid fa-map-pin" style="margin-right:2px"></i>${ev.location}</div>` : ''}
-                </div>`;
-            });
-
-            html += `<div style="border-bottom:1px solid var(--gmc-border-light);border-left:1px solid var(--gmc-border);padding:2px 4px;min-height:48px;background:${isToday ? 'rgba(0,145,174,.02)' : 'transparent'}">${cellHtml}</div>`;
+    if (clientResults.length > 0) {
+        html += '<div class="omni-group"><div class="omni-group-title">Clients</div>';
+        clientResults.slice(0, 5).forEach(c => {
+            html += `
+                <div class="omni-item" onclick="showClientDetail({id:${c.id},name:'${c.name.replace(/'/g, "\\'")}',territoire:'${c.territoire||''}',score:'${c.score}',city:'${c.city||''}',pipeline_revenue:${c.pipeline_revenue||0},description:'${(c.description||'').replace(/'/g,"\\'")}',street:'${c.street||''}',zip:'${c.zip||''}',phone:'${c.phone||''}',email:'${c.email||''}',website:'${c.website||''}',type_client:'${c.type_client||''}'})">
+                    <div class="oi-icon" style="background:var(--gmc-blue);color:#fff"><i class="fa-solid fa-building"></i></div>
+                    <div><div class="oi-name">${c.name}</div><div class="oi-sub">${c.city || '—'}</div></div>
+                </div>
+            `;
         });
-    });
+        html += '</div>';
+    }
 
-    grid.innerHTML = html;
+    if (pipeResults.length > 0) {
+        html += '<div class="omni-group"><div class="omni-group-title">Pipeline</div>';
+        pipeResults.slice(0, 5).forEach(p => {
+            html += `
+                <div class="omni-item">
+                    <div class="oi-icon" style="background:var(--gmc-green);color:#fff"><i class="fa-solid fa-briefcase"></i></div>
+                    <div><div class="oi-name">${p.name}</div><div class="oi-sub">${p.partner_name || '—'}</div></div>
+                </div>
+            `;
+        });
+        html += '</div>';
+    }
+
+    if (html === '') html = '<div class="omni-empty">Aucun résultat</div>';
+
+    document.getElementById('omniResults').innerHTML = html;
+}
+
+document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        openOmni();
+    }
+    if (e.key === 'Escape') closeOmni();
+});
+
+// ========== SECTION NAVIGATION ==========
+function showSection(sectionName, btn) {
+    document.querySelectorAll('.gmc-section').forEach(s => s.classList.remove('active'));
+    document.getElementById(`sec-${sectionName}`).classList.add('active');
+
+    document.querySelectorAll('.gmc-nav-item').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+
+    if (sectionName === 'calendar') {
+        loadCalendarEvents().then(() => renderCalendarWeek());
+    }
+    if (sectionName === 'clients') {
+        setTimeout(() => initClientGrid(), 100);
+    }
+    if (sectionName === 'pipeline') {
+        renderPipeline();
+    }
+    if (sectionName === 'activity') {
+        renderActivityCharts();
+        setTimeout(() => initActGrid(), 100);
+    }
+}
+
+// ========== UTILITIES ==========
+function formatCurrency(value) {
+    return new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: 0 }).format(value);
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return '—';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: '2-digit' });
+}
+
+function convertGridToCSV(data, fields) {
+    const headers = fields.join(',');
+    const rows = data.map(row => fields.map(field => {
+        const val = row[field];
+        if (typeof val === 'string' && val.includes(',')) return `"${val}"`;
+        return val;
+    }).join(','));
+    return [headers, ...rows].join('\n');
+}
+
+function downloadCSV(csv, filename) {
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.setAttribute('href', URL.createObjectURL(blob));
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }
 
 // ========== INIT ==========
-document.addEventListener('DOMContentLoaded', async function() {
-    // Check for stored session
-    const stored = getStoredUser();
-    if (stored && stored.name) {
-        currentUser = stored;
-        updateUIForUser();
-        renderDashboard();
-        renderKanban();
-        renderActivityCharts();
-        initClientGrid();
-        initPipeGrid();
-        initActGrid();
-        await loadCalendarEvents();
-        // Then try to load live data in background (re-renders everything)
-        loadLiveData();
+document.addEventListener('DOMContentLoaded', async () => {
+    const hasSession = initSession();
+
+    if (!hasSession) {
+        // Show login modal
+        const users = await fetchAvailableUsers();
+        showLoginModal(users);
     } else {
-        // Show login, then init after login
-        renderDashboard();
-        renderKanban();
-        renderActivityCharts();
-        initClientGrid();
-        initPipeGrid();
-        initActGrid();
-        await loadCalendarEvents();
-        showLoginModal();
+        // Initialize calendar week to current Monday
+        calNavToday();
+        await Promise.all([loadDashboard(), loadCalendarEvents()]);
     }
 });
+
+async function fetchAvailableUsers() {
+    try {
+        const response = await fetch(`${API_URL}/api/crm/auth/users`);
+        if (response.ok) {
+            const data = await response.json();
+            return data.users || [];
+        }
+    } catch (error) {
+        console.error('Failed to fetch users:', error);
+    }
+    return [];
+}
+
+async function loginUser(email) {
+    try {
+        const response = await fetch(`${API_URL}/api/crm/auth/login?email=${encodeURIComponent(email)}`, { method: 'POST' });
+        if (response.ok) {
+            const data = await response.json();
+            AppState.user = data.user;
+            localStorage.setItem('gmc_user', JSON.stringify(AppState.user));
+            updateSidebarUser();
+            await loadDashboard();
+            document.getElementById('loginModal').style.display = 'none';
+            return true;
+        }
+    } catch (error) {
+        console.error('Login error:', error);
+    }
+    return false;
+}
+
+function showLoginModal(users) {
+    const modal = document.createElement('div');
+    modal.id = 'loginModal';
+    modal.style.cssText = `position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:1000`;
+
+    let content = `
+        <div style="background:var(--gmc-bg-elevated);border-radius:12px;padding:32px;max-width:400px;box-shadow:0 8px 24px rgba(0,0,0,.2)">
+            <h2 style="margin-bottom:8px;color:var(--gmc-text-strong)">Connexion</h2>
+            <p style="color:var(--gmc-text-muted);font-size:13px;margin-bottom:24px">Sélectionnez votre profil ou entrez votre email</p>
+    `;
+
+    if (users.length > 0) {
+        users.forEach(user => {
+            content += `<button onclick="loginUser('${user.email}').then(() => document.getElementById('loginModal').remove())" style="display:block;width:100%;padding:10px;margin:8px 0;background:var(--gmc-bg);border:1px solid var(--gmc-border);border-radius:var(--gmc-radius);cursor:pointer;text-align:left;transition:.15s" onmouseover="this.style.borderColor='var(--gmc-blue)'" onmouseout="this.style.borderColor='var(--gmc-border)'"><div style="font-weight:600">${user.name}</div><div style="font-size:11px;color:var(--gmc-text-muted)">${user.email}</div></button>`;
+        });
+    }
+
+    content += `
+            <div style="margin-top:24px;display:flex;gap:8px">
+                <input type="email" id="customEmail" placeholder="Email" style="flex:1;padding:8px 12px;border:1px solid var(--gmc-border);border-radius:var(--gmc-radius);font-family:inherit">
+                <button onclick="loginUser(document.getElementById('customEmail').value).then(() => document.getElementById('loginModal').remove())" style="padding:8px 16px;background:var(--gmc-blue);color:#fff;border:none;border-radius:var(--gmc-radius);cursor:pointer;font-weight:600">Entrer</button>
+            </div>
+        </div>
+    `;
+
+    modal.innerHTML = content;
+    document.body.appendChild(modal);
+}
 </script>
+
 </body>
 </html>
