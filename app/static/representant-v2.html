@@ -9,175 +9,92 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@32.0.2/styles/ag-grid.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@32.0.2/styles/ag-theme-alpine.css">
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@32.0.2/dist/ag-grid-community.min.noStyle.js"></script>
+    <link rel="stylesheet" href="granites-design.css">
     <style>
         :root {
-            --bg:#f5f8fa;--white:#fff;--sidebar:#2d3e50;--sidebar-hover:#3a4f63;--sidebar-active:#1a2b3c;
-            --accent:#ff7a59;--accent-hover:#ff5c35;--blue:#0091ae;--green:#00bda5;--yellow:#f5c26b;
-            --red:#f2545b;--purple:#6a78d1;--text:#33475b;--text-light:#7c98b6;--text-dark:#1a2b3c;
-            --border:#dfe3eb;--border-light:#eaf0f6;--sidebar-w:210px;--topbar-h:52px;--radius:6px;
-            --shadow:0 1px 3px rgba(0,0,0,.08);
+            --gmc-card: var(--gmc-bg-elevated);
+            --gmc-muted: var(--gmc-text-muted);
         }
         *{margin:0;padding:0;box-sizing:border-box}
-        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:13px;display:flex;min-height:100vh}
-        ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:#cbd6e2;border-radius:3px}
+        body{font-family:var(--gmc-font);background:var(--gmc-bg);color:var(--gmc-text);font-size:var(--gmc-fs-base);display:flex;min-height:100vh}
+        ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-thumb{background:#cbd6e2;border-radius:3px}
 
-        /* Sidebar */
-        .sidebar{width:var(--sidebar-w);background:var(--sidebar);position:fixed;top:0;left:0;bottom:0;z-index:100;display:flex;flex-direction:column}
-        .sidebar-brand{padding:14px 16px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,.1)}
-        .sidebar-brand .logo{width:30px;height:30px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:13px}
-        .sidebar-brand span{color:#fff;font-weight:600;font-size:13px}
-        .sidebar-brand .rep-tag{background:var(--blue);color:#fff;font-size:9px;padding:2px 6px;border-radius:8px;margin-left:auto;font-weight:600}
-        .sidebar-nav{flex:1;padding:8px 0;overflow-y:auto}
-        .nav-label{padding:12px 16px 4px;font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:rgba(255,255,255,.35);font-weight:600}
-        .nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;color:rgba(255,255,255,.7);cursor:pointer;transition:.15s;font-size:13px}
-        .nav-item:hover{background:var(--sidebar-hover);color:#fff}
-        .nav-item.active{background:var(--sidebar-active);color:#fff;border-left:3px solid var(--accent)}
-        .nav-item i{width:18px;text-align:center;font-size:14px}
-        .sidebar-user{padding:12px 16px;border-top:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:8px}
-        .sidebar-user .avatar{width:28px;height:28px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:11px}
-        .sidebar-user .info{color:rgba(255,255,255,.8);font-size:11px;line-height:1.3}
-        .sidebar-user .info .name{font-weight:600}
-
-        /* Main */
-        .main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;height:100vh}
-        .topbar{height:var(--topbar-h);background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0}
-        .topbar h1{font-size:15px;font-weight:600;color:var(--text-dark);white-space:nowrap}
-        .topbar .live-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(0,189,165,.08);color:var(--green);font-size:11px;font-weight:600;border-radius:var(--radius);border:1px solid rgba(0,189,165,.2)}
-        .topbar .live-badge i{font-size:9px}
-        .content{flex:1;padding:16px 20px;overflow-y:auto}
-        .section{display:none;height:100%}.section.active{display:flex;flex-direction:column}
 
         /* Omnisearch */
-        .omnisearch-trigger{display:flex;align-items:center;gap:6px;padding:6px 14px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;color:var(--text-light);font-size:12px;transition:.15s;min-width:220px}
-        .omnisearch-trigger:hover{border-color:var(--blue)}
-        .omnisearch-trigger kbd{font-size:10px;background:var(--white);border:1px solid var(--border);padding:1px 5px;border-radius:3px;font-family:inherit}
+        .omnisearch-trigger{display:flex;align-items:center;gap:6px;padding:6px 14px;background:var(--gmc-bg);border:1px solid var(--gmc-border);border-radius:var(--gmc-radius);cursor:pointer;color:var(--gmc-text-muted);font-size:var(--gmc-fs-sm);transition:.15s;min-width:220px}
+        .omnisearch-trigger:hover{border-color:var(--gmc-blue)}
+        .omnisearch-trigger kbd{font-size:10px;background:var(--gmc-bg-elevated);border:1px solid var(--gmc-border);padding:1px 5px;border-radius:3px;font-family:inherit}
         .omni-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);z-index:500;display:none;align-items:flex-start;justify-content:center;padding-top:80px}
         .omni-overlay.open{display:flex}
-        .omni-box{background:var(--white);border-radius:12px;width:580px;max-height:480px;box-shadow:0 16px 48px rgba(0,0,0,.2);overflow:hidden;display:flex;flex-direction:column}
-        .omni-input-wrap{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border-light)}
-        .omni-input-wrap i{color:var(--text-light);font-size:16px}
-        .omni-input{flex:1;border:none;outline:none;font-size:15px;font-family:inherit;color:var(--text-dark)}
+        .omni-box{background:var(--gmc-bg-elevated);border-radius:12px;width:580px;max-height:480px;box-shadow:0 16px 48px rgba(0,0,0,.2);overflow:hidden;display:flex;flex-direction:column}
+        .omni-input-wrap{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--gmc-border-light)}
+        .omni-input-wrap i{color:var(--gmc-text-muted);font-size:16px}
+        .omni-input{flex:1;border:none;outline:none;font-size:15px;font-family:inherit;color:var(--gmc-text-strong)}
         .omni-results{flex:1;overflow-y:auto;padding:8px 0}
         .omni-group{padding:4px 18px}
-        .omni-group-title{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-light);font-weight:600;padding:6px 0}
-        .omni-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:var(--radius);cursor:pointer;transition:.1s}
-        .omni-item:hover{background:var(--bg)}
+        .omni-group-title{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--gmc-text-muted);font-weight:600;padding:6px 0}
+        .omni-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:var(--gmc-radius);cursor:pointer;transition:.1s}
+        .omni-item:hover{background:var(--gmc-bg)}
         .omni-item .oi-icon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px}
-        .omni-item .oi-name{font-weight:500;font-size:13px}.omni-item .oi-sub{font-size:11px;color:var(--text-light)}
-        .omni-empty{padding:24px;text-align:center;color:var(--text-light);font-size:13px}
+        .omni-item .oi-name{font-weight:500;font-size:13px}.omni-item .oi-sub{font-size:11px;color:var(--gmc-text-muted)}
+        .omni-empty{padding:24px;text-align:center;color:var(--gmc-text-muted);font-size:13px}
 
-        /* Stats */
-        .stat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px}
-        .stat-card{background:var(--white);border-radius:var(--radius);padding:14px 16px;border:1px solid var(--border-light);box-shadow:var(--shadow);cursor:pointer;transition:.15s}
-        .stat-card:hover{border-color:var(--blue);box-shadow:0 2px 8px rgba(0,0,0,.12)}
-        .stat-card .label{font-size:10px;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
-        .stat-card .value{font-size:22px;font-weight:700;color:var(--text-dark)}
-        .stat-card .sub{font-size:11px;margin-top:2px}.trend-up{color:var(--green)}.trend-down{color:var(--red)}
-
-        /* Card */
-        .card{background:var(--white);border-radius:var(--radius);border:1px solid var(--border-light);box-shadow:var(--shadow);margin-bottom:14px;overflow:hidden}
-        .card-header{padding:12px 16px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between}
-        .card-header h2{font-size:13px;font-weight:600}
-        .card-body{padding:14px 16px}
-
-        /* Toolbar */
-        .grid-toolbar{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
-        .grid-search-wrap{position:relative}
-        .grid-search-wrap i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-light);font-size:11px}
-        .grid-search{padding:6px 10px 6px 30px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;background:var(--white);width:220px}
-        .grid-search:focus{outline:none;border-color:var(--blue)}
-        .btn{padding:6px 12px;border-radius:var(--radius);font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--white);color:var(--text);display:inline-flex;align-items:center;gap:5px;transition:.15s}
-        .btn:hover{background:var(--bg)}.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}.btn-primary:hover{background:var(--accent-hover)}
-        .btn i{font-size:11px}
-        .view-tabs{display:flex;gap:2px;background:var(--bg);border-radius:var(--radius);padding:2px}
-        .view-tab{padding:5px 12px;font-size:11px;font-weight:500;cursor:pointer;border-radius:4px;color:var(--text-light);transition:.15s}
-        .view-tab.active{background:var(--white);color:var(--text-dark);box-shadow:var(--shadow)}
-
-        /* AG Grid */
-        .ag-theme-alpine{--ag-font-family:'Inter',sans-serif;--ag-font-size:12px;--ag-header-background-color:#f8fafc;--ag-header-foreground-color:#7c98b6;--ag-row-hover-color:rgba(0,145,174,.04);--ag-selected-row-background-color:rgba(255,122,89,.06);--ag-border-color:#eaf0f6;--ag-header-column-separator-color:transparent;--ag-range-selection-border-color:var(--blue);--ag-checkbox-checked-color:var(--accent)}
-        .ag-theme-alpine .ag-header-cell-text{text-transform:uppercase;letter-spacing:.5px;font-weight:600;font-size:10px}
-        .ag-theme-alpine .ag-row{border-bottom:1px solid #f0f3f7}
-        .ag-theme-alpine .ag-cell{display:flex;align-items:center}
-
-        /* Badges */
-        .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
-        .badge-green{background:#e6f9f5;color:#00875a}.badge-yellow{background:#fff3e0;color:#e07c00}.badge-red{background:#fce4ec;color:#c62828}
-        .badge-blue{background:rgba(0,145,174,.08);color:#0091ae}.badge-purple{background:rgba(106,120,209,.08);color:#6a78d1}
-        .badge-a-plus,.badge-a{background:#e6f9f5;color:#00875a}.badge-b-plus,.badge-b{background:#fff3e0;color:#e07c00}.badge-c-plus,.badge-c{background:#fce4ec;color:#c62828}
-
-        /* Timeline */
+        /* Timeline (page-specific) */
         .timeline{position:relative;padding-left:24px}
         .timeline-item{display:flex;gap:12px;margin-bottom:12px;position:relative}
-        .timeline-item:before{content:'';position:absolute;left:-24px;top:5px;width:8px;height:8px;background:var(--blue);border-radius:50%;border:2px solid var(--white)}
-        .timeline-item:not(:last-child):after{content:'';position:absolute;left:-20px;top:13px;width:2px;height:calc(100% + 0px);background:var(--border)}
-        .timeline-item .time{font-size:11px;color:var(--text-light);min-width:55px;padding-top:2px}
-        .timeline-item .desc{flex:1;font-size:12px;color:var(--text-dark)}
-        .timeline-item .type{font-size:10px;color:var(--text-light);text-transform:uppercase;font-weight:600}
+        .timeline-item:before{content:'';position:absolute;left:-24px;top:5px;width:8px;height:8px;background:var(--gmc-blue);border-radius:50%;border:2px solid var(--gmc-bg-elevated)}
+        .timeline-item:not(:last-child):after{content:'';position:absolute;left:-20px;top:13px;width:2px;height:calc(100% + 0px);background:var(--gmc-border)}
+        .timeline-item .time{font-size:11px;color:var(--gmc-text-muted);min-width:55px;padding-top:2px}
+        .timeline-item .desc{flex:1;font-size:12px;color:var(--gmc-text-strong)}
+        .timeline-item .type{font-size:10px;color:var(--gmc-text-muted);text-transform:uppercase;font-weight:600}
 
-        /* Kanban */
-        .kanban-container{display:flex;gap:12px;overflow-x:auto;margin-bottom:14px}
-        .kanban-column{flex:0 0 300px;background:var(--bg);border-radius:var(--radius);padding:12px}
-        .kanban-header{font-weight:600;font-size:12px;color:var(--text-dark);margin-bottom:10px;display:flex;align-items:center;gap:6px}
-        .kanban-badge{background:var(--text-light);color:var(--white);font-size:10px;padding:1px 6px;border-radius:4px;font-weight:600}
-        .kanban-card{background:var(--white);border:1px solid var(--border-light);border-radius:var(--radius);padding:10px;margin-bottom:8px;cursor:pointer;transition:.15s;font-size:12px}
-        .kanban-card:hover{box-shadow:0 2px 8px rgba(0,0,0,.12);transform:translateY(-2px)}
-        .kanban-card-title{font-weight:600;margin-bottom:4px;color:var(--text-dark)}
-        .kanban-card-client{font-size:11px;color:var(--text-light);margin-bottom:6px}
-        .kanban-card-amount{font-weight:600;color:var(--green);font-size:13px;margin-bottom:4px}
-        .kanban-card-prob{font-size:10px;color:var(--text-light)}
-
-        /* Detail panel */
-        .detail-overlay{position:fixed;top:0;right:0;bottom:0;width:560px;background:var(--white);z-index:300;box-shadow:-4px 0 20px rgba(0,0,0,.15);transform:translateX(100%);transition:transform .25s ease;overflow-y:auto}
-        .detail-overlay.open{transform:translateX(0)}
-        .detail-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--white);z-index:10}
-        .detail-header h2{font-size:15px;font-weight:700}
-        .close-btn{width:28px;height:28px;border-radius:50%;border:none;background:var(--bg);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s}
-        .close-btn:hover{background:var(--border-light)}
-        .detail-body{padding:18px}
-        .detail-section{margin-bottom:18px}
-        .detail-section h3{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-light);margin-bottom:8px;font-weight:600}
-        .field-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-        .field .label{font-size:10px;color:var(--text-light);margin-bottom:1px}.field .val{font-size:13px;font-weight:500;color:var(--text-dark)}
-        .field .val a{color:var(--blue);text-decoration:none}.field .val a:hover{text-decoration:underline}
-        .vol-chart{display:flex;align-items:flex-end;gap:6px;height:55px;margin-top:6px;padding-bottom:18px}
-        .vol-bar{flex:1;background:var(--blue);border-radius:3px 3px 0 0;min-width:30px;position:relative}
-        .vol-bar .vl{position:absolute;bottom:-15px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--text-light);white-space:nowrap}
-        .vol-bar .va{position:absolute;top:-13px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:600;color:var(--text-dark);white-space:nowrap}
-        .link-odoo{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:var(--radius);background:var(--bg);color:var(--blue);font-size:12px;font-weight:500;text-decoration:none;border:1px solid var(--border);transition:.15s;margin-right:6px;margin-top:6px}
-        .link-odoo:hover{background:var(--blue);color:#fff}
-        .backdrop{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.25);z-index:250;display:none}
-        .backdrop.show{display:block}
-
-        /* Alert items */
-        .alert-item{padding:8px 0;border-bottom:1px solid var(--border-light);font-size:12px;display:flex;align-items:center;gap:8px}
-        .alert-item:last-child{border:none}
-
-        /* Top clients chart */
+        /* Top clients chart (page-specific) */
         .clients-chart{display:flex;flex-direction:column;gap:8px}
         .client-bar{display:flex;align-items:center;gap:8px;cursor:pointer;transition:.15s}
         .client-bar:hover{opacity:.8}
         .client-name{width:110px;font-size:12px;font-weight:500;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-        .client-bar-chart{flex:1;height:16px;background:var(--bg);border-radius:3px;overflow:hidden}
-        .client-bar-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--green));border-radius:3px}
+        .client-bar-chart{flex:1;height:16px;background:var(--gmc-bg);border-radius:3px;overflow:hidden}
+        .client-bar-fill{height:100%;background:linear-gradient(90deg,var(--gmc-blue),var(--gmc-green));border-radius:3px}
         .client-amount{font-size:11px;font-weight:600;width:55px;text-align:right}
-        .client-score{font-size:10px;color:var(--text-light);width:40px;text-align:center}
+        .client-score{font-size:10px;color:var(--gmc-text-muted);width:40px;text-align:center}
+
+        /* Alert items (page-specific) */
+        .alert-item{padding:8px 0;border-bottom:1px solid var(--gmc-border-light);font-size:12px;display:flex;align-items:center;gap:8px}
+        .alert-item:last-child{border:none}
+
+        /* Volume chart (page-specific) */
+        .vol-chart{display:flex;align-items:flex-end;gap:6px;height:55px;margin-top:6px;padding-bottom:18px}
+        .vol-bar{flex:1;background:var(--gmc-blue);border-radius:3px 3px 0 0;min-width:30px;position:relative}
+        .vol-bar .vl{position:absolute;bottom:-15px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--gmc-text-muted);white-space:nowrap}
+        .vol-bar .va{position:absolute;top:-13px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:600;color:var(--gmc-text-strong);white-space:nowrap}
+
+        /* Detail panel specific styles */
+        .field-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+        .field .label{font-size:10px;color:var(--gmc-text-muted);margin-bottom:1px}.field .val{font-size:13px;font-weight:500;color:var(--gmc-text-strong)}
+        .field .val a{color:var(--gmc-blue);text-decoration:none}.field .val a:hover{text-decoration:underline}
+        .link-odoo{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:var(--gmc-radius);background:var(--gmc-bg);color:var(--gmc-blue);font-size:12px;font-weight:500;text-decoration:none;border:1px solid var(--gmc-border);transition:.15s;margin-right:6px;margin-top:6px}
+        .link-odoo:hover{background:var(--gmc-blue);color:#fff}
     </style>
 </head>
 <body>
 
-<!-- Sidebar -->
-<nav class="sidebar">
-    <div class="sidebar-brand"><div class="logo">G</div><span>Granites MC</span><span class="rep-tag">REP</span></div>
-    <div class="sidebar-nav">
-        <div class="nav-label">Accueil</div>
-        <div class="nav-item active" onclick="showSection('dashboard',this)"><i class="fa-solid fa-chart-pie"></i> Mon tableau de bord</div>
-        <div class="nav-label">Gestion</div>
-        <div class="nav-item" onclick="showSection('clients',this)"><i class="fa-solid fa-building"></i> Mes clients</div>
-        <div class="nav-item" onclick="showSection('calendar',this)"><i class="fa-solid fa-calendar-days"></i> Calendrier</div>
-        <div class="nav-item" onclick="showSection('pipeline',this)"><i class="fa-solid fa-filter-circle-dollar"></i> Pipeline</div>
-        <div class="nav-item" onclick="showSection('activity',this)"><i class="fa-solid fa-chart-line"></i> Activités</div>
+<a href="#main-content" class="gmc-skip-link">Aller au contenu</a>
+<nav class="gmc-sidebar">
+    <div class="gmc-sidebar-brand"><div class="gmc-sidebar-logo">G</div><span class="gmc-sidebar-title">Granites MC</span><span class="gmc-sidebar-badge">REP</span></div>
+    <div class="gmc-sidebar-nav">
+        <div class="gmc-nav-label">Accueil</div>
+        <button class="gmc-nav-item active" onclick="showSection('dashboard',this)"><i class="fa-solid fa-chart-pie"></i> <span>Tableau de bord</span></button>
+        <div class="gmc-nav-label">Gestion</div>
+        <button class="gmc-nav-item" onclick="showSection('clients',this)"><i class="fa-solid fa-building"></i> <span>Mes clients</span></button>
+        <button class="gmc-nav-item" onclick="showSection('calendar',this)"><i class="fa-solid fa-calendar-days"></i> <span>Calendrier</span></button>
+        <button class="gmc-nav-item" onclick="showSection('pipeline',this)"><i class="fa-solid fa-filter-circle-dollar"></i> <span>Pipeline</span></button>
+        <button class="gmc-nav-item" onclick="showSection('activity',this)"><i class="fa-solid fa-chart-line"></i> <span>Activités</span></button>
     </div>
-    <div class="sidebar-user" style="cursor:pointer" onclick="logout()" title="Cliquer pour changer d'utilisateur"><div class="avatar">IT</div><div class="info"><div class="name">Isabelle T.</div><div>Représentant</div></div><i class="fa-solid fa-right-from-bracket" style="color:rgba(255,255,255,.4);margin-left:auto;font-size:12px"></i></div>
+    <div class="gmc-sidebar-user" onclick="confirmLogout()" title="Cliquer pour changer d'utilisateur">
+        <div class="gmc-avatar">IT</div>
+        <div class="gmc-user-info"><div class="gmc-user-name">Isabelle T.</div><div>Représentant</div></div>
+        <i class="fa-solid fa-right-from-bracket" style="color:rgba(255,255,255,.4);margin-left:auto;font-size:12px"></i>
+    </div>
 </nav>
 
 <!-- Omnisearch overlay -->
@@ -186,7 +103,7 @@
         <div class="omni-input-wrap">
             <i class="fa-solid fa-search"></i>
             <input class="omni-input" id="omniInput" placeholder="Rechercher mes clients, soumissions..." oninput="omniSearch(this.value)" autofocus>
-            <kbd style="font-size:10px;color:var(--text-light);background:var(--bg);padding:2px 6px;border-radius:3px;border:1px solid var(--border)">Esc</kbd>
+            <kbd style="font-size:10px;color:var(--gmc-text-muted);background:var(--gmc-bg);padding:2px 6px;border-radius:3px;border:1px solid var(--gmc-border)">Esc</kbd>
         </div>
         <div class="omni-results" id="omniResults">
             <div class="omni-empty">Tapez pour rechercher...</div>
@@ -195,124 +112,131 @@
 </div>
 
 <!-- Backdrop + Detail panel -->
-<div class="backdrop" id="backdrop" onclick="closeDetail()"></div>
-<div class="detail-overlay" id="detailPanel">
-    <div class="detail-header"><h2 id="detailName">—</h2><button class="close-btn" onclick="closeDetail()"><i class="fa-solid fa-xmark"></i></button></div>
-    <div class="detail-body" id="detailBody"></div>
+<div class="gmc-backdrop" id="backdrop" onclick="closeDetail()"></div>
+<div class="gmc-detail-overlay" id="detailPanel">
+    <div class="gmc-card-header"><h2 id="detailName">—</h2><button class="gmc-btn" onclick="closeDetail()" style="padding:6px;width:28px;justify-content:center;border:none;background:var(--gmc-bg)"><i class="fa-solid fa-xmark"></i></button></div>
+    <div class="gmc-card-body" id="detailBody"></div>
 </div>
 
 <!-- Main Content -->
-<div class="main">
+<div class="gmc-main" id="main-content">
 
 <!-- ====== DASHBOARD ====== -->
-<div class="section active" id="sec-dashboard">
-    <div class="topbar">
+<div class="gmc-section active" id="sec-dashboard">
+    <div class="gmc-topbar">
         <h1>Mon tableau de bord</h1>
         <div class="omnisearch-trigger" onclick="openOmni()"><i class="fa-solid fa-search" style="font-size:12px"></i> Rechercher... <kbd>⌘K</kbd></div>
         <span style="flex:1"></span>
-        <span style="font-size:12px;color:var(--text-light)">Mars 2026</span>
-        <span class="live-badge" id="liveBadge" style="display:none"><i class="fa-solid fa-circle"></i> Live</span>
+        <span style="font-size:12px;color:var(--gmc-text-muted)">Mars 2026</span>
+        <span class="gmc-live-badge" id="liveBadge" style="display:none"><i class="fa-solid fa-circle"></i> Live</span>
     </div>
-    <div class="content">
-        <div class="stat-grid" id="dashboardStats"></div>
-        <div style="display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px">
-            <div class="card">
-                <div class="card-header"><h2><i class="fa-solid fa-ranking-star" style="color:var(--green);margin-right:5px"></i> Mes top 5 clients — Volume 2022</h2></div>
-                <div class="card-body" id="top5Chart"></div>
+    <div class="gmc-content">
+        <!-- Morning Briefing -->
+        <div class="gmc-briefing" id="morningBriefing">
+            <div class="gmc-briefing-greeting">Bonjour <strong id="briefingName">Isabelle</strong> 👋</div>
+            <div class="gmc-briefing-headline" id="briefingHeadline">Tu as <span id="briefingCount">0</span> rendez-vous aujourd'hui</div>
+            <div class="gmc-briefing-cards gmc-stagger" id="briefingCards">
+                <!-- Filled by JS -->
             </div>
-            <div class="card">
-                <div class="card-header">
-                    <h2><i class="fa-solid fa-calendar-days" style="color:var(--blue);margin-right:5px"></i> Ma semaine</h2>
-                    <span id="calendarWeekLabel" style="font-size:12px;color:var(--muted);margin-left:auto"></span>
-                </div>
-                <div class="card-body" id="calendarWidget" style="padding:8px;">
-                    <div id="weekGrid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;min-height:180px;"></div>
-                    <div style="margin-top:10px;display:flex;gap:8px;justify-content:flex-end;">
-                        <button onclick="openNewVisitModal()" style="background:var(--blue);color:white;border:none;padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;">
-                            <i class="fa-solid fa-plus"></i> Planifier visite
-                        </button>
-                    </div>
-                </div>
+            <div class="gmc-briefing-alerts" id="briefingAlerts">
+                <!-- Filled by JS -->
             </div>
         </div>
-        <div class="card">
-            <div class="card-header"><h2><i class="fa-solid fa-clock" style="color:var(--blue);margin-right:5px"></i> Activité récente</h2></div>
-            <div class="card-body" id="timelinePanel"></div>
+
+        <!-- Stats row -->
+        <div class="gmc-stat-grid gmc-stagger" id="dashboardStats"></div>
+
+        <!-- Two column layout -->
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px">
+            <div class="gmc-card">
+                <div class="gmc-card-header"><h2><i class="fa-solid fa-ranking-star" style="color:var(--gmc-green);margin-right:6px"></i> Top 5 clients — Volume 2022</h2></div>
+                <div class="gmc-card-body" id="top5Chart"></div>
+            </div>
+            <div class="gmc-card">
+                <div class="gmc-card-header">
+                    <h2><i class="fa-solid fa-clock" style="color:var(--gmc-blue);margin-right:6px"></i> Activité récente</h2>
+                </div>
+                <div class="gmc-card-body" id="timelinePanel"></div>
+            </div>
         </div>
     </div>
 </div>
 
 <!-- ====== CALENDRIER ====== -->
-<div class="section" id="sec-calendar">
-    <div class="topbar">
-        <h1><i class="fa-solid fa-calendar-days" style="color:var(--blue);margin-right:6px"></i> Mon calendrier</h1>
+<div class="gmc-section" id="sec-calendar">
+    <div class="gmc-topbar">
+        <h1><i class="fa-solid fa-calendar-days" style="color:var(--gmc-blue);margin-right:6px"></i> Mon calendrier</h1>
         <div class="omnisearch-trigger" onclick="openOmni()"><i class="fa-solid fa-search" style="font-size:12px"></i> Rechercher... <kbd>⌘K</kbd></div>
         <span style="flex:1"></span>
-        <button onclick="calNavPrev()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;color:var(--text);font-size:13px"><i class="fa-solid fa-chevron-left"></i></button>
-        <span id="calFullWeekLabel" style="font-size:13px;font-weight:600;color:var(--text-dark);min-width:180px;text-align:center"></span>
-        <button onclick="calNavNext()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;color:var(--text);font-size:13px"><i class="fa-solid fa-chevron-right"></i></button>
-        <button onclick="calNavToday()" style="background:var(--blue);color:white;border:none;padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;margin-left:8px">Aujourd'hui</button>
-        <button onclick="openNewVisitModal()" style="background:var(--accent);color:white;border:none;padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;margin-left:4px"><i class="fa-solid fa-plus"></i> Nouvelle visite</button>
+        <button onclick="calNavPrev()" class="gmc-btn" style="padding:6px 10px"><i class="fa-solid fa-chevron-left"></i></button>
+        <span id="calFullWeekLabel" style="font-size:13px;font-weight:600;color:var(--gmc-text-strong);min-width:180px;text-align:center"></span>
+        <button onclick="calNavNext()" class="gmc-btn" style="padding:6px 10px"><i class="fa-solid fa-chevron-right"></i></button>
+        <button onclick="calNavToday()" class="gmc-btn gmc-btn-blue" style="margin-left:8px">Aujourd'hui</button>
+        <button onclick="openNewVisitModal()" class="gmc-btn gmc-btn-primary" style="margin-left:4px"><i class="fa-solid fa-plus"></i> Nouvelle visite</button>
     </div>
-    <div class="content" style="overflow-y:auto">
-        <div id="calFullGrid" style="display:grid;grid-template-columns:60px repeat(5,1fr);gap:0;background:var(--white);border-radius:10px;border:1px solid var(--border);overflow:hidden;min-height:600px"></div>
-        <div style="margin-top:14px;display:flex;gap:16px;align-items:center;font-size:12px;color:var(--text-light)">
-            <span><span style="display:inline-block;width:10px;height:10px;background:var(--green);border-radius:2px;margin-right:4px"></span> Visite</span>
-            <span><span style="display:inline-block;width:10px;height:10px;background:var(--blue);border-radius:2px;margin-right:4px"></span> Appel</span>
-            <span><span style="display:inline-block;width:10px;height:10px;background:var(--accent);border-radius:2px;margin-right:4px"></span> Réunion / Autre</span>
-            <span><span style="display:inline-block;width:10px;height:10px;background:var(--purple);border-radius:2px;margin-right:4px"></span> Suivi</span>
+    <div class="gmc-content" style="overflow-y:auto">
+        <div id="calFullGrid" style="display:grid;grid-template-columns:60px repeat(5,1fr);gap:0;background:var(--gmc-bg-elevated);border-radius:10px;border:1px solid var(--gmc-border);overflow:hidden;min-height:600px"></div>
+        <div style="margin-top:14px;display:flex;gap:16px;align-items:center;font-size:12px;color:var(--gmc-text-muted)">
+            <span><span style="display:inline-block;width:10px;height:10px;background:var(--gmc-green);border-radius:2px;margin-right:4px"></span> Visite</span>
+            <span><span style="display:inline-block;width:10px;height:10px;background:var(--gmc-blue);border-radius:2px;margin-right:4px"></span> Appel</span>
+            <span><span style="display:inline-block;width:10px;height:10px;background:var(--gmc-accent);border-radius:2px;margin-right:4px"></span> Réunion / Autre</span>
+            <span><span style="display:inline-block;width:10px;height:10px;background:var(--gmc-purple);border-radius:2px;margin-right:4px"></span> Suivi</span>
         </div>
     </div>
 </div>
 
 <!-- ====== MES CLIENTS ====== -->
-<div class="section" id="sec-clients">
-    <div class="topbar">
+<div class="gmc-section" id="sec-clients">
+    <div class="gmc-topbar">
         <h1>Mes clients</h1>
         <div class="omnisearch-trigger" onclick="openOmni()"><i class="fa-solid fa-search" style="font-size:12px"></i> Rechercher... <kbd>⌘K</kbd></div>
         <span style="flex:1"></span>
     </div>
-    <div class="content" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
-        <div class="grid-toolbar">
-            <div class="view-tabs">
-                <div class="view-tab active" onclick="setClientView('all',this)">Tous</div>
-                <div class="view-tab" onclick="setClientView('a',this)">Score A</div>
-                <div class="view-tab" onclick="setClientView('b',this)">Score B</div>
-                <div class="view-tab" onclick="setClientView('c',this)">Score C</div>
+    <div class="gmc-content" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+        <div class="gmc-toolbar">
+            <div class="gmc-view-tabs">
+                <button class="gmc-view-tab active" onclick="setClientView('all',this)">Tous</button>
+                <button class="gmc-view-tab" onclick="setClientView('a',this)">Score A</button>
+                <button class="gmc-view-tab" onclick="setClientView('b',this)">Score B</button>
+                <button class="gmc-view-tab" onclick="setClientView('c',this)">Score C</button>
             </div>
-            <div class="grid-search-wrap"><i class="fa-solid fa-search"></i><input class="grid-search" id="clientGridSearch" placeholder="Filtrer..." oninput="onClientSearch(this.value)"></div>
+            <div class="gmc-search-wrap"><i class="fa-solid fa-search"></i><input class="gmc-search" id="clientGridSearch" placeholder="Filtrer..." oninput="onClientSearch(this.value)"></div>
             <span style="flex:1"></span>
-            <button class="btn" onclick="exportClientGrid()"><i class="fa-solid fa-download"></i> Exporter CSV</button>
+            <button class="gmc-btn" onclick="exportClientGrid()"><i class="fa-solid fa-download"></i> Exporter CSV</button>
         </div>
-        <div id="clientsGrid" class="ag-theme-alpine" style="flex:1;width:100%;min-height:400px"></div>
+        <div class="gmc-grid"><div id="clientsGrid" class="ag-theme-alpine" style="flex:1;width:100%;min-height:400px"></div></div>
     </div>
 </div>
 
 <!-- ====== PIPELINE ====== -->
-<div class="section" id="sec-pipeline">
-    <div class="topbar">
+<div class="gmc-section" id="sec-pipeline">
+    <div class="gmc-topbar">
         <h1>Mon pipeline</h1>
         <div class="omnisearch-trigger" onclick="openOmni()"><i class="fa-solid fa-search" style="font-size:12px"></i> Rechercher... <kbd>⌘K</kbd></div>
         <span style="flex:1"></span>
     </div>
-    <div class="content" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
-        <div class="grid-toolbar">
-            <div class="view-tabs">
-                <div class="view-tab active" onclick="setPipeView('all',this)">Toutes</div>
-                <div class="view-tab" onclick="setPipeView('Nouveau',this)">Nouveau</div>
-                <div class="view-tab" onclick="setPipeView('Soumis',this)">Soumis</div>
-                <div class="view-tab" onclick="setPipeView('Négociation',this)">Négociation</div>
-                <div class="view-tab" onclick="setPipeView('Signé',this)">Signé</div>
+    <div class="gmc-content" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+        <div class="gmc-toolbar">
+            <div class="gmc-view-tabs">
+                <button class="gmc-view-tab active" onclick="setPipeView('all',this)">Toutes</button>
+                <button class="gmc-view-tab" onclick="setPipeView('Nouveau',this)">Nouveau</button>
+                <button class="gmc-view-tab" onclick="setPipeView('Soumis',this)">Soumis</button>
+                <button class="gmc-view-tab" onclick="setPipeView('Négociation',this)">Négociation</button>
+                <button class="gmc-view-tab" onclick="setPipeView('Signé',this)">Signé</button>
             </div>
-            <div class="grid-search-wrap"><i class="fa-solid fa-search"></i><input class="grid-search" id="pipeGridSearch" placeholder="Filtrer soumissions..." oninput="onPipeSearch(this.value)"></div>
+            <div class="gmc-search-wrap"><i class="fa-solid fa-search"></i><input class="gmc-search" id="pipeGridSearch" placeholder="Filtrer soumissions..." oninput="onPipeSearch(this.value)"></div>
             <span style="flex:1"></span>
-            <button class="btn" onclick="exportPipeGrid()"><i class="fa-solid fa-download"></i> Exporter CSV</button>
+            <div class="gmc-view-tabs" style="margin-left:auto">
+                <button class="gmc-view-tab active" onclick="setPipeViewMode('kanban',this)"><i class="fa-solid fa-columns"></i> Kanban</button>
+                <button class="gmc-view-tab" onclick="setPipeViewMode('grid',this)"><i class="fa-solid fa-table"></i> Grille</button>
+            </div>
+            <button class="gmc-btn" onclick="exportPipeGrid()" style="margin-left:8px"><i class="fa-solid fa-download"></i> Exporter</button>
         </div>
         <div id="pipelineTabbed" style="flex:1;display:flex;flex-direction:column;overflow:hidden">
             <div style="flex:1;overflow-y:auto">
-                <div class="kanban-container" id="kanbanContainer"></div>
-                <div style="display:none" id="pipeGridContainer" style="flex:1;width:100%;min-height:300px">
-                    <div id="pipeGrid" class="ag-theme-alpine" style="height:100%;width:100%"></div>
+                <div class="gmc-kanban" id="kanbanContainer"></div>
+                <div style="display:none" id="pipeGridContainer">
+                    <div class="gmc-grid"><div id="pipeGrid" class="ag-theme-alpine" style="height:100%;width:100%"></div></div>
                 </div>
             </div>
         </div>
@@ -320,29 +244,29 @@
 </div>
 
 <!-- ====== ACTIVITÉS ====== -->
-<div class="section" id="sec-activity">
-    <div class="topbar">
+<div class="gmc-section" id="sec-activity">
+    <div class="gmc-topbar">
         <h1>Activités</h1>
         <div class="omnisearch-trigger" onclick="openOmni()"><i class="fa-solid fa-search" style="font-size:12px"></i> Rechercher... <kbd>⌘K</kbd></div>
         <span style="flex:1"></span>
     </div>
-    <div class="content" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+    <div class="gmc-content" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
-            <div class="card">
-                <div class="card-header"><h2>Historique activités (6 mois)</h2></div>
-                <div class="card-body" id="activityChart"></div>
+            <div class="gmc-card">
+                <div class="gmc-card-header"><h2>Historique activités (6 mois)</h2></div>
+                <div class="gmc-card-body" id="activityChart"></div>
             </div>
-            <div class="card">
-                <div class="card-header"><h2>Indicateurs</h2></div>
-                <div class="card-body" id="metricsPanel"></div>
+            <div class="gmc-card">
+                <div class="gmc-card-header"><h2>Indicateurs</h2></div>
+                <div class="gmc-card-body" id="metricsPanel"></div>
             </div>
         </div>
-        <div class="grid-toolbar">
-            <div class="grid-search-wrap"><i class="fa-solid fa-search"></i><input class="grid-search" id="actGridSearch" placeholder="Filtrer..." oninput="onActSearch(this.value)"></div>
+        <div class="gmc-toolbar">
+            <div class="gmc-search-wrap"><i class="fa-solid fa-search"></i><input class="gmc-search" id="actGridSearch" placeholder="Filtrer..." oninput="onActSearch(this.value)"></div>
             <span style="flex:1"></span>
-            <button class="btn" onclick="exportActGrid()"><i class="fa-solid fa-download"></i> Exporter CSV</button>
+            <button class="gmc-btn" onclick="exportActGrid()"><i class="fa-solid fa-download"></i> Exporter CSV</button>
         </div>
-        <div id="actGrid" class="ag-theme-alpine" style="flex:1;width:100%;min-height:250px"></div>
+        <div class="gmc-grid"><div id="actGrid" class="ag-theme-alpine" style="flex:1;width:100%;min-height:250px"></div></div>
     </div>
 </div>
 
@@ -412,14 +336,14 @@ function storeUser(u) { localStorage.setItem('gmc_user', JSON.stringify(u)); }
 function showLoginModal() {
     const modal = document.createElement('div');
     modal.id = 'loginModal';
-    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:99999';
+    modal.className = 'gmc-modal-overlay';
     modal.innerHTML = `
-        <div style="background:white;border-radius:14px;padding:32px;width:380px;max-width:90vw;text-align:center">
-            <div style="width:50px;height:50px;background:var(--accent);border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-weight:800;color:white;font-size:18px">G</div>
-            <h2 style="margin:0 0 4px;color:var(--text-dark);font-size:18px">Granites MC CRM</h2>
-            <p style="color:var(--text-light);font-size:13px;margin:0 0 20px">Connectez-vous pour accéder à votre tableau de bord</p>
+        <div class="gmc-modal">
+            <div style="width:50px;height:50px;background:var(--gmc-accent);border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-weight:800;color:white;font-size:18px">G</div>
+            <h2 style="margin:0 0 4px;color:var(--gmc-text-strong);font-size:18px">Granites MC CRM</h2>
+            <p style="color:var(--gmc-text-muted);font-size:13px;margin:0 0 20px">Connectez-vous pour accéder à votre tableau de bord</p>
             <div id="loginUserList" style="text-align:left;max-height:300px;overflow-y:auto">
-                <div style="text-align:center;padding:20px;color:var(--text-light)"><i class="fa-solid fa-spinner fa-spin"></i> Chargement...</div>
+                <div style="text-align:center;padding:20px;color:var(--gmc-text-muted)"><i class="fa-solid fa-spinner fa-spin"></i> Chargement...</div>
             </div>
         </div>
     `;
@@ -435,25 +359,25 @@ async function loadLoginUsers() {
         const data = await resp.json();
         const users = data.users || [];
         container.innerHTML = users.map(u => `
-            <div onclick="doLogin('${u.email}')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;transition:.15s;border:1px solid var(--border);margin-bottom:6px" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='white'">
-                <div style="width:36px;height:36px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;color:white;font-weight:600;font-size:13px">${u.name.split(' ').map(w=>w[0]).join('').substring(0,2)}</div>
+            <div onclick="doLogin('${u.email}')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;transition:.15s;border:1px solid var(--gmc-border);margin-bottom:6px" onmouseover="this.style.background='var(--gmc-bg)'" onmouseout="this.style.background='white'">
+                <div style="width:36px;height:36px;border-radius:50%;background:var(--gmc-blue);display:flex;align-items:center;justify-content:center;color:white;font-weight:600;font-size:13px">${u.name.split(' ').map(w=>w[0]).join('').substring(0,2)}</div>
                 <div>
-                    <div style="font-weight:600;color:var(--text-dark);font-size:13px">${u.name}</div>
-                    <div style="font-size:11px;color:var(--text-light)">${u.email || 'Pas d\'email'}</div>
+                    <div style="font-weight:600;color:var(--gmc-text-strong);font-size:13px">${u.name}</div>
+                    <div style="font-size:11px;color:var(--gmc-text-muted)">${u.email || 'Pas d\'email'}</div>
                 </div>
             </div>
         `).join('');
     } catch (e) {
         // Fallback: allow manual selection from static list
         container.innerHTML = `
-            <div style="text-align:center;padding:12px;color:var(--text-light);font-size:12px;margin-bottom:10px">API indisponible — mode démo</div>
-            <div onclick="doLoginFallback('Isabelle T.')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;border:1px solid var(--border);margin-bottom:6px" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='white'">
-                <div style="width:36px;height:36px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;color:white;font-weight:600;font-size:13px">IT</div>
-                <div><div style="font-weight:600;color:var(--text-dark);font-size:13px">Isabelle T.</div><div style="font-size:11px;color:var(--text-light)">Représentant</div></div>
+            <div style="text-align:center;padding:12px;color:var(--gmc-text-muted);font-size:12px;margin-bottom:10px">API indisponible — mode démo</div>
+            <div onclick="doLoginFallback('Isabelle T.')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;border:1px solid var(--gmc-border);margin-bottom:6px" onmouseover="this.style.background='var(--gmc-bg)'" onmouseout="this.style.background='white'">
+                <div style="width:36px;height:36px;border-radius:50%;background:var(--gmc-blue);display:flex;align-items:center;justify-content:center;color:white;font-weight:600;font-size:13px">IT</div>
+                <div><div style="font-weight:600;color:var(--gmc-text-strong);font-size:13px">Isabelle T.</div><div style="font-size:11px;color:var(--gmc-text-muted)">Représentant</div></div>
             </div>
-            <div onclick="doLoginFallback('Yvon R.')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;border:1px solid var(--border);margin-bottom:6px" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='white'">
-                <div style="width:36px;height:36px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;color:white;font-weight:600;font-size:13px">YR</div>
-                <div><div style="font-weight:600;color:var(--text-dark);font-size:13px">Yvon R.</div><div style="font-size:11px;color:var(--text-light)">Représentant</div></div>
+            <div onclick="doLoginFallback('Yvon R.')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;border:1px solid var(--gmc-border);margin-bottom:6px" onmouseover="this.style.background='var(--gmc-bg)'" onmouseout="this.style.background='white'">
+                <div style="width:36px;height:36px;border-radius:50%;background:var(--gmc-green);display:flex;align-items:center;justify-content:center;color:white;font-weight:600;font-size:13px">YR</div>
+                <div><div style="font-weight:600;color:var(--gmc-text-strong);font-size:13px">Yvon R.</div><div style="font-size:11px;color:var(--gmc-text-muted)">Représentant</div></div>
             </div>
         `;
     }
@@ -479,6 +403,23 @@ function doLoginFallback(name) {
     document.getElementById('loginModal')?.remove();
     updateUIForUser();
     renderDashboard();
+}
+
+function confirmLogout() {
+    const overlay = document.createElement('div');
+    overlay.className = 'gmc-confirm-overlay';
+    overlay.innerHTML = `
+        <div class="gmc-confirm-dialog">
+            <h3>Changer d'utilisateur?</h3>
+            <p>Vous serez déconnecté de la session en cours.</p>
+            <div class="gmc-confirm-actions">
+                <button class="gmc-btn" onclick="this.closest('.gmc-confirm-overlay').remove()">Annuler</button>
+                <button class="gmc-btn gmc-btn-primary" onclick="logout();this.closest('.gmc-confirm-overlay').remove()">Déconnexion</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
 function logout() {
@@ -560,9 +501,9 @@ function updateUIForUser() {
 
     // Update sidebar user info
     const initials = currentUser.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
-    const userEl = document.querySelector('.sidebar-user');
+    const userEl = document.querySelector('.gmc-sidebar-user');
     if (userEl) {
-        userEl.innerHTML = `<div class="avatar">${initials}</div><div class="info"><div class="name">${currentUser.name}</div><div>${currentUser.role === 'admin' ? 'Administrateur' : 'Représentant'}</div></div>`;
+        userEl.innerHTML = `<div class="gmc-avatar">${initials}</div><div class="gmc-user-info"><div class="gmc-user-name">${currentUser.name}</div><div>${currentUser.role === 'admin' ? 'Administrateur' : 'Représentant'}</div></div><i class="fa-solid fa-right-from-bracket" style="color:rgba(255,255,255,.4);margin-left:auto;font-size:12px"></i>`;
     }
 
     // If live, filter by current user; if fallback, filter by static rep name
@@ -583,14 +524,27 @@ function updateUIForUser() {
 
 // ========== NAVIGATION ==========
 function showSection(id, el) {
-    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.gmc-section').forEach(s => s.classList.remove('active'));
     document.getElementById('sec-'+id).classList.add('active');
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelectorAll('.gmc-nav-item').forEach(n => n.classList.remove('active'));
     el.classList.add('active');
     if (id === 'clients' && clientGrid) setTimeout(() => clientGrid.api.sizeColumnsToFit(), 50);
     if (id === 'pipeline' && pipeGrid) setTimeout(() => pipeGrid.api.sizeColumnsToFit(), 50);
     if (id === 'activity' && actGrid) setTimeout(() => actGrid.api.sizeColumnsToFit(), 50);
     if (id === 'calendar') renderFullCalendar();
+}
+
+function setPipeViewMode(mode, el) {
+    el.parentElement.querySelectorAll('.gmc-view-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    if (mode === 'kanban') {
+        document.getElementById('kanbanContainer').style.display = '';
+        document.getElementById('pipeGridContainer').style.display = 'none';
+    } else {
+        document.getElementById('kanbanContainer').style.display = 'none';
+        document.getElementById('pipeGridContainer').style.display = '';
+        if (pipeGrid) setTimeout(() => pipeGrid.api.sizeColumnsToFit(), 50);
+    }
 }
 
 // ========== OMNISEARCH ==========
@@ -607,7 +561,7 @@ function omniSearch(q) {
     if (matchC.length) {
         html += '<div class="omni-group"><div class="omni-group-title">Mes clients</div>';
         matchC.slice(0,5).forEach(c => {
-            html += `<div class="omni-item" onclick="closeOmni();openDetail(${c.rank})"><div class="oi-icon" style="background:rgba(0,145,174,.08);color:var(--blue)"><i class="fa-solid fa-building"></i></div><div><div class="oi-name">${c.nom}</div><div class="oi-sub">${c.terr} · ${c.score} · $${(c.best/1000).toFixed(0)}k best</div></div></div>`;
+            html += `<div class="omni-item" onclick="closeOmni();openDetail(${c.rank})"><div class="oi-icon" style="background:rgba(0,145,174,.08);color:var(--gmc-blue)"><i class="fa-solid fa-building"></i></div><div><div class="oi-name">${c.nom}</div><div class="oi-sub">${c.terr} · ${c.score} · $${(c.best/1000).toFixed(0)}k best</div></div></div>`;
         });
         html += '</div>';
     }
@@ -616,7 +570,7 @@ function omniSearch(q) {
     if (matchP.length) {
         html += '<div class="omni-group"><div class="omni-group-title">Pipeline</div>';
         matchP.slice(0,5).forEach(p => {
-            html += `<div class="omni-item" onclick="closeOmni();showSection('pipeline',document.querySelectorAll('.nav-item')[3])"><div class="oi-icon" style="background:rgba(255,122,89,.08);color:var(--accent)"><i class="fa-solid fa-file-invoice-dollar"></i></div><div><div class="oi-name">${p.nom}</div><div class="oi-sub">${p.client} · $${p.montant.toLocaleString('fr-CA')} · ${p.etape}</div></div></div>`;
+            html += `<div class="omni-item" onclick="closeOmni();showSection('pipeline',document.querySelectorAll('.gmc-nav-item')[3])"><div class="oi-icon" style="background:rgba(192,122,74,.08);color:var(--gmc-accent)"><i class="fa-solid fa-file-invoice-dollar"></i></div><div><div class="oi-name">${p.nom}</div><div class="oi-sub">${p.client} · $${p.montant.toLocaleString('fr-CA')} · ${p.etape}</div></div></div>`;
         });
         html += '</div>';
     }
@@ -633,8 +587,8 @@ document.addEventListener('keydown', e => {
 // ========== CELL RENDERERS ==========
 function scoreCellRenderer(p) {
     if (!p.value) return '';
-    const cls = p.value.includes('A') ? 'badge-a' : p.value.includes('B') ? 'badge-b' : 'badge-c';
-    return `<span class="badge ${cls}">${p.value}</span>`;
+    const cls = p.value.includes('A') ? 'gmc-score-a' : p.value.includes('B') ? 'gmc-score-b' : 'gmc-score-c';
+    return `<span class="gmc-badge ${cls}">${p.value}</span>`;
 }
 function currencyFormatter(p) { return p.value ? '$' + Number(p.value).toLocaleString('fr-CA') : '—'; }
 function trendRenderer(p) {
@@ -642,13 +596,14 @@ function trendRenderer(p) {
     const v22 = d.vol2022 || 0, v21 = d.vol2021 || 0;
     if (!v21) return '—';
     const pct = ((v22 - v21) / v21 * 100).toFixed(0);
-    return `<span style="color:${pct >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:600">${pct >= 0 ? '↑' : '↓'} ${Math.abs(pct)}%</span>`;
+    return `<span style="color:${pct >= 0 ? 'var(--gmc-green)' : 'var(--gmc-red)'};font-weight:600">${pct >= 0 ? '↑' : '↓'} ${Math.abs(pct)}%</span>`;
 }
-function nameRenderer(p) { return `<span style="font-weight:600;color:var(--text-dark);cursor:pointer" onclick="openDetail(${p.data.rank})">${p.value}</span>`; }
+function nameRenderer(p) { return `<span style="font-weight:600;color:var(--gmc-text-strong);cursor:pointer" onclick="openDetail(${p.data.rank})">${p.value}</span>`; }
 function etapeRenderer(p) {
     if (!p.value) return '';
-    const colors = {'Nouveau':'badge-purple','Soumis':'badge-blue','Négociation':'badge-yellow','Signé':'badge-green'};
-    return `<span class="badge ${colors[p.value]||'badge-blue'}">${p.value}</span>`;
+    const colors = {'Nouveau':'gmc-score-purple','Soumis':'gmc-badge-blue','Négociation':'gmc-badge-yellow','Signé':'gmc-badge-green'};
+    const actualColors = {'Nouveau':'gmc-badge-purple','Soumis':'gmc-badge-blue','Négociation':'gmc-badge-yellow','Signé':'gmc-badge-green'};
+    return `<span class="gmc-badge ${actualColors[p.value]||'gmc-badge-blue'}">${p.value}</span>`;
 }
 
 // ========== AG GRID — CLIENTS ==========
@@ -676,6 +631,7 @@ function getClientRowData() {
 }
 
 function initClientGrid() {
+    const container = document.getElementById('clientsGrid').parentElement;
     clientGrid = agGrid.createGrid(document.getElementById('clientsGrid'), {
         columnDefs: CLIENT_COLUMNS,
         rowData: getClientRowData(),
@@ -690,7 +646,7 @@ function initClientGrid() {
 function onClientSearch(val) { if(clientGrid) clientGrid.api.setGridOption('quickFilterText',val); }
 function exportClientGrid() { if(clientGrid) clientGrid.api.exportDataAsCsv({fileName:'mes_clients_granites.csv'}); }
 function setClientView(filter, el) {
-    el.parentElement.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
+    el.parentElement.querySelectorAll('.gmc-view-tab').forEach(t => t.classList.remove('active'));
     el.classList.add('active');
     if (!clientGrid) return;
     if (filter === 'all') { clientGrid.api.setFilterModel(null); }
@@ -705,7 +661,7 @@ function initPipeGrid() {
         columnDefs: [
             {field:'nom',headerName:'Soumission',minWidth:200,sortable:true,filter:false,cellStyle:{fontWeight:'600'}},
             {field:'client',headerName:'Client',width:140,sortable:true,filter:true},
-            {field:'montant',headerName:'Montant',width:120,sortable:true,valueFormatter:currencyFormatter,cellStyle:{color:'var(--green)',fontWeight:'600'}},
+            {field:'montant',headerName:'Montant',width:120,sortable:true,valueFormatter:currencyFormatter,cellStyle:{color:'var(--gmc-green)',fontWeight:'600'}},
             {field:'etape',headerName:'Étape',width:120,sortable:true,filter:true,cellRenderer:etapeRenderer},
             {field:'prob',headerName:'Probabilité',width:100,sortable:true,valueFormatter:p=>p.value?p.value+'%':''},
             {field:'date',headerName:'Date',width:120,sortable:true,filter:true},
@@ -719,7 +675,7 @@ function initPipeGrid() {
 function onPipeSearch(val) { if(pipeGrid) pipeGrid.api.setGridOption('quickFilterText',val); }
 function exportPipeGrid() { if(pipeGrid) pipeGrid.api.exportDataAsCsv({fileName:'mon_pipeline_granites.csv'}); }
 function setPipeView(etape, el) {
-    el.parentElement.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
+    el.parentElement.querySelectorAll('.gmc-view-tab').forEach(t => t.classList.remove('active'));
     el.classList.add('active');
     if (!pipeGrid) return;
     if (etape === 'all') { pipeGrid.api.setFilterModel(null); }
@@ -763,17 +719,17 @@ function openDetail(rank) {
     }).join('');
     const ctHtml = c.contacts && c.contacts.length > 0
         ? c.contacts.map(ct => `<div style="margin-bottom:5px"><strong>${ct.nom}</strong>${ct.role?' — '+ct.role:''}</div>`).join('')
-        : '<span style="color:var(--text-light)">Aucun contact enregistré</span>';
-    const scoreCls = c.score.includes('A') ? 'badge-a' : c.score.includes('B') ? 'badge-b' : 'badge-c';
+        : '<span style="color:var(--gmc-text-muted)">Aucun contact enregistré</span>';
+    const scoreCls = c.score.includes('A') ? 'gmc-score-a' : c.score.includes('B') ? 'gmc-score-b' : 'gmc-score-c';
 
     document.getElementById('detailBody').innerHTML = `
         <div class="detail-section">
             <div class="field-grid">
-                <div class="field"><div class="label">Score</div><div class="val"><span class="badge ${scoreCls}">${c.score}</span></div></div>
+                <div class="field"><div class="label">Score</div><div class="val"><span class="gmc-badge ${scoreCls}">${c.score}</span></div></div>
                 <div class="field"><div class="label">Territoire</div><div class="val">${c.terr}</div></div>
-                <div class="field"><div class="label">Téléphone</div><div class="val">${c.tel||'—'}</div></div>
+                <div class="field"><div class="label">Téléphone</div><div class="val">${c.tel?'<a href="tel:'+c.tel+'">'+c.tel+'</a>':'—'}</div></div>
                 <div class="field"><div class="label">Email</div><div class="val">${c.email?'<a href="mailto:'+c.email+'">'+c.email+'</a>':'—'}</div></div>
-                <div class="field"><div class="label">Adresse</div><div class="val">${c.addr||'—'}</div></div>
+                <div class="field"><div class="label">Adresse</div><div class="val">${c.addr?'<a href="https://maps.google.com/?q='+encodeURIComponent(c.addr)+'" target="_blank">'+c.addr+'</a>':'—'}</div></div>
             </div>
             <div style="margin-top:10px">
                 ${c.web?'<a href="'+c.web+'" target="_blank" class="link-odoo"><i class="fa-solid fa-globe"></i> Site web</a>':''}
@@ -783,7 +739,7 @@ function openDetail(rank) {
         </div>
         <div class="detail-section">
             <h3>Volume d'achat</h3>
-            <div style="font-size:12px;color:var(--text-light);margin-bottom:6px">Total: <strong style="color:var(--text-dark)">$${c.total.toLocaleString('fr-CA')}</strong> · Meilleur: <strong style="color:var(--green)">$${c.best.toLocaleString('fr-CA')}</strong></div>
+            <div style="font-size:12px;color:var(--gmc-text-muted);margin-bottom:6px">Total: <strong style="color:var(--gmc-text-strong)">$${c.total.toLocaleString('fr-CA')}</strong> · Meilleur: <strong style="color:var(--gmc-green)">$${c.best.toLocaleString('fr-CA')}</strong></div>
             <div class="vol-chart">${bars}</div>
         </div>
         <div class="detail-section"><h3>Contacts</h3>${ctHtml}</div>
@@ -796,8 +752,66 @@ function closeDetail() {
     document.getElementById('backdrop').classList.remove('show');
 }
 
+// ========== MORNING BRIEFING ==========
+function renderMorningBriefing() {
+    const firstName = (currentUser?.name || 'Isabelle').split(' ')[0];
+    document.getElementById('briefingName').textContent = firstName;
+
+    // Get today's events
+    const today = new Date();
+    const todayStr = formatDateOdoo(today);
+    const todayEvents = calendarEvents.filter(ev => ev.start && ev.start.startsWith(todayStr));
+
+    document.getElementById('briefingCount').textContent = todayEvents.length;
+    document.getElementById('briefingHeadline').innerHTML = todayEvents.length > 0
+        ? `Tu as <strong>${todayEvents.length}</strong> rendez-vous aujourd'hui`
+        : `Aucun rendez-vous prévu aujourd'hui`;
+
+    // Render event cards
+    const cardsHtml = todayEvents.map(ev => {
+        const time = ev.start.split(' ')[1]?.substring(0,5) || '';
+        const isVisit = ev.name?.toLowerCase().includes('visite');
+        const isCall = ev.name?.toLowerCase().includes('appel');
+        const icon = isVisit ? 'fa-location-dot' : isCall ? 'fa-phone' : 'fa-calendar-check';
+        const shortName = ev.name?.length > 35 ? ev.name.substring(0,34) + '…' : ev.name;
+        return `<div class="gmc-briefing-card">
+            <div class="gmc-briefing-time"><i class="fa-solid fa-clock" style="margin-right:4px"></i>${time}</div>
+            <div class="gmc-briefing-event"><i class="fa-solid ${icon}" style="margin-right:4px"></i>${shortName}</div>
+            ${ev.location ? `<div class="gmc-briefing-location"><i class="fa-solid fa-map-pin"></i> ${ev.location}</div>` : ''}
+        </div>`;
+    }).join('');
+    document.getElementById('briefingCards').innerHTML = cardsHtml || '<div style="opacity:.6;font-size:14px">Journée libre — bon moment pour de la prospection!</div>';
+
+    // Alerts summary
+    const alerts = [];
+    const totalPipe = MY_PIPELINE.reduce((s,p) => s + p.montant, 0);
+    MY_CLIENTS.forEach(c => {
+        const v22 = c.vols[2022]||0, v21 = c.vols[2021]||0;
+        if (v21 > 20000 && v22 < v21 * 0.3) alerts.push(`⚠️ ${c.court} — volume en chute`);
+    });
+    let alertsHtml = '';
+    if (alerts.length) alertsHtml += `<span>${alerts[0]}</span>`;
+    alertsHtml += `<span>🔥 Pipeline: $${(totalPipe/1000).toFixed(0)}k en cours</span>`;
+    alertsHtml += `<span>📊 ${MY_CLIENTS.length} clients actifs</span>`;
+    document.getElementById('briefingAlerts').innerHTML = alertsHtml;
+}
+
+function animateValue(el, start, end, duration) {
+    const range = end - start;
+    const startTime = performance.now();
+    const step = (timestamp) => {
+        const progress = Math.min((timestamp - startTime) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = Math.floor(start + range * eased);
+        el.textContent = el.dataset.prefix ? el.dataset.prefix + current.toLocaleString('fr-CA') + (el.dataset.suffix||'') : current.toLocaleString('fr-CA') + (el.dataset.suffix||'');
+        if (progress < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+}
+
 // ========== DASHBOARD RENDERING ==========
 function renderDashboard() {
+    renderMorningBriefing();
     const t22 = MY_CLIENTS.reduce((s,c)=>s+(c.vols[2022]||0),0);
     const t21 = MY_CLIENTS.reduce((s,c)=>s+(c.vols[2021]||0),0);
     const ch = t21>0?((t22-t21)/t21*100).toFixed(0):0;
@@ -807,11 +821,11 @@ function renderDashboard() {
     const visites = 12;
 
     document.getElementById('dashboardStats').innerHTML = `
-        <div class="stat-card" onclick="showSection('clients',document.querySelectorAll('.nav-item')[1])"><div class="label">Mes clients</div><div class="value">${MY_CLIENTS.length}</div><div class="sub">${MY_CLIENTS.filter(c=>c.score.includes('A')).length} score A</div></div>
-        <div class="stat-card" onclick="showSection('pipeline',document.querySelectorAll('.nav-item')[3])"><div class="label">Pipeline en cours</div><div class="value">$${(totalPipe/1000).toFixed(0)}k</div><div class="sub">${MY_PIPELINE.length} soumissions</div></div>
-        <div class="stat-card"><div class="label">Volume total 2022</div><div class="value">$${(t22/1000).toFixed(0)}k</div><div class="sub ${ch>=0?'trend-up':'trend-down'}">${ch>=0?'↑':'↓'} ${Math.abs(ch)}% vs 2021</div></div>
-        <div class="stat-card"><div class="label">Objectif visites</div><div class="value">${visites}/${objectif}</div><div class="sub">${Math.round(visites/objectif*100)}% atteint</div></div>
-        <div class="stat-card"><div class="label">Taux conversion</div><div class="value">${avgConv}%</div><div class="sub">${MY_PIPELINE.filter(p=>p.etape==='Signé').length} signées</div></div>`;
+        <div class="gmc-stat" onclick="showSection('clients',document.querySelectorAll('.gmc-nav-item')[1])"><div class="gmc-stat-label">Mes clients</div><div class="gmc-stat-value">${MY_CLIENTS.length}</div><div class="gmc-stat-sub">${MY_CLIENTS.filter(c=>c.score.includes('A')).length} score A</div></div>
+        <div class="gmc-stat" onclick="showSection('pipeline',document.querySelectorAll('.gmc-nav-item')[3])"><div class="gmc-stat-label">Pipeline en cours</div><div class="gmc-stat-value">$${(totalPipe/1000).toFixed(0)}k</div><div class="gmc-stat-sub">${MY_PIPELINE.length} soumissions</div></div>
+        <div class="gmc-stat"><div class="gmc-stat-label">Volume total 2022</div><div class="gmc-stat-value">$${(t22/1000).toFixed(0)}k</div><div class="gmc-stat-sub ${ch>=0?'gmc-trend-up':'gmc-trend-down'}">${ch>=0?'↑':'↓'} ${Math.abs(ch)}% vs 2021</div></div>
+        <div class="gmc-stat"><div class="gmc-stat-label">Objectif visites</div><div class="gmc-stat-value">${visites}/${objectif}</div><div class="gmc-stat-sub">${Math.round(visites/objectif*100)}% atteint</div></div>
+        <div class="gmc-stat"><div class="gmc-stat-label">Taux conversion</div><div class="gmc-stat-value">${avgConv}%</div><div class="gmc-stat-sub">${MY_PIPELINE.filter(p=>p.etape==='Signé').length} signées</div></div>`;
 
     // Top 5
     const top5 = [...MY_CLIENTS].sort((a,b)=>(b.vols[2022]||0)-(a.vols[2022]||0)).slice(0,5);
@@ -827,18 +841,6 @@ function renderDashboard() {
         </div>`;
     }).join('')}</div>`;
 
-    // Alerts
-    const alerts = [];
-    MY_CLIENTS.forEach(c => {
-        const v22 = c.vols[2022]||0, v21 = c.vols[2021]||0;
-        if (v21 > 20000 && v22 < v21 * 0.3) alerts.push({type:'red',text:`${c.court} — volume -${Math.round((1-v22/v21)*100)}%`});
-        else if (v21 > 0 && !v22) alerts.push({type:'yellow',text:`${c.court} — aucun volume 2022`});
-    });
-    document.getElementById('alertsPanel').innerHTML = alerts.slice(0,5).map(a => {
-        const badge = a.type === 'red' ? 'badge-red' : 'badge-yellow';
-        const label = a.type === 'red' ? 'Urgent' : 'Attention';
-        return `<div class="alert-item"><span class="badge ${badge}">${label}</span> ${a.text}</div>`;
-    }).join('') || '<div style="color:var(--text-light);font-size:12px">Aucune alerte</div>';
 
     // Timeline
     const events = [
@@ -862,22 +864,22 @@ function renderKanban() {
     const kanban = stages.map(stage => {
         const items = MY_PIPELINE.filter(p => p.etape === stage);
         const total = items.reduce((s,p)=>s+p.montant,0);
-        const colors = {Nouveau:'#6a78d1',Soumis:'#0091ae',Négociation:'#f5c26b',Signé:'#00bda5'};
+        const colors = {Nouveau:'var(--gmc-purple)',Soumis:'var(--gmc-blue)',Négociation:'var(--gmc-yellow)',Signé:'var(--gmc-green)'};
         return `
-            <div class="kanban-column">
-                <div class="kanban-header" style="color:${colors[stage]}">
+            <div class="gmc-kanban-col">
+                <div class="gmc-kanban-header" style="color:${colors[stage]}">
                     <span>${stage}</span>
-                    <span class="kanban-badge" style="background:${colors[stage]}">${items.length}</span>
+                    <span class="gmc-kanban-count" style="background:${colors[stage]}">${items.length}</span>
                 </div>
                 ${items.map(p => `
-                    <div class="kanban-card">
-                        <div class="kanban-card-title">${p.nom}</div>
-                        <div class="kanban-card-client">${p.client}</div>
-                        <div class="kanban-card-amount">$${(p.montant/1000).toFixed(0)}k</div>
-                        <div class="kanban-card-prob">${p.prob}% probabilité</div>
+                    <div class="gmc-kanban-card">
+                        <div style="font-weight:600;margin-bottom:4px;color:var(--gmc-text-strong);font-size:13px">${p.nom}</div>
+                        <div style="font-size:11px;color:var(--gmc-text-muted);margin-bottom:6px">${p.client}</div>
+                        <div style="font-weight:600;color:var(--gmc-green);font-size:13px;margin-bottom:4px">$${(p.montant/1000).toFixed(0)}k</div>
+                        <div style="font-size:10px;color:var(--gmc-text-muted)">${p.prob}% probabilité</div>
                     </div>
                 `).join('')}
-                <div style="color:var(--text-light);font-size:11px;margin-top:6px;padding-top:6px;border-top:1px solid var(--border-light);font-weight:600">Total: $${(total/1000).toFixed(0)}k</div>
+                <div style="color:var(--gmc-text-muted);font-size:11px;margin-top:6px;padding-top:6px;border-top:1px solid var(--gmc-border-light);font-weight:600">Total: $${(total/1000).toFixed(0)}k</div>
             </div>
         `;
     }).join('');
@@ -891,9 +893,9 @@ function renderActivityCharts() {
     const maxM = Math.max(...data);
     document.getElementById('activityChart').innerHTML = months.map((m,i)=>`
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-            <span style="width:40px;font-size:11px;color:var(--text-light)">${m}</span>
-            <div style="flex:1;height:12px;background:var(--bg);border-radius:2px;overflow:hidden">
-                <div style="height:100%;width:${data[i]/maxM*100}%;background:var(--blue);border-radius:2px"></div>
+            <span style="width:40px;font-size:11px;color:var(--gmc-text-muted)">${m}</span>
+            <div style="flex:1;height:12px;background:var(--gmc-bg);border-radius:2px;overflow:hidden">
+                <div style="height:100%;width:${data[i]/maxM*100}%;background:var(--gmc-blue);border-radius:2px"></div>
             </div>
             <span style="font-size:11px;font-weight:600;width:20px;text-align:right">${data[i]}</span>
         </div>
@@ -901,25 +903,25 @@ function renderActivityCharts() {
 
     document.getElementById('metricsPanel').innerHTML = `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-            <div style="padding:10px;background:var(--bg);border-radius:var(--radius);text-align:center">
-                <div style="font-size:10px;color:var(--text-light);margin-bottom:4px">VISITES</div>
+            <div style="padding:10px;background:var(--gmc-bg);border-radius:var(--gmc-radius);text-align:center">
+                <div style="font-size:10px;color:var(--gmc-text-muted);margin-bottom:4px">VISITES</div>
                 <div style="font-size:20px;font-weight:700">12</div>
-                <div style="font-size:11px;color:var(--green);font-weight:600">↑ Objectif: 15</div>
+                <div style="font-size:11px;color:var(--gmc-green);font-weight:600">↑ Objectif: 15</div>
             </div>
-            <div style="padding:10px;background:var(--bg);border-radius:var(--radius);text-align:center">
-                <div style="font-size:10px;color:var(--text-light);margin-bottom:4px">APPELS</div>
+            <div style="padding:10px;background:var(--gmc-bg);border-radius:var(--gmc-radius);text-align:center">
+                <div style="font-size:10px;color:var(--gmc-text-muted);margin-bottom:4px">APPELS</div>
                 <div style="font-size:20px;font-weight:700">24</div>
-                <div style="font-size:11px;color:var(--text-light)">8/mois en moyenne</div>
+                <div style="font-size:11px;color:var(--gmc-text-muted)">8/mois en moyenne</div>
             </div>
-            <div style="padding:10px;background:var(--bg);border-radius:var(--radius);text-align:center">
-                <div style="font-size:10px;color:var(--text-light);margin-bottom:4px">EMAILS</div>
+            <div style="padding:10px;background:var(--gmc-bg);border-radius:var(--gmc-radius);text-align:center">
+                <div style="font-size:10px;color:var(--gmc-text-muted);margin-bottom:4px">EMAILS</div>
                 <div style="font-size:20px;font-weight:700">18</div>
-                <div style="font-size:11px;color:var(--text-light)">6/mois en moyenne</div>
+                <div style="font-size:11px;color:var(--gmc-text-muted)">6/mois en moyenne</div>
             </div>
-            <div style="padding:10px;background:var(--bg);border-radius:var(--radius);text-align:center">
-                <div style="font-size:10px;color:var(--text-light);margin-bottom:4px">SOUMISSIONS</div>
+            <div style="padding:10px;background:var(--gmc-bg);border-radius:var(--gmc-radius);text-align:center">
+                <div style="font-size:10px;color:var(--gmc-text-muted);margin-bottom:4px">SOUMISSIONS</div>
                 <div style="font-size:20px;font-weight:700">7</div>
-                <div style="font-size:11px;color:var(--green);font-weight:600">34% conversion</div>
+                <div style="font-size:11px;color:var(--gmc-green);font-weight:600">34% conversion</div>
             </div>
         </div>
     `;
@@ -998,21 +1000,21 @@ function renderWeekCalendar() {
             const time = ev.start ? ev.start.split(' ')[1]?.substring(0,5) : '';
             const isVisit = ev.name?.toLowerCase().includes('visite');
             const isCall = ev.name?.toLowerCase().includes('appel');
-            const color = isVisit ? 'var(--green)' : isCall ? 'var(--blue)' : 'var(--accent)';
+            const color = isVisit ? 'var(--gmc-green)' : isCall ? 'var(--gmc-blue)' : 'var(--gmc-accent)';
             const icon = isVisit ? 'fa-location-dot' : isCall ? 'fa-phone' : 'fa-calendar-check';
             const shortName = ev.name?.length > 25 ? ev.name.substring(0,24) + '…' : ev.name;
             return `<div style="background:${color}15;border-left:3px solid ${color};padding:4px 6px;border-radius:4px;margin-bottom:4px;cursor:pointer" title="${ev.name}\n${ev.location || ''}">
                 <div style="font-size:10px;color:${color};font-weight:600"><i class="fa-solid ${icon}" style="margin-right:3px"></i>${time}</div>
-                <div style="font-size:11px;color:var(--text);line-height:1.3">${shortName}</div>
+                <div style="font-size:11px;color:var(--gmc-text);line-height:1.3">${shortName}</div>
             </div>`;
         }).join('');
 
-        const emptySlot = dayEvents.length === 0 ? `<div style="font-size:11px;color:var(--muted);text-align:center;padding:12px 0;">—</div>` : '';
+        const emptySlot = dayEvents.length === 0 ? `<div style="font-size:11px;color:var(--gmc-muted);text-align:center;padding:12px 0;">—</div>` : '';
 
-        return `<div style="background:${isToday ? 'var(--blue)08' : 'var(--bg)'};border-radius:8px;padding:6px;border:${isToday ? '2px solid var(--blue)' : '1px solid var(--border)'}">
+        return `<div style="background:${isToday ? 'rgba(0,145,174,.08)' : 'var(--gmc-bg)'};border-radius:8px;padding:6px;border:${isToday ? '2px solid var(--gmc-blue)' : '1px solid var(--gmc-border)'}">
             <div style="text-align:center;margin-bottom:6px;">
-                <div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase">${dayNames[i]}</div>
-                <div style="font-size:16px;font-weight:700;${isToday ? 'color:var(--blue)' : 'color:var(--text)'}">${d.getDate()}</div>
+                <div style="font-size:10px;color:var(--gmc-muted);font-weight:600;text-transform:uppercase">${dayNames[i]}</div>
+                <div style="font-size:16px;font-weight:700;${isToday ? 'color:var(--gmc-blue)' : 'color:var(--gmc-text)'}">${d.getDate()}</div>
             </div>
             ${eventsHtml}${emptySlot}
         </div>`;
@@ -1024,36 +1026,36 @@ function openNewVisitModal() {
 
     const modal = document.createElement('div');
     modal.id = 'visitModal';
-    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:9999';
+    modal.className = 'gmc-modal-overlay';
     modal.innerHTML = `
-        <div style="background:var(--card);border-radius:12px;padding:24px;width:420px;max-width:90vw;border:1px solid var(--border)">
-            <h3 style="margin:0 0 16px 0;color:var(--text)"><i class="fa-solid fa-calendar-plus" style="color:var(--blue);margin-right:8px"></i>Planifier une visite</h3>
+        <div class="gmc-modal">
+            <h3 style="margin:0 0 16px 0;color:var(--gmc-text)"><i class="fa-solid fa-calendar-plus" style="color:var(--gmc-blue);margin-right:8px"></i>Planifier une visite</h3>
             <div style="display:grid;gap:12px">
                 <div>
-                    <label style="font-size:12px;color:var(--text-light);display:block;margin-bottom:4px">Client</label>
-                    <select id="visitClient" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px">
+                    <label style="font-size:12px;color:var(--gmc-text-muted);display:block;margin-bottom:4px">Client</label>
+                    <select id="visitClient" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--gmc-border);background:var(--gmc-bg);color:var(--gmc-text);font-size:13px">
                         <option value="">— Choisir un client —</option>
                         ${clientOptions}
                     </select>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
                     <div>
-                        <label style="font-size:12px;color:var(--text-light);display:block;margin-bottom:4px">Date</label>
-                        <input type="date" id="visitDate" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px" value="${formatDateOdoo(new Date())}">
+                        <label style="font-size:12px;color:var(--gmc-text-muted);display:block;margin-bottom:4px">Date</label>
+                        <input type="date" id="visitDate" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--gmc-border);background:var(--gmc-bg);color:var(--gmc-text);font-size:13px" value="${formatDateOdoo(new Date())}">
                     </div>
                     <div>
-                        <label style="font-size:12px;color:var(--text-light);display:block;margin-bottom:4px">Heure</label>
-                        <input type="time" id="visitTime" value="09:00" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px">
+                        <label style="font-size:12px;color:var(--gmc-text-muted);display:block;margin-bottom:4px">Heure</label>
+                        <input type="time" id="visitTime" value="09:00" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--gmc-border);background:var(--gmc-bg);color:var(--gmc-text);font-size:13px">
                     </div>
                 </div>
                 <div>
-                    <label style="font-size:12px;color:var(--text-light);display:block;margin-bottom:4px">Notes</label>
-                    <textarea id="visitNotes" rows="2" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;resize:vertical" placeholder="Objectif de la visite..."></textarea>
+                    <label style="font-size:12px;color:var(--gmc-text-muted);display:block;margin-bottom:4px">Notes</label>
+                    <textarea id="visitNotes" rows="2" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--gmc-border);background:var(--gmc-bg);color:var(--gmc-text);font-size:13px;resize:vertical" placeholder="Objectif de la visite..."></textarea>
                 </div>
             </div>
             <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
-                <button onclick="document.getElementById('visitModal').remove()" style="padding:8px 16px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer;font-size:13px">Annuler</button>
-                <button onclick="submitVisit()" style="padding:8px 16px;border-radius:6px;border:none;background:var(--blue);color:white;cursor:pointer;font-size:13px;font-weight:600">
+                <button onclick="document.getElementById('visitModal').remove()" class="gmc-btn">Annuler</button>
+                <button onclick="submitVisit()" class="gmc-btn gmc-btn-primary">
                     <i class="fa-solid fa-check" style="margin-right:4px"></i>Créer la visite
                 </button>
             </div>
@@ -1160,20 +1162,20 @@ async function renderFullCalendar() {
     if (!grid) return;
 
     // Header row
-    let html = '<div style="background:var(--bg);border-bottom:1px solid var(--border);padding:8px 4px;text-align:center;font-size:10px;color:var(--text-light)"></div>';
+    let html = '<div style="background:var(--gmc-bg);border-bottom:1px solid var(--gmc-border);padding:8px 4px;text-align:center;font-size:10px;color:var(--gmc-text-muted)"></div>';
     days.forEach((d,i) => {
         const dateStr = formatDateOdoo(d);
         const isToday = dateStr === todayStr;
-        html += `<div style="background:${isToday ? 'rgba(0,145,174,.06)' : 'var(--bg)'};border-bottom:1px solid var(--border);border-left:1px solid var(--border);padding:8px;text-align:center;">
-            <div style="font-size:11px;color:var(--text-light);font-weight:500">${dayNames[i]}</div>
-            <div style="font-size:18px;font-weight:700;${isToday ? 'color:var(--blue);background:rgba(0,145,174,.1);border-radius:50%;width:32px;height:32px;line-height:32px;margin:2px auto' : 'color:var(--text)'}">${d.getDate()}</div>
+        html += `<div style="background:${isToday ? 'rgba(0,145,174,.06)' : 'var(--gmc-bg)'};border-bottom:1px solid var(--gmc-border);border-left:1px solid var(--gmc-border);padding:8px;text-align:center;">
+            <div style="font-size:11px;color:var(--gmc-text-muted);font-weight:500">${dayNames[i]}</div>
+            <div style="font-size:18px;font-weight:700;${isToday ? 'color:var(--gmc-blue);background:rgba(0,145,174,.1);border-radius:50%;width:32px;height:32px;line-height:32px;margin:2px auto' : 'color:var(--gmc-text)'}">${d.getDate()}</div>
         </div>`;
     });
 
     // Time rows
     hours.forEach(h => {
         // Hour label
-        html += `<div style="border-bottom:1px solid var(--border-light);padding:4px 6px;text-align:right;font-size:10px;color:var(--text-light);vertical-align:top">${String(h).padStart(2,'0')}:00</div>`;
+        html += `<div style="border-bottom:1px solid var(--gmc-border-light);padding:4px 6px;text-align:right;font-size:10px;color:var(--gmc-text-muted);vertical-align:top">${String(h).padStart(2,'0')}:00</div>`;
 
         days.forEach((d,i) => {
             const dateStr = formatDateOdoo(d);
@@ -1193,17 +1195,17 @@ async function renderFullCalendar() {
                 const isVisit = ev.name?.toLowerCase().includes('visite');
                 const isCall = ev.name?.toLowerCase().includes('appel');
                 const isSuivi = ev.name?.toLowerCase().includes('suivi');
-                const color = isVisit ? 'var(--green)' : isCall ? 'var(--blue)' : isSuivi ? 'var(--purple)' : 'var(--accent)';
+                const color = isVisit ? 'var(--gmc-green)' : isCall ? 'var(--gmc-blue)' : isSuivi ? 'var(--gmc-purple)' : 'var(--gmc-accent)';
                 const icon = isVisit ? 'fa-location-dot' : isCall ? 'fa-phone' : isSuivi ? 'fa-rotate' : 'fa-calendar-check';
                 const shortName = ev.name?.length > 30 ? ev.name.substring(0,29) + '…' : ev.name;
                 cellHtml += `<div style="background:${color}12;border-left:3px solid ${color};padding:4px 6px;border-radius:4px;margin-bottom:2px;cursor:pointer;font-size:11px" title="${ev.name}\n${time}–${endTime}\n${ev.location || ''}">
                     <div style="font-weight:600;color:${color};font-size:10px"><i class="fa-solid ${icon}" style="margin-right:3px"></i>${time}–${endTime}</div>
-                    <div style="color:var(--text);line-height:1.3">${shortName}</div>
-                    ${ev.location ? `<div style="font-size:10px;color:var(--text-light)"><i class="fa-solid fa-map-pin" style="margin-right:2px"></i>${ev.location}</div>` : ''}
+                    <div style="color:var(--gmc-text);line-height:1.3">${shortName}</div>
+                    ${ev.location ? `<div style="font-size:10px;color:var(--gmc-text-muted)"><i class="fa-solid fa-map-pin" style="margin-right:2px"></i>${ev.location}</div>` : ''}
                 </div>`;
             });
 
-            html += `<div style="border-bottom:1px solid var(--border-light);border-left:1px solid var(--border);padding:2px 4px;min-height:48px;background:${isToday ? 'rgba(0,145,174,.02)' : 'transparent'}">${cellHtml}</div>`;
+            html += `<div style="border-bottom:1px solid var(--gmc-border-light);border-left:1px solid var(--gmc-border);padding:2px 4px;min-height:48px;background:${isToday ? 'rgba(0,145,174,.02)' : 'transparent'}">${cellHtml}</div>`;
         });
     });
 
@@ -1223,9 +1225,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         initClientGrid();
         initPipeGrid();
         initActGrid();
-        loadCalendarEvents();
+        await loadCalendarEvents();
         // Then try to load live data in background
         loadLiveData().then(() => {
+            renderMorningBriefing();
             renderActivityCharts();
         });
     } else {
@@ -1236,7 +1239,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         initClientGrid();
         initPipeGrid();
         initActGrid();
-        loadCalendarEvents();
+        await loadCalendarEvents();
         showLoginModal();
     }
 });
