@@ -148,7 +148,7 @@ async def get_client_detail(partner_id: int):
     except ValueError:
         raise HTTPException(status_code=404, detail=f"Client {partner_id} non trouvé")
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Erreur Odoo: {str(e)}")
+        raise HTTPException(status_code=502, detail=f"Erreur Odoo get_partner: {str(e)}")
 
     # Get related contacts (child addresses)
     try:
@@ -162,51 +162,63 @@ async def get_client_detail(partner_id: int):
         child_contacts = []
 
     # Get related leads
-    leads = await odoo.get_partner_leads(partner_id)
+    try:
+        leads = await odoo.get_partner_leads(partner_id)
+    except Exception:
+        leads = []
 
     # Get recent activities
-    activities = await odoo.get_partner_activities(partner_id)
+    try:
+        activities = await odoo.get_partner_activities(partner_id)
+    except Exception:
+        activities = []
 
     # Format territory
     terr = partner.get("x_territoire")
     terr_name = terr[1] if isinstance(terr, (list, tuple)) else str(terr or "")
 
-    return ClientDetailResponse(
-        id=partner["id"],
-        name=_s(partner.get("name"), ""),
-        is_company=partner.get("is_company", True),
-        territoire=terr_name,
-        x_score_client=_s(partner.get("x_score_client")),
-        city=_s(partner.get("city")),
-        phone=_s(partner.get("phone")),
-        email=_s(partner.get("email")),
-        website=_s(partner.get("website")),
-        street=_s(partner.get("street")),
-        zip=_s(partner.get("zip")),
-        state_id=partner.get("state_id") if partner.get("state_id") else None,
-        x_notes_terrain=_s(partner.get("x_notes_terrain")),
-        x_competiteurs=_s(partner.get("x_competiteurs")),
-        x_marques_interet=_s(partner.get("x_marques_interet")),
-        x_date_derniere_visite=_s(partner.get("x_date_derniere_visite"), None),
-        x_nb_visites=_i(partner.get("x_nb_visites")),
-        x_type_client=_s(partner.get("x_type_client")),
-        x_echantillons_notes=_s(partner.get("x_echantillons_notes")),
-        x_facebook=_s(partner.get("x_facebook")),
-        x_instagram=_s(partner.get("x_instagram")),
-        x_linkedin=_s(partner.get("x_linkedin")),
-        x_google_maps=_s(partner.get("x_google_maps")),
-        x_description=_s(partner.get("x_description")),
-        x_year_founded=_s(partner.get("x_year_founded")),
-        x_employees_estimate=_s(partner.get("x_employees_estimate")),
-        x_revenue_estimate=_s(partner.get("x_revenue_estimate")),
-        x_req_number=_s(partner.get("x_req_number")),
-        x_brands=_s(partner.get("x_brands")),
-        x_specialties=_s(partner.get("x_specialties")),
-        x_hours=_s(partner.get("x_hours")),
-        child_contacts=child_contacts,
-        leads=leads,
-        activities=activities,
-    )
+    try:
+        return ClientDetailResponse(
+            id=partner["id"],
+            name=_s(partner.get("name"), ""),
+            is_company=bool(partner.get("is_company", True)),
+            territoire=terr_name,
+            x_score_client=_s(partner.get("x_score_client")),
+            city=_s(partner.get("city")),
+            phone=_s(partner.get("phone")),
+            email=_s(partner.get("email")),
+            website=_s(partner.get("website")),
+            street=_s(partner.get("street")),
+            zip=_s(partner.get("zip")),
+            state_id=partner.get("state_id") if partner.get("state_id") else None,
+            x_notes_terrain=_s(partner.get("x_notes_terrain")),
+            x_competiteurs=_s(partner.get("x_competiteurs")),
+            x_marques_interet=_s(partner.get("x_marques_interet")),
+            x_date_derniere_visite=_s(partner.get("x_date_derniere_visite"), None),
+            x_nb_visites=_i(partner.get("x_nb_visites")),
+            x_type_client=_s(partner.get("x_type_client")),
+            x_echantillons_notes=_s(partner.get("x_echantillons_notes")),
+            x_facebook=_s(partner.get("x_facebook")),
+            x_instagram=_s(partner.get("x_instagram")),
+            x_linkedin=_s(partner.get("x_linkedin")),
+            x_google_maps=_s(partner.get("x_google_maps")),
+            x_description=_s(partner.get("x_description")),
+            x_year_founded=_s(partner.get("x_year_founded")),
+            x_employees_estimate=_s(partner.get("x_employees_estimate")),
+            x_revenue_estimate=_s(partner.get("x_revenue_estimate")),
+            x_req_number=_s(partner.get("x_req_number")),
+            x_brands=_s(partner.get("x_brands")),
+            x_specialties=_s(partner.get("x_specialties")),
+            x_hours=_s(partner.get("x_hours")),
+            child_contacts=child_contacts,
+            leads=leads,
+            activities=activities,
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erreur construction réponse pour {partner_id}: {type(e).__name__}: {str(e)}"
+        )
 
 
 @router.get("/pipeline", response_model=dict)
