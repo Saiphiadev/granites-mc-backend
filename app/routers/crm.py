@@ -689,13 +689,24 @@ async def get_dashboard(
 
     # ── 1. Get clients for this user (via leads) ──
     try:
-        lead_domain = [["user_id", "=", user_id]] if user_id else []
-        user_leads = await odoo.search_read(
-            "crm.lead", lead_domain,
-            ["partner_id", "expected_revenue", "probability", "stage_id",
-             "name", "create_date", "date_deadline", "user_id", "description", "tag_ids"],
-            limit=500, order="create_date desc",
-        )
+        lead_fields = ["partner_id", "expected_revenue", "probability", "stage_id",
+             "name", "create_date", "date_deadline", "user_id", "description", "tag_ids"]
+
+        # Try user-filtered first
+        user_leads = []
+        if user_id:
+            user_leads = await odoo.search_read(
+                "crm.lead", [["user_id", "=", user_id]],
+                lead_fields, limit=500, order="create_date desc",
+            )
+
+        # Fallback: if no leads for this user, load ALL leads
+        # (Odoo may not have leads assigned to individual reps yet)
+        if not user_leads:
+            user_leads = await odoo.search_read(
+                "crm.lead", [],
+                lead_fields, limit=500, order="create_date desc",
+            )
 
         # Extract unique partner IDs from leads
         partner_ids = list(set(
@@ -715,16 +726,25 @@ async def get_dashboard(
                 "x_specialties", "x_hours",
             ]
             try:
+                # Try company partners first, then all partners as fallback
                 clients = await odoo.search_read(
                     "res.partner",
                     [["is_company", "=", True], ["id", "in", partner_ids]],
                     basic_fields + custom_fields,
                     limit=500, order="name asc",
                 )
+                # If no company partners found, get ALL partners linked to leads
+                if not clients:
+                    clients = await odoo.search_read(
+                        "res.partner",
+                        [["id", "in", partner_ids]],
+                        basic_fields + custom_fields,
+                        limit=500, order="name asc",
+                    )
             except Exception:
                 clients = await odoo.search_read(
                     "res.partner",
-                    [["is_company", "=", True], ["id", "in", partner_ids]],
+                    [["id", "in", partner_ids]],
                     basic_fields,
                     limit=500, order="name asc",
                 )
@@ -819,17 +839,27 @@ async def get_dashboard(
 
     # ── 4. Get recent activities/messages (timeline) ──
     try:
-        activity_domain = [["res_model", "=", "res.partner"]]
+        # Try user-filtered, then fallback to all
+        activity_domain = [["res_model", "in", ["res.partner", "crm.lead"]]]
         if user_id:
-            activity_domain.append(["user_id", "=", user_id])
-
-        activities = await odoo.search_read(
-            "mail.activity",
-            activity_domain,
-            ["res_id", "summary", "activity_type_id", "date_deadline", "state", "note"],
-            order="date_deadline desc",
-            limit=20,
-        )
+            user_activity_domain = activity_domain + [["user_id", "=", user_id]]
+            activities = await odoo.search_read(
+                "mail.activity", user_activity_domain,
+                ["res_id", "summary", "activity_type_id", "date_deadline", "state", "note"],
+                order="date_deadline desc", limit=20,
+            )
+            if not activities:
+                activities = await odoo.search_read(
+                    "mail.activity", activity_domain,
+                    ["res_id", "summary", "activity_type_id", "date_deadline", "state", "note"],
+                    order="date_deadline desc", limit=20,
+                )
+        else:
+            activities = await odoo.search_read(
+                "mail.activity", activity_domain,
+                ["res_id", "summary", "activity_type_id", "date_deadline", "state", "note"],
+                order="date_deadline desc", limit=20,
+            )
 
         for act in activities:
             act_type = act.get("activity_type_id")
@@ -848,17 +878,22 @@ async def get_dashboard(
 
     # ── 5. Build timeline from recent lead messages ──
     try:
-        msg_domain = [["model", "=", "crm.lead"], ["message_type", "in", ["comment", "email"]]]
-        if user_id:
-            msg_domain.append(["author_id.user_ids", "in", [user_id]])
+        base_msg_domain = [["model", "=", "crm.lead"], ["message_type", "in", ["comment", "email"]]]
+        msg_fields = ["date", "subject", "body", "subtype_id", "res_id"]
 
-        messages = await odoo.search_read(
-            "mail.message",
-            msg_domain,
-            ["date", "subject", "body", "subtype_id", "res_id"],
-            order="date desc",
-            limit=10,
-        )
+        messages = []
+        if user_id:
+            messages = await odoo.search_read(
+                "mail.message",
+                base_msg_domain + [["author_id.user_ids", "in", [user_id]]],
+                msg_fields, order="date desc", limit=10,
+            )
+        if not messages:
+            messages = await odoo.search_read(
+                "mail.message",
+                base_msg_domain,
+                msg_fields, order="date desc", limit=10,
+            )
 
         for msg in messages:
             subtype = msg.get("subtype_id")
