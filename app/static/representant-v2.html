@@ -324,6 +324,10 @@ let PIPELINE = [
   {num:"SOU-26037",nom:"Cuisine haut de gamme",client:"Ebe Des Cantons",montant:19800,etape:"Soumission",rep:"Isabelle T.",date:"12 mars 2026",prob:55},
 ];
 
+// Keep pristine copies of static data for user switching
+const ORIG_CLIENTS = CLIENTS.map(c => ({...c, vols:{...c.vols}, contacts: c.contacts ? c.contacts.map(ct => ({...ct})) : []}));
+const ORIG_PIPELINE = PIPELINE.map(p => ({...p}));
+
 // Filter clients and pipeline for this rep (static fallback)
 let MY_CLIENTS = CLIENTS.filter(c => c.rep === CURRENT_REP);
 let MY_PIPELINE = PIPELINE.filter(p => p.rep === CURRENT_REP);
@@ -430,6 +434,11 @@ function logout() {
     localStorage.removeItem('gmc_user');
     currentUser = null;
     isLive = false;
+    // Reset to pristine static data so next user gets clean state
+    CLIENTS = ORIG_CLIENTS.map(c => ({...c, vols:{...c.vols}, contacts: c.contacts ? c.contacts.map(ct => ({...ct})) : []}));
+    PIPELINE = ORIG_PIPELINE.map(p => ({...p}));
+    MY_CLIENTS = [];
+    MY_PIPELINE = [];
     showLoginModal();
 }
 
@@ -612,9 +621,8 @@ function trendRenderer(p) {
 function nameRenderer(p) { return `<span style="font-weight:600;color:var(--gmc-text-strong);cursor:pointer" onclick="openDetail(${p.data.rank})">${p.value}</span>`; }
 function etapeRenderer(p) {
     if (!p.value) return '';
-    const colors = {'Soumission':'gmc-badge-blue','En attente':'gmc-badge-yellow','Signé':'gmc-badge-green','En cours':'gmc-badge-orange','Livré':'gmc-badge-purple','Perdu':'gmc-badge-red'};
-    const actualColors = {'Soumission':'gmc-badge-blue','En attente':'gmc-badge-yellow','Signé':'gmc-badge-green','En cours':'gmc-badge-orange','Livré':'gmc-badge-purple','Perdu':'gmc-badge-red'};
-    return `<span class="gmc-badge ${actualColors[p.value]||'gmc-badge-blue'}">${p.value}</span>`;
+    const colors = {'Soumission':'gmc-badge-blue','En attente':'gmc-badge-yellow','Signé':'gmc-badge-green','En cours':'gmc-badge-accent','Livré':'gmc-badge-purple','Perdu':'gmc-badge-red'};
+    return `<span class="gmc-badge ${colors[p.value]||'gmc-badge-blue'}">${p.value}</span>`;
 }
 
 // ========== AG GRID — CLIENTS ==========
@@ -643,7 +651,7 @@ function getClientRowData() {
 
 function initClientGrid() {
     if (clientGrid) {
-        clientGrid.api.destroy();
+        try { clientGrid.api.setGridOption('rowData', []); } catch(e) {}
         clientGrid = null;
     }
     const el = document.getElementById('clientsGrid');
@@ -667,7 +675,7 @@ function setClientView(filter, el) {
     el.classList.add('active');
     if (!clientGrid) return;
     if (filter === 'all') { clientGrid.api.setFilterModel(null); }
-    else { clientGrid.api.setFilterModel({ score: { type:'contains', filter: filter.toUpperCase() }}); }
+    else { clientGrid.api.setFilterModel({ score: { filterType:'text', type:'contains', filter: filter.toUpperCase() }}); }
     clientGrid.api.onFilterChanged();
 }
 
@@ -684,14 +692,13 @@ const PIPE_COLUMNS = [
 ];
 
 function initPipeGrid() {
-    // Destroy existing grid if any
     if (pipeGrid) {
-        pipeGrid.api.destroy();
+        try { pipeGrid.api.setGridOption('rowData', []); } catch(e) {}
         pipeGrid = null;
     }
     const el = document.getElementById('pipeGrid');
     if (!el) return;
-    el.innerHTML = ''; // Clear old grid DOM
+    el.innerHTML = '';
     pipeGrid = agGrid.createGrid(el, {
         columnDefs: PIPE_COLUMNS,
         rowData: MY_PIPELINE,
