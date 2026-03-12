@@ -110,7 +110,7 @@ class OdooClient:
 
     async def get_partner(self, partner_id: int) -> dict:
         """Get full partner details for coach briefing."""
-        fields = [
+        base_fields = [
             "name",
             "is_company",
             "phone",
@@ -120,6 +120,11 @@ class OdooClient:
             "city",
             "state_id",
             "zip",
+            "category_id",
+            "activity_ids",
+            "message_ids",
+        ]
+        custom_fields = [
             "x_territoire",
             "x_score_client",
             "x_notes_terrain",
@@ -141,7 +146,8 @@ class OdooClient:
             "x_brands",
             "x_specialties",
             "x_hours",
-            # Isabelle fields
+        ]
+        isabelle_fields = [
             "x_freq_visite",
             "x_date_premiere_visite",
             "x_meilleure_annee",
@@ -159,14 +165,25 @@ class OdooClient:
             "x_provenance",
             "x_salle_montre",
             "x_notes_isabelle",
-            "category_id",
-            "activity_ids",
-            "message_ids",
         ]
-        records = await self.read("res.partner", [partner_id], fields)
-        if not records:
-            raise ValueError(f"Partner {partner_id} not found")
-        return records[0]
+
+        # Try with all fields (including Isabelle), fallback progressively
+        for fields in [
+            base_fields + custom_fields + isabelle_fields,
+            base_fields + custom_fields,
+            base_fields,
+        ]:
+            try:
+                records = await self.read("res.partner", [partner_id], fields)
+                if not records:
+                    raise ValueError(f"Partner {partner_id} not found")
+                return records[0]
+            except ValueError:
+                raise
+            except Exception:
+                continue
+
+        raise ValueError(f"Partner {partner_id} not found or unreadable")
 
     async def get_partner_activities(self, partner_id: int) -> list[dict]:
         """Get scheduled activities for a partner."""
