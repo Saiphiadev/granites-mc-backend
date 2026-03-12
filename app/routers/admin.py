@@ -908,3 +908,44 @@ async def create_partner(data: PartnerCreateRequest):
         raise HTTPException(status_code=502, detail=f"Erreur Odoo: {str(e)}")
 
     return {"status": "ok", "partner_id": new_id, "name": data.name}
+
+
+@router.get("/diagnose-partners/{partner_ids}")
+async def diagnose_partners(partner_ids: str):
+    """
+    Diagnostic: read partners by IDs with basic fields only.
+    partner_ids is a comma-separated list of IDs (e.g., '561,562,563').
+    """
+    odoo = get_odoo_client()
+
+    ids = [int(x.strip()) for x in partner_ids.split(",") if x.strip()]
+
+    try:
+        records = await odoo.read(
+            "res.partner", ids,
+            ["id", "name", "is_company", "active", "phone", "city", "email", "type"]
+        )
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Erreur Odoo: {str(e)}")
+
+    return {"count": len(records), "partners": records}
+
+
+@router.post("/fix-is-company/{partner_ids}")
+async def fix_is_company(partner_ids: str):
+    """
+    Fix: set is_company=True on specified partner IDs.
+    partner_ids is a comma-separated list of IDs.
+    """
+    odoo = get_odoo_client()
+
+    ids = [int(x.strip()) for x in partner_ids.split(",") if x.strip()]
+
+    try:
+        await odoo.write("res.partner", ids, {"is_company": True})
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Erreur Odoo: {str(e)}")
+
+    # Verify
+    records = await odoo.read("res.partner", ids, ["id", "name", "is_company"])
+    return {"status": "ok", "fixed_count": len(ids), "partners": records}
