@@ -16,9 +16,11 @@ router = APIRouter(prefix="/api/crm", tags=["CRM"])
 
 
 def _s(val, default=""):
-    """Sanitize Odoo field value: convert False/None to default string."""
+    """Sanitize Odoo field value: convert False/None/list to default string."""
     if val is False or val is None:
         return default
+    if isinstance(val, (list, tuple)):
+        return ", ".join(str(v) for v in val) if val else default
     return val
 
 
