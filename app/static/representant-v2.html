@@ -219,10 +219,12 @@
         <div class="gmc-toolbar">
             <div class="gmc-view-tabs">
                 <button class="gmc-view-tab active" onclick="setPipeView('all',this)">Toutes</button>
-                <button class="gmc-view-tab" onclick="setPipeView('Nouveau',this)">Nouveau</button>
-                <button class="gmc-view-tab" onclick="setPipeView('Soumis',this)">Soumis</button>
-                <button class="gmc-view-tab" onclick="setPipeView('Négociation',this)">Négociation</button>
+                <button class="gmc-view-tab" onclick="setPipeView('Soumission',this)">Soumission</button>
+                <button class="gmc-view-tab" onclick="setPipeView('En attente',this)">En attente</button>
                 <button class="gmc-view-tab" onclick="setPipeView('Signé',this)">Signé</button>
+                <button class="gmc-view-tab" onclick="setPipeView('En cours',this)">En cours</button>
+                <button class="gmc-view-tab" onclick="setPipeView('Livré',this)">Livré</button>
+                <button class="gmc-view-tab" onclick="setPipeView('Perdu',this)">Perdu</button>
             </div>
             <div class="gmc-search-wrap"><i class="fa-solid fa-search"></i><input class="gmc-search" id="pipeGridSearch" placeholder="Filtrer soumissions..." oninput="onPipeSearch(this.value)"></div>
             <span style="flex:1"></span>
@@ -307,17 +309,17 @@ let CLIENTS = [
 ];
 
 let PIPELINE = [
-  {nom:"Commercial 12 cuisines",client:"Cuisifab",montant:45000,etape:"Soumis",rep:"Isabelle T.",date:"8 mars 2026",prob:65},
-  {nom:"Projet condo Magog",client:"Avivia",montant:28000,etape:"Négociation",rep:"Isabelle T.",date:"5 mars 2026",prob:45},
+  {nom:"Commercial 12 cuisines",client:"Cuisifab",montant:45000,etape:"Soumission",rep:"Isabelle T.",date:"8 mars 2026",prob:65},
+  {nom:"Projet condo Magog",client:"Avivia",montant:28000,etape:"En attente",rep:"Isabelle T.",date:"5 mars 2026",prob:45},
   {nom:"Cuisine design résidentiel",client:"Cuisi-Meuble",montant:18500,etape:"Signé",rep:"Isabelle T.",date:"3 mars 2026",prob:95},
-  {nom:"Réno cuisine complète",client:"Arm. Solution",montant:7600,etape:"Soumis",rep:"Isabelle T.",date:"6 mars 2026",prob:60},
-  {nom:"Projet résidentiel",client:"Prefab",montant:8500,etape:"Nouveau",rep:"Yvon R.",date:"9 mars 2026",prob:20},
-  {nom:"Réno SDB",client:"SMA",montant:3200,etape:"Nouveau",rep:"Isabelle T.",date:"10 mars 2026",prob:15},
-  {nom:"Comptoir commercial",client:"Cuisines MRS",montant:22400,etape:"Soumis",rep:"Isabelle T.",date:"4 mars 2026",prob:50},
-  {nom:"Vanité sur mesure",client:"B. Pichet",montant:5800,etape:"Négociation",rep:"Isabelle T.",date:"2 mars 2026",prob:40},
-  {nom:"Cuisine complète Sherbrooke",client:"Antiq. Design",montant:14200,etape:"Soumis",rep:"Isabelle T.",date:"1 mars 2026",prob:35},
-  {nom:"Projet condo TR",client:"BMS",montant:9700,etape:"Nouveau",rep:"Isabelle T.",date:"10 mars 2026",prob:25},
-  {nom:"Salle de bain design",client:"Arm. Décor",montant:6300,etape:"Soumis",rep:"Isabelle T.",date:"28 fév 2026",prob:45},
+  {nom:"Réno cuisine complète",client:"Arm. Solution",montant:7600,etape:"Soumission",rep:"Isabelle T.",date:"6 mars 2026",prob:60},
+  {nom:"Projet résidentiel",client:"Prefab",montant:8500,etape:"Soumission",rep:"Yvon R.",date:"9 mars 2026",prob:20},
+  {nom:"Réno SDB",client:"SMA",montant:3200,etape:"Soumission",rep:"Isabelle T.",date:"10 mars 2026",prob:15},
+  {nom:"Comptoir commercial",client:"Cuisines MRS",montant:22400,etape:"Soumission",rep:"Isabelle T.",date:"4 mars 2026",prob:50},
+  {nom:"Vanité sur mesure",client:"B. Pichet",montant:5800,etape:"En attente",rep:"Isabelle T.",date:"2 mars 2026",prob:40},
+  {nom:"Cuisine complète Sherbrooke",client:"Antiq. Design",montant:14200,etape:"Soumission",rep:"Isabelle T.",date:"1 mars 2026",prob:35},
+  {nom:"Projet condo TR",client:"BMS",montant:9700,etape:"Soumission",rep:"Isabelle T.",date:"10 mars 2026",prob:25},
+  {nom:"Salle de bain design",client:"Arm. Décor",montant:6300,etape:"Soumission",rep:"Isabelle T.",date:"28 fév 2026",prob:45},
 ];
 
 // Filter clients and pipeline for this rep (static fallback)
@@ -475,7 +477,7 @@ async function loadLiveData() {
                     nom: l.name,
                     client: l.partner_name || '',
                     montant: l.expected_revenue || 0,
-                    etape: l.stage_name || 'Nouveau',
+                    etape: ({'New':'Soumission','Nouveau':'Soumission','Qualification':'En attente','Proposition':'En attente','Negotiation':'En cours','Négociation':'En cours','Won':'Signé','Gagné':'Signé','Lost':'Perdu'}[l.stage_name] || l.stage_name || 'Soumission'),
                     rep: l.user_name || '',
                     date: l.create_date?.split(' ')[0] || '',
                     prob: l.probability || 0,
@@ -489,7 +491,7 @@ async function loadLiveData() {
 
     // Re-filter for current user
     updateUIForUser();
-    document.getElementById('liveBadge').style.display = isLive ? 'inline-flex' : 'none';
+    const lb = document.getElementById('liveBadge'); if (lb) lb.style.display = isLive ? 'inline-flex' : 'none';
     renderDashboard();
     renderKanban();
     initClientGrid();
@@ -601,8 +603,8 @@ function trendRenderer(p) {
 function nameRenderer(p) { return `<span style="font-weight:600;color:var(--gmc-text-strong);cursor:pointer" onclick="openDetail(${p.data.rank})">${p.value}</span>`; }
 function etapeRenderer(p) {
     if (!p.value) return '';
-    const colors = {'Nouveau':'gmc-score-purple','Soumis':'gmc-badge-blue','Négociation':'gmc-badge-yellow','Signé':'gmc-badge-green'};
-    const actualColors = {'Nouveau':'gmc-badge-purple','Soumis':'gmc-badge-blue','Négociation':'gmc-badge-yellow','Signé':'gmc-badge-green'};
+    const colors = {'Soumission':'gmc-badge-blue','En attente':'gmc-badge-yellow','Signé':'gmc-badge-green','En cours':'gmc-badge-orange','Livré':'gmc-badge-purple','Perdu':'gmc-badge-red'};
+    const actualColors = {'Soumission':'gmc-badge-blue','En attente':'gmc-badge-yellow','Signé':'gmc-badge-green','En cours':'gmc-badge-orange','Livré':'gmc-badge-purple','Perdu':'gmc-badge-red'};
     return `<span class="gmc-badge ${actualColors[p.value]||'gmc-badge-blue'}">${p.value}</span>`;
 }
 
@@ -755,15 +757,15 @@ function closeDetail() {
 // ========== MORNING BRIEFING ==========
 function renderMorningBriefing() {
     const firstName = (currentUser?.name || 'Isabelle').split(' ')[0];
-    document.getElementById('briefingName').textContent = firstName;
+    const bn = document.getElementById('briefingName'); if (bn) bn.textContent = firstName;
 
     // Get today's events
     const today = new Date();
     const todayStr = formatDateOdoo(today);
     const todayEvents = calendarEvents.filter(ev => ev.start && ev.start.startsWith(todayStr));
 
-    document.getElementById('briefingCount').textContent = todayEvents.length;
-    document.getElementById('briefingHeadline').innerHTML = todayEvents.length > 0
+    const bc = document.getElementById('briefingCount'); if (bc) bc.textContent = todayEvents.length;
+    const bh = document.getElementById('briefingHeadline'); if (bh) bh.innerHTML = todayEvents.length > 0
         ? `Tu as <strong>${todayEvents.length}</strong> rendez-vous aujourd'hui`
         : `Aucun rendez-vous prévu aujourd'hui`;
 
@@ -780,7 +782,7 @@ function renderMorningBriefing() {
             ${ev.location ? `<div class="gmc-briefing-location"><i class="fa-solid fa-map-pin"></i> ${ev.location}</div>` : ''}
         </div>`;
     }).join('');
-    document.getElementById('briefingCards').innerHTML = cardsHtml || '<div style="opacity:.6;font-size:14px">Journée libre — bon moment pour de la prospection!</div>';
+    const bCards = document.getElementById('briefingCards'); if (bCards) bCards.innerHTML = cardsHtml || '<div style="opacity:.6;font-size:14px">Journée libre — bon moment pour de la prospection!</div>';
 
     // Alerts summary
     const alerts = [];
@@ -793,7 +795,7 @@ function renderMorningBriefing() {
     if (alerts.length) alertsHtml += `<span>${alerts[0]}</span>`;
     alertsHtml += `<span>🔥 Pipeline: $${(totalPipe/1000).toFixed(0)}k en cours</span>`;
     alertsHtml += `<span>📊 ${MY_CLIENTS.length} clients actifs</span>`;
-    document.getElementById('briefingAlerts').innerHTML = alertsHtml;
+    const bAlerts = document.getElementById('briefingAlerts'); if (bAlerts) bAlerts.innerHTML = alertsHtml;
 }
 
 function animateValue(el, start, end, duration) {
@@ -860,11 +862,11 @@ function renderDashboard() {
 
 // ========== KANBAN RENDERING ==========
 function renderKanban() {
-    const stages = ['Nouveau','Soumis','Négociation','Signé'];
+    const stages = ['Soumission','En attente','Signé','En cours','Livré','Perdu'];
     const kanban = stages.map(stage => {
         const items = MY_PIPELINE.filter(p => p.etape === stage);
         const total = items.reduce((s,p)=>s+p.montant,0);
-        const colors = {Nouveau:'var(--gmc-purple)',Soumis:'var(--gmc-blue)',Négociation:'var(--gmc-yellow)',Signé:'var(--gmc-green)'};
+        const colors = {'Soumission':'var(--gmc-blue)','En attente':'var(--gmc-yellow)','Signé':'var(--gmc-green)','En cours':'var(--gmc-accent)','Livré':'var(--gmc-purple)','Perdu':'#e74c3c'};
         return `
             <div class="gmc-kanban-col">
                 <div class="gmc-kanban-header" style="color:${colors[stage]}">

@@ -951,3 +951,52 @@ async def fix_is_company(partner_ids: str):
     # Verify
     records = await odoo.read("res.partner", ids, ["id", "name", "is_company"])
     return {"status": "ok", "fixed_count": len(ids), "partners": records}
+
+
+@router.post("/assign-leads")
+async def assign_leads_to_user(
+    user_email: str = "",
+    lead_ids: str = "",
+    count: int = 5,
+):
+    """
+    Assigne des leads existants à un utilisateur (par email).
+    Si lead_ids est vide, prend les N premiers leads non-assignés ou réassigne.
+    """
+    odoo = get_odoo_client()
+
+    # Find user by email
+    users = await odoo.search_read(
+        "res.users",
+        [["email", "=", user_email], ["active", "=", True]],
+        ["id", "name"],
+        limit=1,
+    )
+    if not users:
+        raise HTTPException(status_code=404, detail=f"User not found: {user_email}")
+
+    user_id = users[0]["id"]
+    user_name = users[0]["name"]
+
+    if lead_ids:
+        ids = [int(x.strip()) for x in lead_ids.split(",") if x.strip()]
+    else:
+        # Get some leads to reassign
+        leads = await odoo.search_read(
+            "crm.lead", [], ["id"], limit=count * 2, order="id asc",
+        )
+        # Take every other lead to spread data
+        ids = [l["id"] for i, l in enumerate(leads) if i % 2 == 0][:count]
+
+    if not ids:
+        return {"status": "no_leads", "message": "No leads found to assign"}
+
+    await odoo.write("crm.lead", ids, {"user_id": user_id})
+
+    return {
+        "status": "ok",
+        "user": user_name,
+        "user_id": user_id,
+        "assigned_lead_ids": ids,
+        "count": len(ids),
+    }

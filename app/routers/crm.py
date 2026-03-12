@@ -595,14 +595,18 @@ async def list_auth_users():
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Erreur Odoo: {str(e)}")
 
+    # Exclude system/admin users from login list (prototype)
+    excluded_emails = {"pgirardin@saiphia.ca", "alexandre.bouffard@granitesmc.com"}
+    filtered = [u for u in users if (_s(u.get("email"))).lower() not in excluded_emails]
+
     return {
-        "count": len(users),
+        "count": len(filtered),
         "users": [
             {
                 "id": u["id"],
                 "name": u.get("name", ""),
                 "email": _s(u.get("email")),
             }
-            for u in users
+            for u in filtered
         ],
     }
