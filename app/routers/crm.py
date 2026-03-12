@@ -687,7 +687,7 @@ async def get_dashboard(
         "timeline": [],
     }
 
-    # ── 1. Get clients for this user (via leads) ──
+    # ── 1. Get clients and leads ──
     try:
         lead_fields = ["partner_id", "expected_revenue", "probability", "stage_id",
              "name", "create_date", "date_deadline", "user_id", "description", "tag_ids"]
@@ -701,7 +701,6 @@ async def get_dashboard(
             )
 
         # Fallback: if no leads for this user, load ALL leads
-        # (Odoo may not have leads assigned to individual reps yet)
         if not user_leads:
             user_leads = await odoo.search_read(
                 "crm.lead", [],
@@ -709,79 +708,87 @@ async def get_dashboard(
             )
 
         # Extract unique partner IDs from leads
-        partner_ids = list(set(
+        partner_ids_from_leads = list(set(
             l["partner_id"][0] if isinstance(l.get("partner_id"), (list, tuple)) else l.get("partner_id")
             for l in user_leads if l.get("partner_id")
         ))
 
-        # Get partner details
-        if partner_ids:
-            basic_fields = ["id", "name", "city", "phone", "email", "website", "street", "zip"]
-            custom_fields = [
-                "x_territoire", "x_score_client", "x_notes_terrain",
-                "x_competiteurs", "x_marques_interet", "x_type_client",
-                "x_facebook", "x_instagram", "x_linkedin", "x_google_maps",
-                "x_description", "x_year_founded", "x_employees_estimate",
-                "x_revenue_estimate", "x_req_number", "x_brands",
-                "x_specialties", "x_hours",
-            ]
+        # Get ALL company partners — always show all clients in dashboard
+        basic_fields = ["id", "name", "city", "phone", "email", "website", "street", "zip",
+                        "country_id", "category_id"]
+        custom_fields = [
+            "x_territoire", "x_score_client", "x_notes_terrain",
+            "x_competiteurs", "x_marques_interet", "x_type_client",
+            "x_facebook", "x_instagram", "x_linkedin", "x_google_maps",
+            "x_description", "x_year_founded", "x_employees_estimate",
+            "x_revenue_estimate", "x_req_number", "x_brands",
+            "x_specialties", "x_hours",
+        ]
+        try:
+            clients = await odoo.search_read(
+                "res.partner",
+                [["is_company", "=", True]],
+                basic_fields + custom_fields,
+                limit=500, order="name asc",
+            )
+        except Exception:
             try:
-                # Try company partners first, then all partners as fallback
                 clients = await odoo.search_read(
                     "res.partner",
-                    [["is_company", "=", True], ["id", "in", partner_ids]],
-                    basic_fields + custom_fields,
-                    limit=500, order="name asc",
-                )
-                # If no company partners found, get ALL partners linked to leads
-                if not clients:
-                    clients = await odoo.search_read(
-                        "res.partner",
-                        [["id", "in", partner_ids]],
-                        basic_fields + custom_fields,
-                        limit=500, order="name asc",
-                    )
-            except Exception:
-                clients = await odoo.search_read(
-                    "res.partner",
-                    [["id", "in", partner_ids]],
+                    [["is_company", "=", True]],
                     basic_fields,
                     limit=500, order="name asc",
                 )
+            except Exception:
+                clients = []
 
-            # Count leads per partner for enrichment
-            leads_per_partner = {}
-            revenue_per_partner = {}
-            for l in user_leads:
-                pid = l["partner_id"][0] if isinstance(l.get("partner_id"), (list, tuple)) else l.get("partner_id")
-                if pid:
-                    leads_per_partner[pid] = leads_per_partner.get(pid, 0) + 1
-                    revenue_per_partner[pid] = revenue_per_partner.get(pid, 0) + (l.get("expected_revenue") or 0)
+        # If still no company partners, try ALL partners
+        if not clients:
+            try:
+                clients = await odoo.search_read(
+                    "res.partner",
+                    [["active", "=", True]],
+                    basic_fields,
+                    limit=200, order="name asc",
+                )
+            except Exception:
+                clients = []
 
-            for c in clients:
-                terr = c.get("x_territoire")
-                terr_name = terr[1] if isinstance(terr, (list, tuple)) else str(terr or "")
-                result["clients"].append({
-                    "id": c["id"],
-                    "name": c.get("name", ""),
-                    "territoire": terr_name,
-                    "score": c.get("x_score_client", "") or "",
-                    "city": c.get("city", "") or "",
-                    "phone": c.get("phone", "") or "",
-                    "email": c.get("email", "") or "",
-                    "website": c.get("website", "") or "",
-                    "street": c.get("street", "") or "",
-                    "zip": c.get("zip", "") or "",
-                    "description": c.get("x_description", "") or "",
-                    "facebook": c.get("x_facebook", "") or "",
-                    "instagram": c.get("x_instagram", "") or "",
-                    "linkedin": c.get("x_linkedin", "") or "",
-                    "google_maps": c.get("x_google_maps", "") or "",
-                    "type_client": c.get("x_type_client", "") or "",
-                    "notes_terrain": c.get("x_notes_terrain", "") or "",
-                    "lead_count": leads_per_partner.get(c["id"], 0),
-                    "pipeline_revenue": revenue_per_partner.get(c["id"], 0),
-                })
+        # Count leads per partner for enrichment
+        leads_per_partner = {}
+        revenue_per_partner = {}
+        for l in user_leads:
+            pid = l["partner_id"][0] if isinstance(l.get("partner_id"), (list, tuple)) else l.get("partner_id")
+            if pid:
+                leads_per_partner[pid] = leads_per_partner.get(pid, 0) + 1
+                revenue_per_partner[pid] = revenue_per_partner.get(pid, 0) + (l.get("expected_revenue") or 0)
+
+        for c in clients:
+            terr = c.get("x_territoire")
+            terr_name = terr[1] if isinstance(terr, (list, tuple)) else str(terr or "")
+            tags = c.get("category_id", [])
+            result["clients"].append({
+                "id": c["id"],
+                "name": c.get("name", ""),
+                "territoire": terr_name,
+                "score": c.get("x_score_client", "") or "",
+                "city": c.get("city", "") or "",
+                "phone": c.get("phone", "") or "",
+                "email": c.get("email", "") or "",
+                "website": c.get("website", "") or "",
+                "street": c.get("street", "") or "",
+                "zip": c.get("zip", "") or "",
+                "description": c.get("x_description", "") or "",
+                "facebook": c.get("x_facebook", "") or "",
+                "instagram": c.get("x_instagram", "") or "",
+                "linkedin": c.get("x_linkedin", "") or "",
+                "google_maps": c.get("x_google_maps", "") or "",
+                "type_client": c.get("x_type_client", "") or "",
+                "notes_terrain": c.get("x_notes_terrain", "") or "",
+                "lead_count": leads_per_partner.get(c["id"], 0),
+                "pipeline_revenue": revenue_per_partner.get(c["id"], 0),
+                "tag_ids": tags if isinstance(tags, list) else [],
+            })
 
         # ── 2. Transform pipeline leads ──
         for lead in user_leads:
