@@ -5,9 +5,13 @@ FastAPI backend pour les modules IA du CRM Granites MC :
 - Voix du Terrain (transcription + résumé IA)
 """
 
+import os
+from pathlib import Path
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 from app.config import get_settings
 from app.models.schemas import HealthResponse
@@ -66,9 +70,33 @@ app.include_router(crm.router)
 app.include_router(admin.router)
 
 
+# Static interface files
+STATIC_DIR = Path(__file__).parent / "static"
+if STATIC_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+
 @app.get("/", include_in_schema=False)
 async def root():
     return {"message": "Granites MC — Backend IA", "docs": "/docs"}
+
+
+@app.get("/app/admin", include_in_schema=False)
+async def serve_admin():
+    """Interface Admin CRM."""
+    return FileResponse(str(STATIC_DIR / "admin-v2.html"))
+
+
+@app.get("/app/representant", include_in_schema=False)
+async def serve_representant():
+    """Interface Représentant."""
+    return FileResponse(str(STATIC_DIR / "representant-v2.html"))
+
+
+@app.get("/app/contacts", include_in_schema=False)
+async def serve_contacts():
+    """Annuaire / Contacts."""
+    return FileResponse(str(STATIC_DIR / "contacts.html"))
 
 
 @app.get("/health", response_model=HealthResponse, tags=["System"])

@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Granites MC — CRM Représentant</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@32.0.2/styles/ag-grid.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@32.0.2/styles/ag-theme-alpine.css">
+    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@32.0.2/dist/ag-grid-community.min.noStyle.js"></script>
+    <style>
+        :root {
+            --bg:#f5f8fa;--white:#fff;--sidebar:#2d3e50;--sidebar-hover:#3a4f63;--sidebar-active:#1a2b3c;
+            --accent:#ff7a59;--accent-hover:#ff5c35;--blue:#0091ae;--green:#00bda5;--yellow:#f5c26b;
+            --red:#f2545b;--purple:#6a78d1;--text:#33475b;--text-light:#7c98b6;--text-dark:#1a2b3c;
+            --border:#dfe3eb;--border-light:#eaf0f6;--sidebar-w:210px;--topbar-h:52px;--radius:6px;
+            --shadow:0 1px 3px rgba(0,0,0,.08);
+        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:13px;display:flex;min-height:100vh}
+        ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:#cbd6e2;border-radius:3px}
+
+        /* Sidebar */
+        .sidebar{width:var(--sidebar-w);background:var(--sidebar);position:fixed;top:0;left:0;bottom:0;z-index:100;display:flex;flex-direction:column}
+        .sidebar-brand{padding:14px 16px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,.1)}
+        .sidebar-brand .logo{width:30px;height:30px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:13px}
+        .sidebar-brand span{color:#fff;font-weight:600;font-size:13px}
+        .sidebar-brand .rep-tag{background:var(--blue);color:#fff;font-size:9px;padding:2px 6px;border-radius:8px;margin-left:auto;font-weight:600}
+        .sidebar-nav{flex:1;padding:8px 0;overflow-y:auto}
+        .nav-label{padding:12px 16px 4px;font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:rgba(255,255,255,.35);font-weight:600}
+        .nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;color:rgba(255,255,255,.7);cursor:pointer;transition:.15s;font-size:13px}
+        .nav-item:hover{background:var(--sidebar-hover);color:#fff}
+        .nav-item.active{background:var(--sidebar-active);color:#fff;border-left:3px solid var(--accent)}
+        .nav-item i{width:18px;text-align:center;font-size:14px}
+        .sidebar-user{padding:12px 16px;border-top:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:8px}
+        .sidebar-user .avatar{width:28px;height:28px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:11px}
+        .sidebar-user .info{color:rgba(255,255,255,.8);font-size:11px;line-height:1.3}
+        .sidebar-user .info .name{font-weight:600}
+
+        /* Main */
+        .main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;height:100vh}
+        .topbar{height:var(--topbar-h);background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0}
+        .topbar h1{font-size:15px;font-weight:600;color:var(--text-dark);white-space:nowrap}
+        .topbar .live-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(0,189,165,.08);color:var(--green);font-size:11px;font-weight:600;border-radius:var(--radius);border:1px solid rgba(0,189,165,.2)}
+        .topbar .live-badge i{font-size:9px}
+        .content{flex:1;padding:16px 20px;overflow-y:auto}
+        .section{display:none;height:100%}.section.active{display:flex;flex-direction:column}
+
+        /* Omnisearch */
+        .omnisearch-trigger{display:flex;align-items:center;gap:6px;padding:6px 14px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;color:var(--text-light);font-size:12px;transition:.15s;min-width:220px}
+        .omnisearch-trigger:hover{border-color:var(--blue)}
+        .omnisearch-trigger kbd{font-size:10px;background:var(--white);border:1px solid var(--border);padding:1px 5px;border-radius:3px;font-family:inherit}
+        .omni-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);z-index:500;display:none;align-items:flex-start;justify-content:center;padding-top:80px}
+        .omni-overlay.open{display:flex}
+        .omni-box{background:var(--white);border-radius:12px;width:580px;max-height:480px;box-shadow:0 16px 48px rgba(0,0,0,.2);overflow:hidden;display:flex;flex-direction:column}
+        .omni-input-wrap{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border-light)}
+        .omni-input-wrap i{color:var(--text-light);font-size:16px}
+        .omni-input{flex:1;border:none;outline:none;font-size:15px;font-family:inherit;color:var(--text-dark)}
+        .omni-results{flex:1;overflow-y:auto;padding:8px 0}
+        .omni-group{padding:4px 18px}
+        .omni-group-title{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-light);font-weight:600;padding:6px 0}
+        .omni-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:var(--radius);cursor:pointer;transition:.1s}
+        .omni-item:hover{background:var(--bg)}
+        .omni-item .oi-icon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px}
+        .omni-item .oi-name{font-weight:500;font-size:13px}.omni-item .oi-sub{font-size:11px;color:var(--text-light)}
+        .omni-empty{padding:24px;text-align:center;color:var(--text-light);font-size:13px}
+
+        /* Stats */
+        .stat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px}
+        .stat-card{background:var(--white);border-radius:var(--radius);padding:14px 16px;border:1px solid var(--border-light);box-shadow:var(--shadow);cursor:pointer;transition:.15s}
+        .stat-card:hover{border-color:var(--blue);box-shadow:0 2px 8px rgba(0,0,0,.12)}
+        .stat-card .label{font-size:10px;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+        .stat-card .value{font-size:22px;font-weight:700;color:var(--text-dark)}
+        .stat-card .sub{font-size:11px;margin-top:2px}.trend-up{color:var(--green)}.trend-down{color:var(--red)}
+
+        /* Card */
+        .card{background:var(--white);border-radius:var(--radius);border:1px solid var(--border-light);box-shadow:var(--shadow);margin-bottom:14px;overflow:hidden}
+        .card-header{padding:12px 16px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between}
+        .card-header h2{font-size:13px;font-weight:600}
+        .card-body{padding:14px 16px}
+
+        /* Toolbar */
+        .grid-toolbar{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+        .grid-search-wrap{position:relative}
+        .grid-search-wrap i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-light);font-size:11px}
+        .grid-search{padding:6px 10px 6px 30px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;background:var(--white);width:220px}
+        .grid-search:focus{outline:none;border-color:var(--blue)}
+        .btn{padding:6px 12px;border-radius:var(--radius);font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--white);color:var(--text);display:inline-flex;align-items:center;gap:5px;transition:.15s}
+        .btn:hover{background:var(--bg)}.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}.btn-primary:hover{background:var(--accent-hover)}
+        .btn i{font-size:11px}
+        .view-tabs{display:flex;gap:2px;background:var(--bg);border-radius:var(--radius);padding:2px}
+        .view-tab{padding:5px 12px;font-size:11px;font-weight:500;cursor:pointer;border-radius:4px;color:var(--text-light);transition:.15s}
+        .view-tab.active{background:var(--white);color:var(--text-dark);box-shadow:var(--shadow)}
+
+        /* AG Grid */
+        .ag-theme-alpine{--ag-font-family:'Inter',sans-serif;--ag-font-size:12px;--ag-header-background-color:#f8fafc;--ag-header-foreground-color:#7c98b6;--ag-row-hover-color:rgba(0,145,174,.04);--ag-selected-row-background-color:rgba(255,122,89,.06);--ag-border-color:#eaf0f6;--ag-header-column-separator-color:transparent;--ag-range-selection-border-color:var(--blue);--ag-checkbox-checked-color:var(--accent)}
+        .ag-theme-alpine .ag-header-cell-text{text-transform:uppercase;letter-spacing:.5px;font-weight:600;font-size:10px}
+        .ag-theme-alpine .ag-row{border-bottom:1px solid #f0f3f7}
+        .ag-theme-alpine .ag-cell{display:flex;align-items:center}
+
+        /* Badges */
+        .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+        .badge-green{background:#e6f9f5;color:#00875a}.badge-yellow{background:#fff3e0;color:#e07c00}.badge-red{background:#fce4ec;color:#c62828}
+        .badge-blue{background:rgba(0,145,174,.08);color:#0091ae}.badge-purple{background:rgba(106,120,209,.08);color:#6a78d1}
+        .badge-a-plus,.badge-a{background:#e6f9f5;color:#00875a}.badge-b-plus,.badge-b{background:#fff3e0;color:#e07c00}.badge-c-plus,.badge-c{background:#fce4ec;color:#c62828}
+
+        /* Timeline */
+        .timeline{position:relative;padding-left:24px}
+        .timeline-item{display:flex;gap:12px;margin-bottom:12px;position:relative}
+        .timeline-item:before{content:'';position:absolute;left:-24px;top:5px;width:8px;height:8px;background:var(--blue);border-radius:50%;border:2px solid var(--white)}
+        .timeline-item:not(:last-child):after{content:'';position:absolute;left:-20px;top:13px;width:2px;height:calc(100% + 0px);background:var(--border)}
+        .timeline-item .time{font-size:11px;color:var(--text-light);min-width:55px;padding-top:2px}
+        .timeline-item .desc{flex:1;font-size:12px;color:var(--text-dark)}
+        .timeline-item .type{font-size:10px;color:var(--text-light);text-transform:uppercase;font-weight:600}
+
+        /* Kanban */
+        .kanban-container{display:flex;gap:12px;overflow-x:auto;margin-bottom:14px}
+        .kanban-column{flex:0 0 300px;background:var(--bg);border-radius:var(--radius);padding:12px}
+        .kanban-header{font-weight:600;font-size:12px;color:var(--text-dark);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+        .kanban-badge{background:var(--text-light);color:var(--white);font-size:10px;padding:1px 6px;border-radius:4px;font-weight:600}
+        .kanban-card{background:var(--white);border:1px solid var(--border-light);border-radius:var(--radius);padding:10px;margin-bottom:8px;cursor:pointer;transition:.15s;font-size:12px}
+        .kanban-card:hover{box-shadow:0 2px 8px rgba(0,0,0,.12);transform:translateY(-2px)}
+        .kanban-card-title{font-weight:600;margin-bottom:4px;color:var(--text-dark)}
+        .kanban-card-client{font-size:11px;color:var(--text-light);margin-bottom:6px}
+        .kanban-card-amount{font-weight:600;color:var(--green);font-size:13px;margin-bottom:4px}
+        .kanban-card-prob{font-size:10px;color:var(--text-light)}
+
+        /* Detail panel */
+        .detail-overlay{position:fixed;top:0;right:0;bottom:0;width:560px;background:var(--white);z-index:300;box-shadow:-4px 0 20px rgba(0,0,0,.15);transform:translateX(100%);transition:transform .25s ease;overflow-y:auto}
+        .detail-overlay.open{transform:translateX(0)}
+        .detail-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--white);z-index:10}
+        .detail-header h2{font-size:15px;font-weight:700}
+        .close-btn{width:28px;height:28px;border-radius:50%;border:none;background:var(--bg);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s}
+        .close-btn:hover{background:var(--border-light)}
+        .detail-body{padding:18px}
+        .detail-section{margin-bottom:18px}
+        .detail-section h3{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-light);margin-bottom:8px;font-weight:600}
+        .field-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+        .field .label{font-size:10px;color:var(--text-light);margin-bottom:1px}.field .val{font-size:13px;font-weight:500;color:var(--text-dark)}
+        .field .val a{color:var(--blue);text-decoration:none}.field .val a:hover{text-decoration:underline}
+        .vol-chart{display:flex;align-items:flex-end;gap:6px;height:55px;margin-top:6px;padding-bottom:18px}
+        .vol-bar{flex:1;background:var(--blue);border-radius:3px 3px 0 0;min-width:30px;position:relative}
+        .vol-bar .vl{position:absolute;bottom:-15px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--text-light);white-space:nowrap}
+        .vol-bar .va{position:absolute;top:-13px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:600;color:var(--text-dark);white-space:nowrap}
+        .link-odoo{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:var(--radius);background:var(--bg);color:var(--blue);font-size:12px;font-weight:500;text-decoration:none;border:1px solid var(--border);transition:.15s;margin-right:6px;margin-top:6px}
+        .link-odoo:hover{background:var(--blue);color:#fff}
+        .backdrop{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.25);z-index:250;display:none}
+        .backdrop.show{display:block}
+
+        /* Alert items */
+        .alert-item{padding:8px 0;border-bottom:1px solid var(--border-light);font-size:12px;display:flex;align-items:center;gap:8px}
+        .alert-item:last-child{border:none}
+
+        /* Top clients chart */
+        .clients-chart{display:flex;flex-direction:column;gap:8px}
+        .client-bar{display:flex;align-items:center;gap:8px;cursor:pointer;transition:.15s}
+        .client-bar:hover{opacity:.8}
+        .client-name{width:110px;font-size:12px;font-weight:500;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .client-bar-chart{flex:1;height:16px;background:var(--bg);border-radius:3px;overflow:hidden}
+        .client-bar-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--green));border-radius:3px}
+        .client-amount{font-size:11px;font-weight:600;width:55px;text-align:right}
+        .client-score{font-size:10px;color:var(--text-light);width:40px;text-align:center}
+    </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<nav class="sidebar">
+    <div class="sidebar-brand"><div class="logo">G</div><span>Granites MC</span><span class="rep-tag">REP</span></div>
+    <div class="sidebar-nav">
+        <div class="nav-label">Accueil</div>
+        <div class="nav-item active" onclick="showSection('dashboard',this)"><i class="fa-solid fa-chart-pie"></i> Mon tableau de bord</div>
+        <div class="nav-label">Gestion</div>
+        <div class="nav-item" onclick="showSection('clients',this)"><i class="fa-solid fa-building"></i> Mes clients</div>
+        <div class="nav-item" onclick="showSection('pipeline',this)"><i class="fa-solid fa-filter-circle-dollar"></i> Pipeline</div>
+        <div class="nav-item" onclick="showSection('activity',this)"><i class="fa-solid fa-chart-line"></i> Activités</div>
+    </div>
+    <div class="sidebar-user"><div class="avatar">IT</div><div class="info"><div class="name">Isabelle T.</div><div>Représentant</div></div></div>
+</nav>
+
+<!-- Omnisearch overlay -->
+<div class="omni-overlay" id="omniOverlay" onclick="if(event.target===this)closeOmni()">
+    <div class="omni-box">
+        <div class="omni-input-wrap">
+            <i class="fa-solid fa-search"></i>
+            <input class="omni-input" id="omniInput" placeholder="Rechercher mes clients, soumissions..." oninput="omniSearch(this.value)" autofocus>
+            <kbd style="font-size:10px;color:var(--text-light);background:var(--bg);padding:2px 6px;border-radius:3px;border:1px solid var(--border)">Esc</kbd>
+        </div>
+        <div class="omni-results" id="omniResults">
+            <div class="omni-empty">Tapez pour rechercher...</div>
+        </div>
+    </div>
+</div>
+
+<!-- Backdrop + Detail panel -->
+<div class="backdrop" id="backdrop" onclick="closeDetail()"></div>
+<div class="detail-overlay" id="detailPanel">
+    <div class="detail-header"><h2 id="detailName">—</h2><button class="close-btn" onclick="closeDetail()"><i class="fa-solid fa-xmark"></i></button></div>
+    <div class="detail-body" id="detailBody"></div>
+</div>
+
+<!-- Main Content -->
+<div class="main">
+
+<!-- ====== DASHBOARD ====== -->
+<div class="section active" id="sec-dashboard">
+    <div class="topbar">
+        <h1>Mon tableau de bord</h1>
+        <div class="omnisearch-trigger" onclick="openOmni()"><i class="fa-solid fa-search" style="font-size:12px"></i> Rechercher... <kbd>⌘K</kbd></div>
+        <span style="flex:1"></span>
+        <span style="font-size:12px;color:var(--text-light)">Mars 2026</span>
+        <span class="live-badge" id="liveBadge" style="display:none"><i class="fa-solid fa-circle"></i> Live</span>
+    </div>
+    <div class="content">
+        <div class="stat-grid" id="dashboardStats"></div>
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px">
+            <div class="card">
+                <div class="card-header"><h2><i class="fa-solid fa-ranking-star" style="color:var(--green);margin-right:5px"></i> Mes top 5 clients — Volume 2022</h2></div>
+                <div class="card-body" id="top5Chart"></div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h2><i class="fa-solid fa-triangle-exclamation" style="color:var(--accent);margin-right:5px"></i> Alertes</h2></div>
+                <div class="card-body" id="alertsPanel"></div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header"><h2><i class="fa-solid fa-clock" style="color:var(--blue);margin-right:5px"></i> Activité récente</h2></div>
+            <div class="card-body" id="timelinePanel"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ====== MES CLIENTS ====== -->
+<div class="section" id="sec-clients">
+    <div class="topbar">
+        <h1>Mes clients</h1>
+        <div class="omnisearch-trigger" onclick="openOmni()"><i class="fa-solid fa-search" style="font-size:12px"></i> Rechercher... <kbd>⌘K</kbd></div>
+        <span style="flex:1"></span>
+    </div>
+    <div class="content" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+        <div class="grid-toolbar">
+            <div class="view-tabs">
+                <div class="view-tab active" onclick="setClientView('all',this)">Tous</div>
+                <div class="view-tab" onclick="setClientView('a',this)">Score A</div>
+                <div class="view-tab" onclick="setClientView('b',this)">Score B</div>
+                <div class="view-tab" onclick="setClientView('c',this)">Score C</div>
+            </div>
+            <div class="grid-search-wrap"><i class="fa-solid fa-search"></i><input class="grid-search" id="clientGridSearch" placeholder="Filtrer..." oninput="onClientSearch(this.value)"></div>
+            <span style="flex:1"></span>
+            <button class="btn" onclick="exportClientGrid()"><i class="fa-solid fa-download"></i> Exporter CSV</button>
+        </div>
+        <div id="clientsGrid" class="ag-theme-alpine" style="flex:1;width:100%;min-height:400px"></div>
+    </div>
+</div>
+
+<!-- ====== PIPELINE ====== -->
+<div class="section" id="sec-pipeline">
+    <div class="topbar">
+        <h1>Mon pipeline</h1>
+        <div class="omnisearch-trigger" onclick="openOmni()"><i class="fa-solid fa-search" style="font-size:12px"></i> Rechercher... <kbd>⌘K</kbd></div>
+        <span style="flex:1"></span>
+    </div>
+    <div class="content" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+        <div class="grid-toolbar">
+            <div class="view-tabs">
+                <div class="view-tab active" onclick="setPipeView('all',this)">Toutes</div>
+                <div class="view-tab" onclick="setPipeView('Nouveau',this)">Nouveau</div>
+                <div class="view-tab" onclick="setPipeView('Soumis',this)">Soumis</div>
+                <div class="view-tab" onclick="setPipeView('Négociation',this)">Négociation</div>
+                <div class="view-tab" onclick="setPipeView('Signé',this)">Signé</div>
+            </div>
+            <div class="grid-search-wrap"><i class="fa-solid fa-search"></i><input class="grid-search" id="pipeGridSearch" placeholder="Filtrer soumissions..." oninput="onPipeSearch(this.value)"></div>
+            <span style="flex:1"></span>
+            <button class="btn" onclick="exportPipeGrid()"><i class="fa-solid fa-download"></i> Exporter CSV</button>
+        </div>
+        <div id="pipelineTabbed" style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+            <div style="flex:1;overflow-y:auto">
+                <div class="kanban-container" id="kanbanContainer"></div>
+                <div style="display:none" id="pipeGridContainer" style="flex:1;width:100%;min-height:300px">
+                    <div id="pipeGrid" class="ag-theme-alpine" style="height:100%;width:100%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ====== ACTIVITÉS ====== -->
+<div class="section" id="sec-activity">
+    <div class="topbar">
+        <h1>Activités</h1>
+        <div class="omnisearch-trigger" onclick="openOmni()"><i class="fa-solid fa-search" style="font-size:12px"></i> Rechercher... <kbd>⌘K</kbd></div>
+        <span style="flex:1"></span>
+    </div>
+    <div class="content" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+            <div class="card">
+                <div class="card-header"><h2>Historique activités (6 mois)</h2></div>
+                <div class="card-body" id="activityChart"></div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h2>Indicateurs</h2></div>
+                <div class="card-body" id="metricsPanel"></div>
+            </div>
+        </div>
+        <div class="grid-toolbar">
+            <div class="grid-search-wrap"><i class="fa-solid fa-search"></i><input class="grid-search" id="actGridSearch" placeholder="Filtrer..." oninput="onActSearch(this.value)"></div>
+            <span style="flex:1"></span>
+            <button class="btn" onclick="exportActGrid()"><i class="fa-solid fa-download"></i> Exporter CSV</button>
+        </div>
+        <div id="actGrid" class="ag-theme-alpine" style="flex:1;width:100%;min-height:250px"></div>
+    </div>
+</div>
+
+</div><!-- /main -->
+
+<script>
+// ========== DATA ==========
+const ODOO = 'https://granites-mc.odoo.com';
+const API_URL = 'https://granites-mc-backend-production-f93a.up.railway.app';
+const CURRENT_REP = 'Isabelle T.';
+
+let CLIENTS = [
+  {rank:1,nom:"Cuisifab Inc",court:"Cuisifab",terr:"3-RI",score:"A+",best:325950,total:830151,vols:{2019:105019,2020:158799,2021:325950,2022:240383},web:"https://cuisifab.com/",addr:"5075 Boul. des Forges, Trois-Rivières",tel:"819-519-8400",email:"info@cuisifab.com",fb:"https://www.facebook.com/Cuisifab/",contacts:[],desc:"Fabricant armoires cuisine/SDB depuis 2000",pay:"",rep:"Isabelle T."},
+  {rank:2,nom:"Espaces Rubic",court:"Rubic",terr:"T03",score:"A+",best:169560,total:391248,vols:{2019:47813,2020:86720,2021:169560,2022:87155},web:"https://espacesrubic.com/",addr:"397 rue Rose-Ellis, Drummondville",tel:"819-850-6125",email:"info@espacesrubic.com",fb:"",contacts:[],desc:"Cuisines design avant-garde",pay:"",rep:"Yvon R."},
+  {rank:3,nom:"Avivia Inc",court:"Avivia",terr:"3-RI",score:"A+",best:161399,total:504653,vols:{2019:67925,2020:161399,2021:136557,2022:138772},web:"https://avivia.ca/",addr:"20 route Goulet, St-Séverin",tel:"418-365-7821",email:"",fb:"",contacts:[],desc:"Fabricant québécois armoires familial",pay:"",rep:"Isabelle T."},
+  {rank:4,nom:"Cuisi-Meuble S.M.",court:"Cuisi-Meuble",terr:"T03",score:"A+",best:133631,total:438031,vols:{2019:116621,2020:115316,2021:133631,2022:72463},web:"https://cuisimeublesm.com/",addr:"1031 ch. Warwick, Tingwick",tel:"819-359-3110",email:"info@cuisimeublesm.com",fb:"",contacts:[{nom:"Simon",role:""},{nom:"Benjamin",role:""}],desc:"Armoires sur mesure, CNC",pay:"",rep:"Isabelle T."},
+  {rank:5,nom:"Cuisines M.R.S.",court:"Cuisines MRS",terr:"T03",score:"A",best:111642,total:295138,vols:{2019:71514,2020:18661,2021:93321,2022:111642},web:"https://cuisimax.com/fr/1_cuisines-mrs",addr:"180 Boul. Bois-Francs S, Victoriaville",tel:"819-758-1594",email:"info@cuisimax.com",fb:"",contacts:[{nom:"Kelly",role:""},{nom:"Marianne",role:""}],desc:"Fabricant armoires depuis 1967",pay:"5%, net 30j",rep:"Isabelle T."},
+  {rank:6,nom:"Éb. des Cantons-de-l'Est",court:"Éb. Cantons",terr:"T03",score:"A",best:86864,total:187256,vols:{2019:42350,2020:52791,2021:86864,2022:5251},web:"http://www.ebenisterie.ca/",addr:"47 rue Aristide, Granby",tel:"450-375-5054",email:"",fb:"",contacts:[{nom:"Stéphan Gagnon",role:"Dir. opérations"}],desc:"Ébénisterie classique/commerciale",pay:"",rep:"Isabelle T."},
+  {rank:7,nom:"Armoires N.S.",court:"Armoires NS",terr:"T04",score:"A",best:65819,total:104840,vols:{2019:65819,2020:28800,2021:10221},web:"",addr:"Québec",tel:"",email:"",fb:"",contacts:[{nom:"Laurie Bédard",role:""}],desc:"Fabricant armoires",pay:"",rep:"Marc L."},
+  {rank:8,nom:"Andréanne Allard Designer",court:"A. Allard",terr:"3-RI",score:"A",best:57892,total:74413,vols:{2019:57892,2020:15216,2021:1305},web:"https://andreanneallard.com/",addr:"5235 rue De La Châtelaine, TR",tel:"819-995-0173",email:"",fb:"",contacts:[],desc:"Designer intérieur 20 ans exp",pay:"",rep:"Isabelle T."},
+  {rank:9,nom:"Armoires Solution Inc",court:"Arm. Solution",terr:"3-RI",score:"A",best:39813,total:94448,vols:{2019:8636,2020:10476,2021:35523,2022:39813},web:"http://www.armoiressolution.com",addr:"430 rue Vachon, TR",tel:"819-697-2464",email:"info@armoiressolution.com",fb:"",contacts:[],desc:"Resurfaçage/refacing armoires",pay:"",rep:"Isabelle T."},
+  {rank:10,nom:"Éb. P.G. Massicotte",court:"PG Massicotte",terr:"3-RI",score:"A",best:37641,total:97015,vols:{2019:7419,2020:16615,2021:37641,2022:35340},web:"",addr:"Trois-Rivières",tel:"",email:"",fb:"",contacts:[],desc:"Fabrication armoires, Mauricie",pay:"",rep:"Isabelle T."},
+  {rank:11,nom:"Prefab",court:"Prefab",terr:"T03",score:"B+",best:34286,total:44346,vols:{2019:1256,2021:34286,2022:8804},web:"",addr:"Estrie",tel:"",email:"",fb:"",contacts:[],desc:"Ébéniste/cuisiniste Estrie",pay:"",rep:"Yvon R."},
+  {rank:12,nom:"Atelier Bruno Pichet",court:"B. Pichet",terr:"3-RI",score:"B+",best:32769,total:87677,vols:{2019:21545,2020:17099,2021:32769,2022:16264},web:"https://brunopichet.com/",addr:"2281 rang Ste-Marguerite, St-Maurice",tel:"819-375-5337",email:"",fb:"",contacts:[],desc:"Maître ébéniste sur mesure",pay:"",rep:"Isabelle T."},
+  {rank:13,nom:"Pascal & Stéfanie Bois B",court:"Bois B",terr:"3-RI",score:"B+",best:30760,total:34047,vols:{2021:3287,2022:30760},web:"",addr:"Trois-Rivières",tel:"",email:"",fb:"",contacts:[],desc:"Ébéniste, forte croissance 2022",pay:"",rep:"Isabelle T."},
+  {rank:14,nom:"Atelier DLJ",court:"Atelier DLJ",terr:"3-RI",score:"B+",best:30621,total:76501,vols:{2019:15951,2020:14084,2021:30621,2022:15845},web:"",addr:"Trois-Rivières",tel:"",email:"",fb:"",contacts:[],desc:"Atelier ébénisterie, Mauricie",pay:"",rep:"Isabelle T."},
+  {rank:15,nom:"Antiquité Design",court:"Antiq. Design",terr:"T03",score:"B+",best:28606,total:86290,vols:{2019:8364,2020:26545,2021:28606,2022:22775},web:"https://www.antiquitedesign.com/",addr:"16 rue Poirier, Saint-Rosaire",tel:"819-690-4457",email:"",fb:"",contacts:[{nom:"Marie-Lise Frenette",role:"Designer"}],desc:"Design rustique, maisons ancestrales",pay:"",rep:"Isabelle T."},
+  {rank:16,nom:"Armoire Décor Inc",court:"Arm. Décor",terr:"3-RI",score:"B",best:28487,total:54128,vols:{2019:16043,2020:3995,2021:28487,2022:5603},web:"https://armoiredecor.com/",addr:"12488 rue Notre-Dame O, TR",tel:"819-377-1871",email:"info@armoiredecor.com",fb:"",contacts:[],desc:"Armoires sur mesure depuis 1979",pay:"",rep:"Isabelle T."},
+  {rank:17,nom:"Bois-Briand Cuisines",court:"Bois-Briand",terr:"3-RI",score:"B",best:27210,total:60924,vols:{2019:18737,2020:27210,2021:13893,2022:1084},web:"https://nova-design.ca/",addr:"2105 rue Charbonneau, TR",tel:"819-840-6906",email:"info@nova-design.ca",fb:"",contacts:[],desc:"Fab armoires cuisine/SDB",pay:"",rep:"Isabelle T."},
+  {rank:18,nom:"Armoires C. Tremblay",court:"C. Tremblay",terr:"T03",score:"B",best:26839,total:67036,vols:{2019:13788,2020:9716,2021:26839,2022:16693},web:"https://www.armoirestremblay.com/",addr:"3108 rue Bernard-Pilon, St-Mathieu-de-Beloeil",tel:"450-446-2182",email:"",fb:"",contacts:[],desc:"Famille depuis 1984",pay:"",rep:"Yvon R."},
+  {rank:19,nom:"Armoires B.M.S.",court:"BMS",terr:"3-RI",score:"B",best:25182,total:54783,vols:{2019:20375,2020:4845,2021:25182,2022:4381},web:"https://www.armoiresbms.com/",addr:"371 rang du Pays-Brûlé, St-Célestin",tel:"819-229-3315",email:"info@armoiresbms.com",fb:"",contacts:[{nom:"Alain",role:""},{nom:"Andrée",role:""}],desc:"Armoires et mobilier commercial",pay:"Escompte 2%, net 10j",rep:"Isabelle T."},
+  {rank:20,nom:"Armoire B.M.",court:"Arm. BM",terr:"T03",score:"B",best:17551,total:30614,vols:{2019:7987,2020:5076,2021:17551},web:"",addr:"Estrie",tel:"",email:"",fb:"",contacts:[{nom:"Jessika",role:""}],desc:"Fabricant armoires",pay:"",rep:"Isabelle T."},
+  {rank:21,nom:"Bout Design Ladouceur",court:"Bout Design",terr:"T03",score:"B",best:16517,total:50122,vols:{2019:13508,2020:4155,2021:15942,2022:16517},web:"",addr:"Estrie",tel:"",email:"",fb:"",contacts:[],desc:"2 salles de montre, client depuis 2012",pay:"",rep:"Yvon R."},
+  {rank:22,nom:"Les Cuisines S. Chaput",court:"Cuis. Chaput",terr:"T03",score:"B",best:15115,total:36520,vols:{2019:15115,2021:11907,2022:9498},web:"",addr:"Victoriaville",tel:"",email:"",fb:"",contacts:[],desc:"Cuisines réno/construction",pay:"",rep:"Isabelle T."},
+  {rank:23,nom:"Atelier Éb. Luc Chênevert",court:"L. Chênevert",terr:"3-RI",score:"C+",best:12457,total:23261,vols:{2019:12457,2021:8705,2022:2099},web:"https://www.atelierebenisterielucchenevert.ca/",addr:"343 rang de la Rivière SO, Maskinongé",tel:"819-227-3140",email:"",fb:"",contacts:[],desc:"Ébénisterie sur mesure depuis 1984",pay:"",rep:"Isabelle T."},
+  {rank:24,nom:"SMA Ébénisterie",court:"SMA",terr:"T03",score:"C",best:9209,total:14277,vols:{2020:9209,2021:2257,2022:2811},web:"",addr:"Estrie",tel:"",email:"",fb:"",contacts:[{nom:"Jean-Luc",role:""}],desc:"Ébéniste Estrie",pay:"",rep:"Isabelle T."},
+  {rank:25,nom:"Boiseries Anny-Max",court:"Anny-Max",terr:"3-RI",score:"C",best:7278,total:8117,vols:{2019:839,2021:7278},web:"",addr:"2736 rue Charbonneau, TR",tel:"819-377-0496",email:"boiseriesanny.max@hotmail.com",fb:"",contacts:[],desc:"Armoires et mobilier depuis 1988",pay:"",rep:"Isabelle T."}
+];
+
+let PIPELINE = [
+  {nom:"Commercial 12 cuisines",client:"Cuisifab",montant:45000,etape:"Soumis",rep:"Isabelle T.",date:"8 mars 2026",prob:65},
+  {nom:"Projet condo Magog",client:"Avivia",montant:28000,etape:"Négociation",rep:"Isabelle T.",date:"5 mars 2026",prob:45},
+  {nom:"Cuisine design résidentiel",client:"Cuisi-Meuble",montant:18500,etape:"Signé",rep:"Isabelle T.",date:"3 mars 2026",prob:95},
+  {nom:"Réno cuisine complète",client:"Arm. Solution",montant:7600,etape:"Soumis",rep:"Isabelle T.",date:"6 mars 2026",prob:60},
+  {nom:"Projet résidentiel",client:"Prefab",montant:8500,etape:"Nouveau",rep:"Yvon R.",date:"9 mars 2026",prob:20},
+  {nom:"Réno SDB",client:"SMA",montant:3200,etape:"Nouveau",rep:"Isabelle T.",date:"10 mars 2026",prob:15},
+  {nom:"Comptoir commercial",client:"Cuisines MRS",montant:22400,etape:"Soumis",rep:"Isabelle T.",date:"4 mars 2026",prob:50},
+  {nom:"Vanité sur mesure",client:"B. Pichet",montant:5800,etape:"Négociation",rep:"Isabelle T.",date:"2 mars 2026",prob:40},
+  {nom:"Cuisine complète Sherbrooke",client:"Antiq. Design",montant:14200,etape:"Soumis",rep:"Isabelle T.",date:"1 mars 2026",prob:35},
+  {nom:"Projet condo TR",client:"BMS",montant:9700,etape:"Nouveau",rep:"Isabelle T.",date:"10 mars 2026",prob:25},
+  {nom:"Salle de bain design",client:"Arm. Décor",montant:6300,etape:"Soumis",rep:"Isabelle T.",date:"28 fév 2026",prob:45},
+];
+
+// Filter clients and pipeline for this rep
+const MY_CLIENTS = CLIENTS.filter(c => c.rep === CURRENT_REP);
+const MY_PIPELINE = PIPELINE.filter(p => p.rep === CURRENT_REP);
+
+// ========== API SYNC ==========
+async function syncWithRailway() {
+    try {
+        const response = await fetch(API_URL + '/api/clients');
+        if (response.ok) {
+            const data = await response.json();
+            if (data && Array.isArray(data)) {
+                // Merge with static data
+                CLIENTS = data.map(d => {
+                    const existing = CLIENTS.find(c => c.rank === d.rank);
+                    return {...existing, ...d};
+                });
+                document.getElementById('liveBadge').style.display = 'inline-flex';
+            }
+        }
+    } catch(e) { console.log('API sync skipped'); }
+}
+syncWithRailway();
+
+// ========== NAVIGATION ==========
+function showSection(id, el) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.getElementById('sec-'+id).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    el.classList.add('active');
+    if (id === 'clients' && clientGrid) setTimeout(() => clientGrid.api.sizeColumnsToFit(), 50);
+    if (id === 'pipeline' && pipeGrid) setTimeout(() => pipeGrid.api.sizeColumnsToFit(), 50);
+    if (id === 'activity' && actGrid) setTimeout(() => actGrid.api.sizeColumnsToFit(), 50);
+}
+
+// ========== OMNISEARCH ==========
+function openOmni() { document.getElementById('omniOverlay').classList.add('open'); setTimeout(()=>document.getElementById('omniInput').focus(),100); }
+function closeOmni() { document.getElementById('omniOverlay').classList.remove('open'); document.getElementById('omniInput').value=''; }
+
+function omniSearch(q) {
+    const res = document.getElementById('omniResults');
+    if (!q || q.length < 2) { res.innerHTML = '<div class="omni-empty">Tapez pour rechercher...</div>'; return; }
+    const ql = q.toLowerCase();
+    let html = '';
+
+    const matchC = MY_CLIENTS.filter(c => c.nom.toLowerCase().includes(ql) || c.court.toLowerCase().includes(ql) || c.addr.toLowerCase().includes(ql));
+    if (matchC.length) {
+        html += '<div class="omni-group"><div class="omni-group-title">Mes clients</div>';
+        matchC.slice(0,5).forEach(c => {
+            html += `<div class="omni-item" onclick="closeOmni();openDetail(${c.rank})"><div class="oi-icon" style="background:rgba(0,145,174,.08);color:var(--blue)"><i class="fa-solid fa-building"></i></div><div><div class="oi-name">${c.nom}</div><div class="oi-sub">${c.terr} · ${c.score} · $${(c.best/1000).toFixed(0)}k best</div></div></div>`;
+        });
+        html += '</div>';
+    }
+
+    const matchP = MY_PIPELINE.filter(p => p.nom.toLowerCase().includes(ql) || p.client.toLowerCase().includes(ql));
+    if (matchP.length) {
+        html += '<div class="omni-group"><div class="omni-group-title">Pipeline</div>';
+        matchP.slice(0,5).forEach(p => {
+            html += `<div class="omni-item" onclick="closeOmni();showSection('pipeline',document.querySelectorAll('.nav-item')[2])"><div class="oi-icon" style="background:rgba(255,122,89,.08);color:var(--accent)"><i class="fa-solid fa-file-invoice-dollar"></i></div><div><div class="oi-name">${p.nom}</div><div class="oi-sub">${p.client} · $${p.montant.toLocaleString('fr-CA')} · ${p.etape}</div></div></div>`;
+        });
+        html += '</div>';
+    }
+
+    if (!html) html = '<div class="omni-empty">Aucun résultat</div>';
+    res.innerHTML = html;
+}
+
+document.addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); openOmni(); }
+    if (e.key === 'Escape') { closeOmni(); closeDetail(); }
+});
+
+// ========== CELL RENDERERS ==========
+function scoreCellRenderer(p) {
+    if (!p.value) return '';
+    const cls = p.value.includes('A') ? 'badge-a' : p.value.includes('B') ? 'badge-b' : 'badge-c';
+    return `<span class="badge ${cls}">${p.value}</span>`;
+}
+function currencyFormatter(p) { return p.value ? '$' + Number(p.value).toLocaleString('fr-CA') : '—'; }
+function trendRenderer(p) {
+    const d = p.data; if (!d) return '';
+    const v22 = d.vol2022 || 0, v21 = d.vol2021 || 0;
+    if (!v21) return '—';
+    const pct = ((v22 - v21) / v21 * 100).toFixed(0);
+    return `<span style="color:${pct >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:600">${pct >= 0 ? '↑' : '↓'} ${Math.abs(pct)}%</span>`;
+}
+function nameRenderer(p) { return `<span style="font-weight:600;color:var(--text-dark);cursor:pointer" onclick="openDetail(${p.data.rank})">${p.value}</span>`; }
+function etapeRenderer(p) {
+    if (!p.value) return '';
+    const colors = {'Nouveau':'badge-purple','Soumis':'badge-blue','Négociation':'badge-yellow','Signé':'badge-green'};
+    return `<span class="badge ${colors[p.value]||'badge-blue'}">${p.value}</span>`;
+}
+
+// ========== AG GRID — CLIENTS ==========
+let clientGrid;
+const CLIENT_COLUMNS = [
+    {field:'rank',headerName:'#',width:50,pinned:'left'},
+    {field:'nom',headerName:'Client',minWidth:200,pinned:'left',cellRenderer:nameRenderer},
+    {field:'terr',headerName:'Territoire',width:100,filter:true},
+    {field:'score',headerName:'Score',width:85,cellRenderer:scoreCellRenderer,filter:true},
+    {field:'vol2022',headerName:'Vol. 2022',width:110,valueFormatter:currencyFormatter},
+    {field:'vol2021',headerName:'Vol. 2021',width:110,valueFormatter:currencyFormatter},
+    {field:'trend',headerName:'Tendance',width:100,sortable:false,cellRenderer:trendRenderer},
+    {field:'best',headerName:'Meilleur',width:110,valueFormatter:currencyFormatter},
+    {field:'total',headerName:'Total cumulé',width:120,valueFormatter:currencyFormatter,hide:true},
+    {field:'tel',headerName:'Téléphone',width:130},
+    {field:'email',headerName:'Email',width:180,hide:true},
+];
+
+function getClientRowData() {
+    return MY_CLIENTS.map(c => ({
+        rank:c.rank, nom:c.nom, terr:c.terr, score:c.score, best:c.best, total:c.total,
+        vol2022:c.vols[2022]||0, vol2021:c.vols[2021]||0, vol2020:c.vols[2020]||0, vol2019:c.vols[2019]||0,
+        tel:c.tel, email:c.email
+    }));
+}
+
+function initClientGrid() {
+    clientGrid = agGrid.createGrid(document.getElementById('clientsGrid'), {
+        columnDefs: CLIENT_COLUMNS,
+        rowData: getClientRowData(),
+        defaultColDef: { resizable:true, sortable:true, filter:false, floatingFilter:false, minWidth:70 },
+        rowSelection:'multiple', animateRows:true, pagination:true, paginationPageSize:25,
+        enableCellTextSelection:true,
+        onRowDoubleClicked: (e) => openDetail(e.data.rank),
+        getRowStyle: (p) => p.data && p.data.score && p.data.score.includes('A') ? {fontWeight:'500'} : null,
+    });
+}
+
+function onClientSearch(val) { if(clientGrid) clientGrid.api.setGridOption('quickFilterText',val); }
+function exportClientGrid() { if(clientGrid) clientGrid.api.exportDataAsCsv({fileName:'mes_clients_granites.csv'}); }
+function setClientView(filter, el) {
+    el.parentElement.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    if (!clientGrid) return;
+    if (filter === 'all') { clientGrid.api.setFilterModel(null); }
+    else { clientGrid.api.setFilterModel({ score: { type:'contains', filter: filter.toUpperCase() }}); }
+    clientGrid.api.onFilterChanged();
+}
+
+// ========== AG GRID — PIPELINE ==========
+let pipeGrid;
+function initPipeGrid() {
+    pipeGrid = agGrid.createGrid(document.getElementById('pipeGrid'), {
+        columnDefs: [
+            {field:'nom',headerName:'Soumission',minWidth:200,sortable:true,filter:false,cellStyle:{fontWeight:'600'}},
+            {field:'client',headerName:'Client',width:140,sortable:true,filter:true},
+            {field:'montant',headerName:'Montant',width:120,sortable:true,valueFormatter:currencyFormatter,cellStyle:{color:'var(--green)',fontWeight:'600'}},
+            {field:'etape',headerName:'Étape',width:120,sortable:true,filter:true,cellRenderer:etapeRenderer},
+            {field:'prob',headerName:'Probabilité',width:100,sortable:true,valueFormatter:p=>p.value?p.value+'%':''},
+            {field:'date',headerName:'Date',width:120,sortable:true,filter:true},
+        ],
+        rowData: MY_PIPELINE,
+        defaultColDef:{resizable:true,sortable:true,filter:false,floatingFilter:false},
+        animateRows:true,pagination:true,paginationPageSize:20,enableCellTextSelection:true
+    });
+}
+
+function onPipeSearch(val) { if(pipeGrid) pipeGrid.api.setGridOption('quickFilterText',val); }
+function exportPipeGrid() { if(pipeGrid) pipeGrid.api.exportDataAsCsv({fileName:'mon_pipeline_granites.csv'}); }
+function setPipeView(etape, el) {
+    el.parentElement.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    if (!pipeGrid) return;
+    if (etape === 'all') { pipeGrid.api.setFilterModel(null); }
+    else { pipeGrid.api.setFilterModel({ etape: { type:'equals', filter: etape }}); }
+    pipeGrid.api.onFilterChanged();
+}
+
+// ========== AG GRID — ACTIVITÉS ==========
+let actGrid;
+function initActGrid() {
+    const acts = [
+        {type:'Visite',client:'Cuisifab',date:'8 mars 2026',notes:'Visite chantier'},
+        {type:'Appel',client:'Avivia',date:'7 mars 2026',notes:'Suivi soumission'},
+        {type:'Email',client:'Cuisi-Meuble',date:'6 mars 2026',notes:'Devis supplémentaire'},
+        {type:'Visite',client:'Arm. Solution',date:'5 mars 2026',notes:'Nouvelle affaire'},
+        {type:'Appel',client:'BMS',date:'4 mars 2026',notes:'Commande confirmée'},
+    ];
+    actGrid = agGrid.createGrid(document.getElementById('actGrid'), {
+        columnDefs: [
+            {field:'type',headerName:'Type',width:100,sortable:true,filter:true},
+            {field:'client',headerName:'Client',width:140,sortable:true,filter:true},
+            {field:'date',headerName:'Date',width:130,sortable:true,filter:true},
+            {field:'notes',headerName:'Notes',minWidth:200,sortable:false},
+        ],
+        rowData: acts,
+        defaultColDef:{resizable:true,sortable:true,filter:false,floatingFilter:false},
+        animateRows:true,enableCellTextSelection:true,domLayout:'autoHeight'
+    });
+}
+function onActSearch(val) { if(actGrid) actGrid.api.setGridOption('quickFilterText',val); }
+function exportActGrid() { if(actGrid) actGrid.api.exportDataAsCsv({fileName:'activites_granites.csv'}); }
+
+// ========== CLIENT DETAIL PANEL ==========
+function openDetail(rank) {
+    const c = CLIENTS.find(x => x.rank === rank); if (!c) return;
+    document.getElementById('detailName').textContent = c.nom;
+    const maxV = Math.max(...Object.values(c.vols));
+    const bars = Object.entries(c.vols).sort((a,b)=>a[0]-b[0]).map(([yr,v]) => {
+        const h = maxV > 0 ? (v/maxV*50) : 0;
+        return `<div class="vol-bar" style="height:${h}px"><span class="va">$${(v/1000).toFixed(0)}k</span><span class="vl">${yr}</span></div>`;
+    }).join('');
+    const ctHtml = c.contacts && c.contacts.length > 0
+        ? c.contacts.map(ct => `<div style="margin-bottom:5px"><strong>${ct.nom}</strong>${ct.role?' — '+ct.role:''}</div>`).join('')
+        : '<span style="color:var(--text-light)">Aucun contact enregistré</span>';
+    const scoreCls = c.score.includes('A') ? 'badge-a' : c.score.includes('B') ? 'badge-b' : 'badge-c';
+
+    document.getElementById('detailBody').innerHTML = `
+        <div class="detail-section">
+            <div class="field-grid">
+                <div class="field"><div class="label">Score</div><div class="val"><span class="badge ${scoreCls}">${c.score}</span></div></div>
+                <div class="field"><div class="label">Territoire</div><div class="val">${c.terr}</div></div>
+                <div class="field"><div class="label">Téléphone</div><div class="val">${c.tel||'—'}</div></div>
+                <div class="field"><div class="label">Email</div><div class="val">${c.email?'<a href="mailto:'+c.email+'">'+c.email+'</a>':'—'}</div></div>
+                <div class="field"><div class="label">Adresse</div><div class="val">${c.addr||'—'}</div></div>
+            </div>
+            <div style="margin-top:10px">
+                ${c.web?'<a href="'+c.web+'" target="_blank" class="link-odoo"><i class="fa-solid fa-globe"></i> Site web</a>':''}
+                ${c.fb?'<a href="'+c.fb+'" target="_blank" class="link-odoo"><i class="fa-brands fa-facebook"></i> Facebook</a>':''}
+                <a href="${ODOO+'/web#action=contacts&view_type=list&search='+encodeURIComponent(c.court)}" target="_blank" class="link-odoo"><i class="fa-solid fa-external-link-alt"></i> Ouvrir Odoo</a>
+            </div>
+        </div>
+        <div class="detail-section">
+            <h3>Volume d'achat</h3>
+            <div style="font-size:12px;color:var(--text-light);margin-bottom:6px">Total: <strong style="color:var(--text-dark)">$${c.total.toLocaleString('fr-CA')}</strong> · Meilleur: <strong style="color:var(--green)">$${c.best.toLocaleString('fr-CA')}</strong></div>
+            <div class="vol-chart">${bars}</div>
+        </div>
+        <div class="detail-section"><h3>Contacts</h3>${ctHtml}</div>
+        <div class="detail-section"><h3>Description</h3><p style="font-size:12px;line-height:1.5">${c.desc}</p></div>`;
+    document.getElementById('detailPanel').classList.add('open');
+    document.getElementById('backdrop').classList.add('show');
+}
+function closeDetail() {
+    document.getElementById('detailPanel').classList.remove('open');
+    document.getElementById('backdrop').classList.remove('show');
+}
+
+// ========== DASHBOARD RENDERING ==========
+function renderDashboard() {
+    const t22 = MY_CLIENTS.reduce((s,c)=>s+(c.vols[2022]||0),0);
+    const t21 = MY_CLIENTS.reduce((s,c)=>s+(c.vols[2021]||0),0);
+    const ch = t21>0?((t22-t21)/t21*100).toFixed(0):0;
+    const totalPipe = MY_PIPELINE.reduce((s,p)=>s+p.montant,0);
+    const avgConv = MY_PIPELINE.length > 0 ? Math.round(MY_PIPELINE.reduce((s,p)=>s+p.prob,0)/MY_PIPELINE.length) : 0;
+    const objectif = 15;
+    const visites = 12;
+
+    document.getElementById('dashboardStats').innerHTML = `
+        <div class="stat-card" onclick="showSection('clients',document.querySelectorAll('.nav-item')[1])"><div class="label">Mes clients</div><div class="value">${MY_CLIENTS.length}</div><div class="sub">${MY_CLIENTS.filter(c=>c.score.includes('A')).length} score A</div></div>
+        <div class="stat-card" onclick="showSection('pipeline',document.querySelectorAll('.nav-item')[2])"><div class="label">Pipeline en cours</div><div class="value">$${(totalPipe/1000).toFixed(0)}k</div><div class="sub">${MY_PIPELINE.length} soumissions</div></div>
+        <div class="stat-card"><div class="label">Volume total 2022</div><div class="value">$${(t22/1000).toFixed(0)}k</div><div class="sub ${ch>=0?'trend-up':'trend-down'}">${ch>=0?'↑':'↓'} ${Math.abs(ch)}% vs 2021</div></div>
+        <div class="stat-card"><div class="label">Objectif visites</div><div class="value">${visites}/${objectif}</div><div class="sub">${Math.round(visites/objectif*100)}% atteint</div></div>
+        <div class="stat-card"><div class="label">Taux conversion</div><div class="value">${avgConv}%</div><div class="sub">${MY_PIPELINE.filter(p=>p.etape==='Signé').length} signées</div></div>`;
+
+    // Top 5
+    const top5 = [...MY_CLIENTS].sort((a,b)=>(b.vols[2022]||0)-(a.vols[2022]||0)).slice(0,5);
+    const maxV = Math.max(...top5.map(c=>c.vols[2022]||0));
+    document.getElementById('top5Chart').innerHTML = `<div class="clients-chart">${top5.map(c=>{
+        const v = c.vols[2022]||0;
+        const w = maxV>0?(v/maxV*100):0;
+        return `<div class="client-bar" onclick="openDetail(${c.rank})">
+            <span class="client-name">${c.court}</span>
+            <div class="client-bar-chart"><div class="client-bar-fill" style="width:${w}%"></div></div>
+            <span class="client-amount">$${(v/1000).toFixed(0)}k</span>
+            <span class="client-score">${c.score}</span>
+        </div>`;
+    }).join('')}</div>`;
+
+    // Alerts
+    const alerts = [];
+    MY_CLIENTS.forEach(c => {
+        const v22 = c.vols[2022]||0, v21 = c.vols[2021]||0;
+        if (v21 > 20000 && v22 < v21 * 0.3) alerts.push({type:'red',text:`${c.court} — volume -${Math.round((1-v22/v21)*100)}%`});
+        else if (v21 > 0 && !v22) alerts.push({type:'yellow',text:`${c.court} — aucun volume 2022`});
+    });
+    document.getElementById('alertsPanel').innerHTML = alerts.slice(0,5).map(a => {
+        const badge = a.type === 'red' ? 'badge-red' : 'badge-yellow';
+        const label = a.type === 'red' ? 'Urgent' : 'Attention';
+        return `<div class="alert-item"><span class="badge ${badge}">${label}</span> ${a.text}</div>`;
+    }).join('') || '<div style="color:var(--text-light);font-size:12px">Aucune alerte</div>';
+
+    // Timeline
+    const events = [
+        {time:'10 mars',type:'Appel',desc:'Suivi avec Cuisifab'},
+        {time:'9 mars',type:'Visite',desc:'Atelier Avivia — Magog'},
+        {time:'8 mars',type:'Soumission',desc:'Cuisine design résidentiel signée'},
+        {time:'7 mars',type:'Appel',desc:'Confirmation commande BMS'},
+        {time:'6 mars',type:'Visite',desc:'Rénovation salle de bain'},
+    ];
+    document.getElementById('timelinePanel').innerHTML = `<div class="timeline">${events.map(e => `
+        <div class="timeline-item">
+            <div class="time">${e.time}</div>
+            <div><div class="type">${e.type}</div><div class="desc">${e.desc}</div></div>
+        </div>
+    `).join('')}</div>`;
+}
+
+// ========== KANBAN RENDERING ==========
+function renderKanban() {
+    const stages = ['Nouveau','Soumis','Négociation','Signé'];
+    const kanban = stages.map(stage => {
+        const items = MY_PIPELINE.filter(p => p.etape === stage);
+        const total = items.reduce((s,p)=>s+p.montant,0);
+        const colors = {Nouveau:'#6a78d1',Soumis:'#0091ae',Négociation:'#f5c26b',Signé:'#00bda5'};
+        return `
+            <div class="kanban-column">
+                <div class="kanban-header" style="color:${colors[stage]}">
+                    <span>${stage}</span>
+                    <span class="kanban-badge" style="background:${colors[stage]}">${items.length}</span>
+                </div>
+                ${items.map(p => `
+                    <div class="kanban-card">
+                        <div class="kanban-card-title">${p.nom}</div>
+                        <div class="kanban-card-client">${p.client}</div>
+                        <div class="kanban-card-amount">$${(p.montant/1000).toFixed(0)}k</div>
+                        <div class="kanban-card-prob">${p.prob}% probabilité</div>
+                    </div>
+                `).join('')}
+                <div style="color:var(--text-light);font-size:11px;margin-top:6px;padding-top:6px;border-top:1px solid var(--border-light);font-weight:600">Total: $${(total/1000).toFixed(0)}k</div>
+            </div>
+        `;
+    }).join('');
+    document.getElementById('kanbanContainer').innerHTML = kanban;
+}
+
+// ========== ACTIVITY CHARTS ==========
+function renderActivityCharts() {
+    const months = ['Oct','Nov','Déc','Jan','Fév','Mars'];
+    const data = [2,3,1,4,2,3]; // Isabelle's visits
+    const maxM = Math.max(...data);
+    document.getElementById('activityChart').innerHTML = months.map((m,i)=>`
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <span style="width:40px;font-size:11px;color:var(--text-light)">${m}</span>
+            <div style="flex:1;height:12px;background:var(--bg);border-radius:2px;overflow:hidden">
+                <div style="height:100%;width:${data[i]/maxM*100}%;background:var(--blue);border-radius:2px"></div>
+            </div>
+            <span style="font-size:11px;font-weight:600;width:20px;text-align:right">${data[i]}</span>
+        </div>
+    `).join('');
+
+    document.getElementById('metricsPanel').innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div style="padding:10px;background:var(--bg);border-radius:var(--radius);text-align:center">
+                <div style="font-size:10px;color:var(--text-light);margin-bottom:4px">VISITES</div>
+                <div style="font-size:20px;font-weight:700">12</div>
+                <div style="font-size:11px;color:var(--green);font-weight:600">↑ Objectif: 15</div>
+            </div>
+            <div style="padding:10px;background:var(--bg);border-radius:var(--radius);text-align:center">
+                <div style="font-size:10px;color:var(--text-light);margin-bottom:4px">APPELS</div>
+                <div style="font-size:20px;font-weight:700">24</div>
+                <div style="font-size:11px;color:var(--text-light)">8/mois en moyenne</div>
+            </div>
+            <div style="padding:10px;background:var(--bg);border-radius:var(--radius);text-align:center">
+                <div style="font-size:10px;color:var(--text-light);margin-bottom:4px">EMAILS</div>
+                <div style="font-size:20px;font-weight:700">18</div>
+                <div style="font-size:11px;color:var(--text-light)">6/mois en moyenne</div>
+            </div>
+            <div style="padding:10px;background:var(--bg);border-radius:var(--radius);text-align:center">
+                <div style="font-size:10px;color:var(--text-light);margin-bottom:4px">SOUMISSIONS</div>
+                <div style="font-size:20px;font-weight:700">7</div>
+                <div style="font-size:11px;color:var(--green);font-weight:600">34% conversion</div>
+            </div>
+        </div>
+    `;
+}
+
+// ========== INIT ==========
+document.addEventListener('DOMContentLoaded', function() {
+    renderDashboard();
+    renderKanban();
+    renderActivityCharts();
+    initClientGrid();
+    initPipeGrid();
+    initActGrid();
+});
+</script>
+</body>
+</html>

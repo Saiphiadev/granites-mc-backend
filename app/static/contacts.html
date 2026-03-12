@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Annuaire Entreprises — Granites MC</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@32.0.2/styles/ag-grid.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@32.0.2/styles/ag-theme-alpine.css">
+    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@32.0.2/dist/ag-grid-community.min.noStyle.js"></script>
+    <style>
+        :root {
+            --bg:#f5f8fa;--white:#fff;--sidebar:#2d3e50;--sidebar-hover:#3a4f63;--sidebar-active:#1a2b3c;
+            --accent:#ff7a59;--accent-hover:#ff5c35;--blue:#0091ae;--green:#00bda5;--yellow:#f5c26b;
+            --red:#f2545b;--purple:#6a78d1;--text:#33475b;--text-light:#7c98b6;--text-dark:#1a2b3c;
+            --border:#dfe3eb;--border-light:#eaf0f6;--sidebar-w:210px;--topbar-h:52px;--radius:6px;
+            --shadow:0 1px 3px rgba(0,0,0,.08);
+        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:13px;display:flex;min-height:100vh}
+        ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:#cbd6e2;border-radius:3px}
+
+        /* Sidebar */
+        .sidebar{width:var(--sidebar-w);background:var(--sidebar);position:fixed;top:0;left:0;bottom:0;z-index:100;display:flex;flex-direction:column}
+        .sidebar-brand{padding:14px 16px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,.1)}
+        .sidebar-brand .logo{width:30px;height:30px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:13px}
+        .sidebar-brand span{color:#fff;font-weight:600;font-size:13px}
+        .sidebar-nav{flex:1;padding:8px 0;overflow-y:auto}
+        .nav-label{padding:12px 16px 4px;font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:rgba(255,255,255,.35);font-weight:600}
+        .nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;color:rgba(255,255,255,.7);cursor:pointer;transition:.15s;font-size:13px}
+        .nav-item:hover{background:var(--sidebar-hover);color:#fff}
+        .nav-item.active{background:var(--sidebar-active);color:#fff;border-left:3px solid var(--accent)}
+        .nav-item i{width:18px;text-align:center;font-size:14px}
+        .sidebar-user{padding:12px 16px;border-top:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:8px}
+        .sidebar-user .avatar{width:28px;height:28px;border-radius:50%;background:var(--purple);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:11px}
+        .sidebar-user .info{color:rgba(255,255,255,.8);font-size:11px;line-height:1.3}
+        .sidebar-user .info .name{font-weight:600}
+
+        /* Main */
+        .main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;height:100vh}
+        .topbar{height:var(--topbar-h);background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0}
+        .topbar h1{font-size:15px;font-weight:600;color:var(--text-dark);white-space:nowrap}
+        .content{flex:1;padding:16px 20px;overflow-y:auto;display:flex;flex-direction:column}
+
+        /* Omnisearch */
+        .omnisearch-trigger{display:flex;align-items:center;gap:6px;padding:6px 14px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;color:var(--text-light);font-size:12px;transition:.15s;min-width:220px}
+        .omnisearch-trigger:hover{border-color:var(--blue)}
+        .omnisearch-trigger kbd{font-size:10px;background:var(--white);border:1px solid var(--border);padding:1px 5px;border-radius:3px;font-family:inherit}
+        .omni-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);z-index:500;display:none;align-items:flex-start;justify-content:center;padding-top:80px}
+        .omni-overlay.open{display:flex}
+        .omni-box{background:var(--white);border-radius:12px;width:580px;max-height:480px;box-shadow:0 16px 48px rgba(0,0,0,.2);overflow:hidden;display:flex;flex-direction:column}
+        .omni-input-wrap{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border-light)}
+        .omni-input-wrap i{color:var(--text-light);font-size:16px}
+        .omni-input{flex:1;border:none;outline:none;font-size:15px;font-family:inherit;color:var(--text-dark)}
+        .omni-results{flex:1;overflow-y:auto;padding:8px 0}
+        .omni-group{padding:4px 18px}
+        .omni-group-title{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-light);font-weight:600;padding:6px 0}
+        .omni-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:var(--radius);cursor:pointer;transition:.1s}
+        .omni-item:hover{background:var(--bg)}
+        .omni-item .oi-icon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px}
+        .omni-item .oi-name{font-weight:500;font-size:13px}.omni-item .oi-sub{font-size:11px;color:var(--text-light)}
+        .omni-empty{padding:24px;text-align:center;color:var(--text-light);font-size:13px}
+
+        /* Stats */
+        .stat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px}
+        .stat-card{background:var(--white);border-radius:var(--radius);padding:14px 16px;border:1px solid var(--border-light);box-shadow:var(--shadow);cursor:pointer;transition:.15s}
+        .stat-card:hover{border-color:var(--blue);box-shadow:0 2px 8px rgba(0,145,174,.12)}
+        .stat-card .label{font-size:10px;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+        .stat-card .value{font-size:22px;font-weight:700;color:var(--text-dark)}
+        .stat-card .sub{font-size:11px;margin-top:2px}.trend-up{color:var(--green)}.trend-down{color:var(--red)}
+        .stat-card.active{border-color:var(--accent);background:rgba(255,122,89,.04)}
+
+        /* Card */
+        .card{background:var(--white);border-radius:var(--radius);border:1px solid var(--border-light);box-shadow:var(--shadow);margin-bottom:14px;overflow:hidden}
+        .card-header{padding:12px 16px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between}
+        .card-header h2{font-size:13px;font-weight:600}
+        .card-body{padding:14px 16px}
+
+        /* Toolbar */
+        .grid-toolbar{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+        .grid-search-wrap{position:relative}
+        .grid-search-wrap i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-light);font-size:11px}
+        .grid-search{padding:6px 10px 6px 30px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;background:var(--white);width:220px}
+        .grid-search:focus{outline:none;border-color:var(--blue)}
+        .btn{padding:6px 12px;border-radius:var(--radius);font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--white);color:var(--text);display:inline-flex;align-items:center;gap:5px;transition:.15s}
+        .btn:hover{background:var(--bg)}
+        .btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+        .btn-primary:hover{background:var(--accent-hover)}
+        .btn i{font-size:11px}
+        .view-tabs{display:flex;gap:2px;background:var(--bg);border-radius:var(--radius);padding:2px}
+        .view-tab{padding:5px 12px;font-size:11px;font-weight:500;cursor:pointer;border-radius:4px;color:var(--text-light);transition:.15s}
+        .view-tab.active{background:var(--white);color:var(--text-dark);box-shadow:var(--shadow)}
+        .dropdown-menu{position:relative;display:inline-block}
+        .dropdown-toggle{padding:6px 12px;border:1px solid var(--border);background:var(--white);color:var(--text);border-radius:var(--radius);font-size:12px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:5px}
+        .dropdown-toggle:hover{background:var(--bg)}
+        .dropdown-toggle i{font-size:10px}
+        .dropdown-content{position:absolute;top:100%;right:0;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 4px 12px rgba(0,0,0,.15);z-index:100;min-width:160px;display:none;flex-direction:column}
+        .dropdown-content.open{display:flex}
+        .dropdown-item{padding:8px 14px;font-size:12px;color:var(--text);cursor:pointer;transition:.1s;border:none;background:none;text-align:left;width:100%}
+        .dropdown-item:hover{background:var(--bg)}
+        .dropdown-item.active{background:rgba(0,145,174,.08);color:var(--blue);font-weight:500}
+
+        /* AG Grid HubSpot */
+        .ag-theme-alpine{--ag-font-family:'Inter',sans-serif;--ag-font-size:12px;--ag-header-background-color:#f8fafc;--ag-header-foreground-color:#7c98b6;--ag-row-hover-color:rgba(0,145,174,.04);--ag-selected-row-background-color:rgba(255,122,89,.06);--ag-border-color:#eaf0f6;--ag-header-column-separator-color:transparent;--ag-range-selection-border-color:var(--blue);--ag-checkbox-checked-color:var(--accent)}
+        .ag-theme-alpine .ag-header-cell-text{text-transform:uppercase;letter-spacing:.5px;font-weight:600;font-size:10px}
+        .ag-theme-alpine .ag-row{border-bottom:1px solid #f0f3f7}
+        .ag-theme-alpine .ag-cell{display:flex;align-items:center}
+
+        /* Badges */
+        .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+        .badge-green{background:#e6f9f5;color:#00875a}
+        .badge-yellow{background:#fff3e0;color:#e07c00}
+        .badge-red{background:#fce4ec;color:#c62828}
+        .badge-blue{background:rgba(0,145,174,.08);color:#0091ae}
+        .badge-purple{background:rgba(106,120,209,.08);color:#6a78d1}
+        .badge-a-plus,.badge-a{background:#e6f9f5;color:#00875a}
+        .badge-b-plus,.badge-b{background:#fff3e0;color:#e07c00}
+        .badge-c-plus,.badge-c{background:#fce4ec;color:#c62828}
+        .badge-fab{background:rgba(51,71,91,.08);color:#33475b}
+        .badge-ebe{background:rgba(255,122,89,.08);color:#ff7a59}
+        .badge-des{background:rgba(0,189,165,.08);color:#00bda5}
+        .badge-autre{background:rgba(106,120,209,.08);color:#6a78d1}
+
+        /* Column chooser */
+        .col-chooser{position:absolute;top:100%;right:0;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 8px 24px rgba(0,0,0,.12);padding:8px 0;z-index:400;min-width:220px;max-height:320px;overflow-y:auto;display:none}
+        .col-chooser.open{display:block}
+        .col-chooser label{display:flex;align-items:center;gap:8px;padding:6px 14px;font-size:12px;cursor:pointer;transition:.1s}
+        .col-chooser label:hover{background:var(--bg)}
+        .col-chooser input[type=checkbox]{accent-color:var(--accent)}
+
+        /* Detail panel */
+        .detail-overlay{position:fixed;top:0;right:0;bottom:0;width:560px;background:var(--white);z-index:300;box-shadow:-4px 0 20px rgba(0,0,0,.15);transform:translateX(100%);transition:transform .25s ease;overflow-y:auto}
+        .detail-overlay.open{transform:translateX(0)}
+        .detail-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--white);z-index:10}
+        .detail-header h2{font-size:15px;font-weight:700}
+        .close-btn{width:28px;height:28px;border-radius:50%;border:none;background:var(--bg);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s}
+        .close-btn:hover{background:var(--border)}
+        .detail-body{padding:18px}
+        .detail-section{margin-bottom:18px}
+        .detail-section h3{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-light);margin-bottom:8px;font-weight:600}
+        .field-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+        .field .label{font-size:10px;color:var(--text-light);margin-bottom:1px}
+        .field .val{font-size:13px;font-weight:500;color:var(--text-dark)}
+        .field .val a{color:var(--blue);text-decoration:none}
+        .field .val a:hover{text-decoration:underline}
+        .vol-chart{display:flex;align-items:flex-end;gap:6px;height:55px;margin-top:6px;padding-bottom:18px}
+        .vol-bar{flex:1;background:var(--blue);border-radius:3px 3px 0 0;min-width:30px;position:relative}
+        .vol-bar .vl{position:absolute;bottom:-15px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--text-light);white-space:nowrap}
+        .vol-bar .va{position:absolute;top:-13px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:600;color:var(--text-dark);white-space:nowrap}
+        .link-odoo{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:var(--radius);background:var(--bg);color:var(--blue);font-size:12px;font-weight:500;text-decoration:none;border:1px solid var(--border);transition:.15s;margin-right:6px;margin-top:6px}
+        .link-odoo:hover{background:var(--blue);color:#fff}
+        .social-links{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+        .social-btn{width:32px;height:32px;border-radius:6px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--text-light);font-size:14px;cursor:pointer;transition:.15s;text-decoration:none}
+        .social-btn:hover{border-color:var(--blue);color:var(--blue)}
+        .contact-item{padding:8px 0;border-bottom:1px solid var(--border-light);font-size:12px}
+        .contact-item:last-child{border:none}
+        .backdrop{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.25);z-index:250;display:none}
+        .backdrop.show{display:block}
+
+        /* Card View */
+        .card-grid{display:none;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px}
+        .card-grid.active{display:grid}
+        .client-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:12px;cursor:pointer;transition:.15s;display:flex;flex-direction:column}
+        .client-card:hover{border-color:var(--blue);box-shadow:0 2px 8px rgba(0,145,174,.12)}
+        .card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px}
+        .card-name{font-weight:600;color:var(--text-dark);font-size:13px;flex:1}
+        .card-score{font-size:10px;padding:2px 6px;border-radius:3px;font-weight:600;white-space:nowrap}
+        .card-score.badge-a{background:rgba(0,189,165,.15);color:#009B7D}
+        .card-score.badge-b{background:rgba(255,122,89,.15);color:#CC5D47}
+        .card-score.badge-c{background:rgba(245,194,107,.15);color:#C49545}
+        .card-type{font-size:10px;color:var(--text-light);margin-bottom:6px}
+        .card-meta{font-size:11px;color:var(--text-light);margin-bottom:2px;display:flex;justify-content:space-between}
+        .card-contact{margin:6px 0;font-size:11px}
+        .card-contact a{color:var(--blue);text-decoration:none;display:inline-block}
+        .card-contact a:hover{text-decoration:underline}
+        .card-socials{display:flex;gap:4px;margin-top:8px;flex-wrap:wrap}
+        .card-social-link{width:24px;height:24px;border-radius:4px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--text-light);font-size:11px;text-decoration:none;transition:.15s}
+        .card-social-link:hover{border-color:var(--blue);color:var(--blue)}
+        .ag-root{display:none}
+        .ag-root.active{display:block}
+
+        /* Responsive */
+        @media (max-width:1400px) {
+            .stat-grid{grid-template-columns:repeat(4,1fr)}
+            .field-grid{grid-template-columns:1fr}
+            .card-grid{grid-template-columns:repeat(2,1fr)}
+        }
+        @media (max-width:768px) {
+            .stat-grid{grid-template-columns:repeat(2,1fr)}
+            .detail-overlay{width:100%}
+            .grid-toolbar{flex-direction:column;align-items:flex-start}
+            .grid-search{width:100%}
+            .card-grid{grid-template-columns:1fr}
+        }
+
+        /* Accessibility */
+        .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border-width:0}
+        button:focus,input:focus,select:focus{outline:2px solid var(--blue);outline-offset:2px}
+        .stat-card:focus-within{outline:2px solid var(--blue);outline-offset:2px}
+    </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<nav class="sidebar" role="navigation" aria-label="Navigation principale">
+    <div class="sidebar-brand"><div class="logo">G</div><span>Granites MC</span></div>
+    <div class="sidebar-nav">
+        <div class="nav-label">Menu</div>
+        <a href="admin.html" class="nav-item" title="Tableau de bord"><i class="fa-solid fa-chart-pie"></i> Tableau de bord</a>
+        <div class="nav-item active" title="Annuaire Entreprises"><i class="fa-solid fa-address-book"></i> Contacts</div>
+        <a href="representant.html" class="nav-item" title="Gestion des représentants"><i class="fa-solid fa-users"></i> Représentant</a>
+    </div>
+    <div class="sidebar-user"><div class="avatar">PG</div><div class="info"><div class="name">Patrick G.</div><div>Administrateur</div></div></div>
+</nav>
+
+<!-- Omnisearch overlay -->
+<div class="omni-overlay" id="omniOverlay" onclick="if(event.target===this)closeOmni()">
+    <div class="omni-box">
+        <div class="omni-input-wrap">
+            <i class="fa-solid fa-search"></i>
+            <input class="omni-input" id="omniInput" placeholder="Rechercher entreprises, contacts, ville..." oninput="omniSearch(this.value)" autofocus aria-label="Recherche omnisearch">
+            <kbd style="font-size:10px;color:var(--text-light);background:var(--bg);padding:2px 6px;border-radius:3px;border:1px solid var(--border)">Esc</kbd>
+        </div>
+        <div class="omni-results" id="omniResults">
+            <div class="omni-empty">Tapez pour rechercher partout...</div>
+        </div>
+    </div>
+</div>
+
+<!-- Backdrop + Detail panel -->
+<div class="backdrop" id="backdrop" onclick="closeDetail()"></div>
+<div class="detail-overlay" id="detailPanel" role="complementary" aria-label="Détail de l'entreprise">
+    <div class="detail-header"><h2 id="detailName">—</h2><button class="close-btn" onclick="closeDetail()" aria-label="Fermer le panneau"><i class="fa-solid fa-xmark"></i></button></div>
+    <div class="detail-body" id="detailBody"></div>
+</div>
+
+<!-- Main Content -->
+<div class="main">
+    <div class="topbar">
+        <h1>Annuaire Entreprises</h1>
+        <div class="omnisearch-trigger" onclick="openOmni()" role="button" tabindex="0" aria-label="Ouvrir la recherche"><i class="fa-solid fa-search" style="font-size:12px"></i> Rechercher... <kbd>⌘K</kbd></div>
+        <span style="flex:1"></span>
+    </div>
+    <div class="content">
+        <!-- Summary Cards -->
+        <div class="stat-grid" id="statsContainer" role="region" aria-label="Statistiques résumées"></div>
+
+        <!-- Toolbar -->
+        <div class="grid-toolbar">
+            <div class="grid-search-wrap">
+                <i class="fa-solid fa-search"></i>
+                <input class="grid-search" id="gridSearch" placeholder="Rechercher..." oninput="onGridSearch(this.value)" aria-label="Filtrer la liste">
+            </div>
+            <div class="view-tabs" role="tablist" aria-label="Vue par score">
+                <button class="view-tab active" onclick="filterByScore('all',this)" role="tab" aria-selected="true">Tous</button>
+                <button class="view-tab" onclick="filterByScore('A',this)" role="tab" aria-selected="false">Score A</button>
+                <button class="view-tab" onclick="filterByScore('B',this)" role="tab" aria-selected="false">Score B</button>
+                <button class="view-tab" onclick="filterByScore('C',this)" role="tab" aria-selected="false">Score C</button>
+            </div>
+            <div id="liveBadge" style="display:none;align-items:center;gap:6px;padding:4px 10px;background:rgba(0,189,165,.08);border-radius:var(--radius);font-size:11px;font-weight:600;color:var(--green)"><i class="fa-solid fa-circle" style="font-size:6px"></i> Live Odoo</div>
+            <div class="dropdown-menu">
+                <button class="dropdown-toggle" onclick="toggleTypeDropdown()"><i class="fa-solid fa-filter"></i> Type <i class="fa-solid fa-chevron-down"></i></button>
+                <div class="dropdown-content" id="typeDropdown">
+                    <button class="dropdown-item active" onclick="filterByType('all',this)">Tous les types</button>
+                    <button class="dropdown-item" onclick="filterByType('Fabricant d\'armoires',this)">Fabricant d'armoires</button>
+                    <button class="dropdown-item" onclick="filterByType('Ébénisterie',this)">Ébénisterie</button>
+                    <button class="dropdown-item" onclick="filterByType('Designer',this)">Designer</button>
+                    <button class="dropdown-item" onclick="filterByType('Autre',this)">Autre</button>
+                </div>
+            </div>
+            <div class="dropdown-menu">
+                <button class="dropdown-toggle" onclick="toggleTerrDropdown()"><i class="fa-solid fa-map"></i> Territoire <i class="fa-solid fa-chevron-down"></i></button>
+                <div class="dropdown-content" id="terrDropdown">
+                    <button class="dropdown-item active" onclick="filterByTerritory('all',this)">Tous les territoires</button>
+                    <button class="dropdown-item" onclick="filterByTerritory('3-RI',this)">3-RI</button>
+                    <button class="dropdown-item" onclick="filterByTerritory('T03',this)">T03</button>
+                    <button class="dropdown-item" onclick="filterByTerritory('T04',this)">T04</button>
+                </div>
+            </div>
+            <span style="flex:1"></span>
+            <div class="view-tabs" role="tablist" aria-label="Vue de présentation">
+                <button class="view-tab active" onclick="switchView('grid',this)" role="tab" aria-selected="true" title="Vue grille"><i class="fa-solid fa-table"></i></button>
+                <button class="view-tab" onclick="switchView('card',this)" role="tab" aria-selected="false" title="Vue carte"><i class="fa-solid fa-id-card"></i></button>
+            </div>
+            <div style="position:relative">
+                <button class="btn" onclick="toggleColChooser()"><i class="fa-solid fa-columns"></i> Colonnes</button>
+                <div class="col-chooser" id="colChooser"></div>
+            </div>
+            <button class="btn" onclick="exportGrid()"><i class="fa-solid fa-download"></i> CSV</button>
+            <button class="btn btn-primary" onclick="resetFilters()"><i class="fa-solid fa-rotate"></i> Réinitialiser</button>
+        </div>
+
+        <!-- Card Grid -->
+        <div id="cardGrid" class="card-grid"></div>
+
+        <!-- AG Grid -->
+        <div id="contactsGrid" class="ag-theme-alpine active" style="flex:1;width:100%;min-height:400px"></div>
+    </div>
+</div>
+
+<script>
+// ========== DATA ==========
+const ODOO = 'https://granites-mc.odoo.com';
+let CLIENTS = [
+  {rank:1,nom:"Cuisifab Inc",court:"Cuisifab",type:"Fabricant d'armoires",terr:"3-RI",score:"A+",best:325950,total:830151,vols:{2019:105019,2020:158799,2021:325950,2022:240383},web:"https://cuisifab.com/",addr:"5075 Boul. des Forges, Trois-Rivières",ville:"Trois-Rivières",tel:"819-519-8400",email:"info@cuisifab.com",fb:"https://www.facebook.com/Cuisifab/",ig:"https://www.instagram.com/cuisifab/",linkedin:"",gmap:"",contacts:[],desc:"Fabricant armoires cuisine/SDB depuis 2000",pay:"",rep:"Isabelle T.",founded:2000,employees:15,revenue:2500000,req:"",brands:"Cuisifab Pro",competitors:""},
+  {rank:2,nom:"Espaces Rubic",court:"Rubic",type:"Designer",terr:"T03",score:"A+",best:169560,total:391248,vols:{2019:47813,2020:86720,2021:169560,2022:87155},web:"https://espacesrubic.com/",addr:"397 rue Rose-Ellis, Drummondville",ville:"Drummondville",tel:"819-850-6125",email:"info@espacesrubic.com",fb:"https://www.facebook.com/espacesrubic",ig:"https://www.instagram.com/espacesrubic",linkedin:"",gmap:"",contacts:[],desc:"Cuisines design avant-garde",pay:"",rep:"Yvon R.",founded:2010,employees:8,revenue:850000,req:"",brands:"Rubic Design",competitors:""},
+  {rank:3,nom:"Avivia Inc",court:"Avivia",type:"Fabricant d'armoires",terr:"3-RI",score:"A+",best:161399,total:504653,vols:{2019:67925,2020:161399,2021:136557,2022:138772},web:"https://avivia.ca/",addr:"20 route Goulet, St-Séverin",ville:"St-Séverin",tel:"418-365-7821",email:"",fb:"https://www.facebook.com/CuisinesAvivA/",ig:"",linkedin:"",gmap:"",contacts:[],desc:"Fabricant québécois armoires familial",pay:"",rep:"Isabelle T.",founded:1995,employees:22,revenue:3200000,req:"",brands:"Avivia Classic",competitors:""},
+  {rank:4,nom:"Cuisi-Meuble S.M.",court:"Cuisi-Meuble",type:"Fabricant d'armoires",terr:"T03",score:"A+",best:133631,total:438031,vols:{2019:116621,2020:115316,2021:133631,2022:72463},web:"https://cuisimeublesm.com/",addr:"1031 ch. Warwick, Tingwick",ville:"Tingwick",tel:"819-359-3110",email:"info@cuisimeublesm.com",fb:"https://www.facebook.com/p/Cuisi-Meuble-SM-inc-100063602498796/",ig:"",linkedin:"",gmap:"",contacts:[{nom:"Simon",role:""},{nom:"Benjamin",role:""}],desc:"Armoires sur mesure, CNC",pay:"",rep:"Isabelle T.",founded:2005,employees:12,revenue:1800000,req:"",brands:"Cuisi-Meuble Custom",competitors:""},
+  {rank:5,nom:"Cuisines M.R.S.",court:"Cuisines MRS",type:"Fabricant d'armoires",terr:"T03",score:"A",best:111642,total:295138,vols:{2019:71514,2020:18661,2021:93321,2022:111642},web:"https://cuisimax.com/fr/1_cuisines-mrs",addr:"180 Boul. Bois-Francs S, Victoriaville",ville:"Victoriaville",tel:"819-758-1594",email:"info@cuisimax.com",fb:"https://www.facebook.com/p/Cuisines-MRS-100075941271182/",ig:"",linkedin:"",gmap:"",contacts:[{nom:"Kelly",role:""},{nom:"Marianne",role:""}],desc:"Fabricant armoires depuis 1967",pay:"5%, net 30j",rep:"Isabelle T.",founded:1967,employees:18,revenue:2200000,req:"",brands:"Cuisines MRS Traditional",competitors:""},
+  {rank:6,nom:"Éb. des Cantons-de-l'Est",court:"Éb. Cantons",type:"Ébénisterie",terr:"T03",score:"A",best:86864,total:187256,vols:{2019:42350,2020:52791,2021:86864,2022:5251},web:"http://www.ebenisterie.ca/",addr:"47 rue Aristide, Granby",ville:"Granby",tel:"450-375-5054",email:"",fb:"",ig:"",linkedin:"",gmap:"",contacts:[{nom:"Stéphan Gagnon",role:"Dir. opérations"}],desc:"Ébénisterie classique/commerciale",pay:"",rep:"Isabelle T.",founded:1988,employees:10,revenue:1200000,req:"",brands:"Cantons Fine Woodwork",competitors:""},
+  {rank:7,nom:"Armoires N.S.",court:"Armoires NS",type:"Fabricant d'armoires",terr:"T04",score:"A",best:65819,total:104840,vols:{2019:65819,2020:28800,2021:10221},web:"",addr:"Québec",ville:"Québec",tel:"",email:"",fb:"",ig:"",linkedin:"",gmap:"",contacts:[{nom:"Laurie Bédard",role:""}],desc:"Fabricant armoires",pay:"",rep:"Marc L.",founded:2008,employees:6,revenue:650000,req:"",brands:"Armoires NS Premier",competitors:""},
+  {rank:8,nom:"Andréanne Allard Designer",court:"A. Allard",type:"Designer",terr:"3-RI",score:"A",best:57892,total:74413,vols:{2019:57892,2020:15216,2021:1305},web:"https://andreanneallard.com/",addr:"5235 rue De La Châtelaine, TR",ville:"Trois-Rivières",tel:"819-995-0173",email:"",fb:"https://www.facebook.com/andreanneallarddesigner/",ig:"",linkedin:"https://ca.linkedin.com/in/andréanne-allard-457484157",gmap:"",contacts:[],desc:"Designer intérieur 20 ans exp",pay:"",rep:"Isabelle T.",founded:2003,employees:3,revenue:450000,req:"",brands:"Allard Design Studio",competitors:""},
+  {rank:9,nom:"Armoires Solution Inc",court:"Arm. Solution",type:"Autre",terr:"3-RI",score:"A",best:39813,total:94448,vols:{2019:8636,2020:10476,2021:35523,2022:39813},web:"http://www.armoiressolution.com",addr:"430 rue Vachon, TR",ville:"Trois-Rivières",tel:"819-697-2464",email:"info@armoiressolution.com",fb:"https://www.facebook.com/armoiressolution/",ig:"",linkedin:"",gmap:"",contacts:[],desc:"Resurfaçage/refacing armoires",pay:"",rep:"Isabelle T.",founded:2009,employees:5,revenue:380000,req:"",brands:"Solution Refacing",competitors:""},
+  {rank:10,nom:"Éb. P.G. Massicotte",court:"PG Massicotte",type:"Ébénisterie",terr:"3-RI",score:"A",best:37641,total:97015,vols:{2019:7419,2020:16615,2021:37641,2022:35340},web:"",addr:"Trois-Rivières",ville:"Trois-Rivières",tel:"",email:"",fb:"",ig:"",linkedin:"",gmap:"",contacts:[],desc:"Fabrication armoires, Mauricie",pay:"",rep:"Isabelle T.",founded:1999,employees:7,revenue:550000,req:"",brands:"Massicotte Woodcraft",competitors:""},
+  {rank:11,nom:"Prefab",court:"Prefab",type:"Fabricant d'armoires",terr:"T03",score:"B+",best:34286,total:44346,vols:{2019:1256,2021:34286,2022:8804},web:"",addr:"Estrie",ville:"Sherbrooke",tel:"",email:"",fb:"",ig:"",linkedin:"",gmap:"",contacts:[],desc:"Ébéniste/cuisiniste Estrie",pay:"",rep:"Yvon R.",founded:2015,employees:4,revenue:320000,req:"",brands:"Prefab Modern",competitors:""},
+  {rank:12,nom:"Atelier Bruno Pichet",court:"B. Pichet",type:"Ébénisterie",terr:"3-RI",score:"B+",best:32769,total:87677,vols:{2019:21545,2020:17099,2021:32769,2022:16264},web:"https://brunopichet.com/",addr:"2281 rang Ste-Marguerite, St-Maurice",ville:"St-Maurice",tel:"819-375-5337",email:"",fb:"https://www.facebook.com/latelierdebruno62",ig:"",linkedin:"https://fr.linkedin.com/company/atelierbruno",gmap:"",contacts:[],desc:"Maître ébéniste sur mesure",pay:"",rep:"Isabelle T.",founded:1994,employees:4,revenue:420000,req:"",brands:"Pichet Artisan",competitors:""},
+  {rank:13,nom:"Pascal & Stéfanie Bois B",court:"Bois B",type:"Ébénisterie",terr:"3-RI",score:"B+",best:30760,total:34047,vols:{2021:3287,2022:30760},web:"",addr:"Trois-Rivières",ville:"Trois-Rivières",tel:"",email:"",fb:"",ig:"",linkedin:"",gmap:"",contacts:[],desc:"Ébéniste, forte croissance 2022",pay:"",rep:"Isabelle T.",founded:2019,employees:2,revenue:180000,req:"",brands:"Bois B Custom",competitors:""},
+  {rank:14,nom:"Atelier DLJ",court:"Atelier DLJ",type:"Ébénisterie",terr:"3-RI",score:"B+",best:30621,total:76501,vols:{2019:15951,2020:14084,2021:30621,2022:15845},web:"",addr:"Trois-Rivières",ville:"Trois-Rivières",tel:"819-692-6624",email:"",fb:"https://www.facebook.com/latelierdalexis/",ig:"",linkedin:"",gmap:"",contacts:[],desc:"Atelier ébénisterie, Mauricie",pay:"",rep:"Isabelle T.",founded:2001,employees:6,revenue:480000,req:"",brands:"DLJ Fine Woodwork",competitors:""},
+  {rank:15,nom:"Antiquité Design",court:"Antiq. Design",type:"Designer",terr:"T03",score:"B+",best:28606,total:86290,vols:{2019:8364,2020:26545,2021:28606,2022:22775},web:"https://www.antiquitedesign.com/",addr:"16 rue Poirier, Saint-Rosaire",ville:"Saint-Rosaire",tel:"819-690-4457",email:"marielise@antiquitedesign.com",fb:"https://www.facebook.com/antiquitedesign/",ig:"https://www.instagram.com/antiquite_design/",linkedin:"",gmap:"",contacts:[{nom:"Marie-Lise Frenette",role:"Designer"}],desc:"Design rustique, maisons ancestrales",pay:"",rep:"Isabelle T.",founded:2008,employees:5,revenue:580000,req:"",brands:"Antiquité Design Rustique",competitors:""},
+  {rank:16,nom:"Armoire Décor Inc",court:"Arm. Décor",type:"Fabricant d'armoires",terr:"3-RI",score:"B",best:28487,total:54128,vols:{2019:16043,2020:3995,2021:28487,2022:5603},web:"https://armoiredecor.com/",addr:"12488 rue Notre-Dame O, TR",ville:"Trois-Rivières",tel:"819-377-1871",email:"info@armoiredecor.com",fb:"https://www.facebook.com/p/Armoire-Décor-Inc-100068019462827/",ig:"",linkedin:"",gmap:"",contacts:[],desc:"Armoires sur mesure depuis 1979",pay:"",rep:"Isabelle T.",founded:1979,employees:8,revenue:720000,req:"",brands:"Armoire Décor Premium",competitors:""},
+  {rank:17,nom:"Bois-Briand Cuisines",court:"Bois-Briand",type:"Fabricant d'armoires",terr:"3-RI",score:"B",best:27210,total:60924,vols:{2019:18737,2020:27210,2021:13893,2022:1084},web:"https://nova-design.ca/",addr:"2105 rue Charbonneau, TR",ville:"Trois-Rivières",tel:"819-840-6906",email:"info@nova-design.ca",fb:"https://www.facebook.com/p/Bois-Briand-Cuisines-et-Salles-de-bain-100063667835763/",ig:"",linkedin:"",gmap:"",contacts:[],desc:"Fab armoires cuisine/SDB",pay:"",rep:"Isabelle T.",founded:2006,employees:7,revenue:680000,req:"",brands:"Bois-Briand Nova",competitors:""},
+  {rank:18,nom:"Armoires C. Tremblay",court:"C. Tremblay",type:"Fabricant d'armoires",terr:"T03",score:"B",best:26839,total:67036,vols:{2019:13788,2020:9716,2021:26839,2022:16693},web:"https://www.armoirestremblay.com/",addr:"3108 rue Bernard-Pilon, St-Mathieu-de-Beloeil",ville:"St-Mathieu-de-Beloeil",tel:"450-446-2182",email:"",fb:"https://www.facebook.com/ArmoiresTremblay/",ig:"",linkedin:"https://ca.linkedin.com/company/armoirestremblay",gmap:"",contacts:[],desc:"Famille depuis 1984",pay:"",rep:"Yvon R.",founded:1984,employees:9,revenue:840000,req:"",brands:"Tremblay Family Kitchens",competitors:""},
+  {rank:19,nom:"Armoires B.M.S.",court:"BMS",type:"Autre",terr:"3-RI",score:"B",best:25182,total:54783,vols:{2019:20375,2020:4845,2021:25182,2022:4381},web:"https://www.armoiresbms.com/",addr:"371 rang du Pays-Brûlé, St-Célestin",ville:"St-Célestin",tel:"819-229-3315",email:"info@armoiresbms.com",fb:"",ig:"",linkedin:"",gmap:"",contacts:[{nom:"Alain",role:""},{nom:"Andrée",role:""}],desc:"Armoires et mobilier commercial",pay:"Escompte 2%, net 10j",rep:"Isabelle T.",founded:1991,employees:11,revenue:950000,req:"",brands:"BMS Commercial",competitors:""},
+  {rank:20,nom:"Armoire B.M.",court:"Arm. BM",type:"Fabricant d'armoires",terr:"T03",score:"B",best:17551,total:30614,vols:{2019:7987,2020:5076,2021:17551},web:"",addr:"Estrie",ville:"Coaticook",tel:"",email:"",fb:"",ig:"",linkedin:"",gmap:"",contacts:[{nom:"Jessika",role:""}],desc:"Fabricant armoires",pay:"",rep:"Isabelle T.",founded:2010,employees:4,revenue:340000,req:"",brands:"Armoire BM Select",competitors:""},
+  {rank:21,nom:"Bout Design Ladouceur",court:"Bout Design",type:"Designer",terr:"T03",score:"B",best:16517,total:50122,vols:{2019:13508,2020:4155,2021:15942,2022:16517},web:"",addr:"Estrie",ville:"Sherbrooke",tel:"",email:"",fb:"",ig:"",linkedin:"",gmap:"",contacts:[],desc:"2 salles de montre, client depuis 2012",pay:"",rep:"Yvon R.",founded:2011,employees:6,revenue:520000,req:"",brands:"Bout Design Studio",competitors:""},
+  {rank:22,nom:"Les Cuisines S. Chaput",court:"Cuis. Chaput",type:"Fabricant d'armoires",terr:"T03",score:"B",best:15115,total:36520,vols:{2019:15115,2021:11907,2022:9498},web:"",addr:"Victoriaville",ville:"Victoriaville",tel:"",email:"",fb:"",ig:"",linkedin:"",gmap:"",contacts:[],desc:"Cuisines réno/construction",pay:"",rep:"Isabelle T.",founded:2007,employees:5,revenue:400000,req:"",brands:"Cuisines Chaput Réno",competitors:""},
+  {rank:23,nom:"Atelier Éb. Luc Chênevert",court:"L. Chênevert",type:"Ébénisterie",terr:"3-RI",score:"C+",best:12457,total:23261,vols:{2019:12457,2021:8705,2022:2099},web:"https://www.atelierebenisterielucchenevert.ca/",addr:"343 rang de la Rivière SO, Maskinongé",ville:"Maskinongé",tel:"819-227-3140",email:"",fb:"https://www.facebook.com/ebenisterielucchenevert/",ig:"",linkedin:"",gmap:"",contacts:[],desc:"Ébénisterie sur mesure depuis 1984",pay:"",rep:"Isabelle T.",founded:1984,employees:3,revenue:280000,req:"",brands:"Chênevert Artisan",competitors:""},
+  {rank:24,nom:"SMA Ébénisterie",court:"SMA",type:"Ébénisterie",terr:"T03",score:"C",best:9209,total:14277,vols:{2020:9209,2021:2257,2022:2811},web:"",addr:"Estrie",ville:"Sherbrooke",tel:"",email:"",fb:"",ig:"",linkedin:"",gmap:"",contacts:[{nom:"Jean-Luc",role:""}],desc:"Ébéniste Estrie",pay:"",rep:"Isabelle T.",founded:2017,employees:2,revenue:120000,req:"",brands:"SMA Woodcraft",competitors:""},
+  {rank:25,nom:"Boiseries Anny-Max",court:"Anny-Max",type:"Autre",terr:"3-RI",score:"C",best:7278,total:8117,vols:{2019:839,2021:7278},web:"",addr:"2736 rue Charbonneau, TR",ville:"Trois-Rivières",tel:"819-377-0496",email:"boiseriesanny.max@hotmail.com",fb:"https://www.facebook.com/ArmoireBoiseriesAnnyMaxInc/",ig:"",linkedin:"",gmap:"",contacts:[],desc:"Armoires et mobilier depuis 1988",pay:"",rep:"Isabelle T.",founded:1988,employees:3,revenue:220000,req:"",brands:"Anny-Max Woodwork",competitors:""}
+];
+
+// ========== RAILWAY API INTEGRATION ==========
+const RAILWAY_API = 'https://granites-mc-backend-production-f93a.up.railway.app/api/crm/clients';
+let liveDataLoaded = false;
+
+async function loadLiveData() {
+    try {
+        const response = await fetch(RAILWAY_API);
+        if (!response.ok) throw new Error('API error: ' + response.status);
+
+        const apiClients = await response.json();
+        if (!Array.isArray(apiClients)) throw new Error('Invalid API response');
+
+        apiClients.forEach(apiClient => {
+            const localClient = CLIENTS.find(c =>
+                c.nom.toLowerCase() === apiClient.nom_legal?.toLowerCase() ||
+                c.nom.toLowerCase() === apiClient.nom_excel?.toLowerCase() ||
+                c.rank === apiClient.odoo_id ||
+                c.court?.toLowerCase() === apiClient.nom_excel?.toLowerCase()
+            );
+
+            if (localClient) {
+                if (apiClient.phone) localClient.tel = apiClient.phone;
+                if (apiClient.email) localClient.email = apiClient.email;
+                if (apiClient.website) localClient.web = apiClient.website;
+                if (apiClient.facebook) localClient.fb = apiClient.facebook;
+                if (apiClient.instagram) localClient.ig = apiClient.instagram;
+                if (apiClient.linkedin) localClient.linkedin = apiClient.linkedin;
+                if (apiClient.city) localClient.ville = apiClient.city;
+                if (apiClient.address) localClient.addr = apiClient.address;
+            }
+        });
+
+        liveDataLoaded = true;
+        document.getElementById('liveBadge').style.display = 'inline-flex';
+        if (contactGrid) {
+            contactGrid.api.setRowData(getGridRowData());
+        }
+        console.log('Live data loaded from Railway API');
+    } catch (error) {
+        console.log('Railway API sync skipped:', error.message);
+        document.getElementById('liveBadge').style.display = 'none';
+    }
+}
+
+// ========== CELL RENDERERS ==========
+function scoreCellRenderer(p) {
+    if (!p.value) return '';
+    const cls = p.value.includes('A') ? 'badge-a' : p.value.includes('B') ? 'badge-b' : 'badge-c';
+    return `<span class="badge ${cls}">${p.value}</span>`;
+}
+
+function typeCellRenderer(p) {
+    if (!p.value) return '';
+    const types = {'Fabricant d\'armoires':'badge-fab','Ébénisterie':'badge-ebe','Designer':'badge-des','Autre':'badge-autre'};
+    const cls = types[p.value] || 'badge-blue';
+    return `<span class="badge ${cls}">${p.value}</span>`;
+}
+
+function currencyFormatter(p) { return p.value ? '$' + Number(p.value).toLocaleString('fr-CA') : '—'; }
+
+function phoneRenderer(p) {
+    if (!p.value) return '—';
+    return `<a href="tel:${p.value}" style="color:var(--blue);text-decoration:none">${p.value}</a>`;
+}
+
+function emailRenderer(p) {
+    if (!p.value) return '—';
+    return `<a href="mailto:${p.value}" style="color:var(--blue);text-decoration:none">${p.value}</a>`;
+}
+
+function webRenderer(p) {
+    if (!p.value) return '—';
+    return `<a href="${p.value}" target="_blank" style="color:var(--blue);text-decoration:none" aria-label="Ouvrir le site web">Visiter</a>`;
+}
+
+function nameRenderer(p) {
+    return `<span style="font-weight:600;color:var(--text-dark);cursor:pointer" onclick="openDetail(${p.data.rank})">${p.value}</span>`;
+}
+
+function trendRenderer(p) {
+    const d = p.data; if (!d) return '';
+    const v22 = d.vol2022 || 0, v21 = d.vol2021 || 0;
+    if (!v21) return '—';
+    const pct = ((v22 - v21) / v21 * 100).toFixed(0);
+    return `<span style="color:${pct >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:600">${pct >= 0 ? '↑' : '↓'} ${Math.abs(pct)}%</span>`;
+}
+
+// ========== AG GRID ==========
+let contactGrid;
+const COLUMNS = [
+    {field:'rank',headerName:'#',width:50,pinned:'left',sortable:false},
+    {field:'nom',headerName:'Nom',minWidth:200,pinned:'left',cellRenderer:nameRenderer},
+    {field:'type',headerName:'Type',width:140,cellRenderer:typeCellRenderer,filter:true},
+    {field:'score',headerName:'Score',width:85,cellRenderer:scoreCellRenderer,filter:true},
+    {field:'terr',headerName:'Territoire',width:110,filter:true},
+    {field:'ville',headerName:'Ville',width:120,filter:true},
+    {field:'tel',headerName:'Téléphone',width:130,cellRenderer:phoneRenderer},
+    {field:'email',headerName:'Email',width:180,cellRenderer:emailRenderer},
+    {field:'web',headerName:'Site web',width:120,cellRenderer:webRenderer},
+    {field:'total',headerName:'Volume total',width:130,valueFormatter:currencyFormatter},
+    {field:'best',headerName:'Meilleure année',width:140,valueFormatter:currencyFormatter},
+    {field:'vol2022',headerName:'Volume 2022',width:130,valueFormatter:currencyFormatter},
+    {field:'trend',headerName:'Tendance',width:100,sortable:false,cellRenderer:trendRenderer},
+    {field:'founded',headerName:'Fondée',width:90},
+    {field:'employees',headerName:'Employés',width:100},
+    {field:'revenue',headerName:'CA estimé',width:130,valueFormatter:currencyFormatter,hide:true},
+    {field:'contactPrincipal',headerName:'Contact principal',width:150,hide:true},
+    {field:'rep',headerName:'Représentant',width:130,hide:true},
+    {field:'addr',headerName:'Adresse complète',minWidth:200,hide:true},
+    {field:'req',headerName:'REQ',width:100,hide:true},
+    {field:'desc',headerName:'Description',minWidth:250,hide:true},
+    {field:'brands',headerName:'Marques',minWidth:200,hide:true},
+    {field:'competitors',headerName:'Compétiteurs',minWidth:200,hide:true},
+];
+
+function getGridRowData() {
+    return CLIENTS.map(c => ({
+        rank:c.rank, nom:c.nom, type:c.type, terr:c.terr, score:c.score, ville:c.ville,
+        best:c.best, total:c.total, vol2022:c.vols[2022]||0, vol2021:c.vols[2021]||0, vol2020:c.vols[2020]||0, vol2019:c.vols[2019]||0,
+        tel:c.tel, email:c.email, addr:c.addr, web:c.web,
+        contactPrincipal: c.contacts && c.contacts[0] ? c.contacts[0].nom : '—',
+        rep:c.rep, desc:c.desc, founded:c.founded, employees:c.employees, revenue:c.revenue, req:c.req, brands:c.brands, competitors:c.competitors
+    }));
+}
+
+function initGrid() {
+    contactGrid = agGrid.createGrid(document.getElementById('contactsGrid'), {
+        columnDefs: COLUMNS,
+        rowData: getGridRowData(),
+        defaultColDef: { resizable:true, sortable:true, filter:false, floatingFilter:false, minWidth:70 },
+        rowSelection:'multiple', animateRows:true, pagination:true, paginationPageSize:25,
+        enableCellTextSelection:true,
+        onRowDoubleClicked: (e) => openDetail(e.data.rank),
+        getRowStyle: (p) => p.data && p.data.score && p.data.score.includes('A') ? {fontWeight:'500'} : null,
+    });
+}
+
+function onGridSearch(val) { if(contactGrid) { contactGrid.api.setGridOption('quickFilterText',val); if (document.getElementById('cardGrid').classList.contains('active')) setTimeout(renderCardView, 100); } }
+function exportGrid() { if(contactGrid) contactGrid.api.exportDataAsCsv({fileName:'annuaire_granites.csv'}); }
+
+function filterByScore(score, el) {
+    el.parentElement.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    if (!contactGrid) return;
+    if (score === 'all') { contactGrid.api.setFilterModel({}) ; }
+    else { contactGrid.api.setFilterModel({ score: { type:'contains', filter: score.toUpperCase() }}); }
+    contactGrid.api.onFilterChanged();
+    if (document.getElementById('cardGrid').classList.contains('active')) renderCardView();
+}
+
+function filterByType(type, el) {
+    el.parentElement.querySelectorAll('.dropdown-item').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    if (!contactGrid) return;
+    const fm = contactGrid.api.getFilterModel() || {};
+    if (type === 'all') { delete fm.type; }
+    else { fm.type = { type:'equals', filter: type }; }
+    contactGrid.api.setFilterModel(fm);
+    contactGrid.api.onFilterChanged();
+    if (document.getElementById('cardGrid').classList.contains('active')) renderCardView();
+}
+
+function filterByTerritory(terr, el) {
+    el.parentElement.querySelectorAll('.dropdown-item').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    if (!contactGrid) return;
+    const fm = contactGrid.api.getFilterModel() || {};
+    if (terr === 'all') { delete fm.terr; }
+    else { fm.terr = { type:'equals', filter: terr }; }
+    contactGrid.api.setFilterModel(fm);
+    contactGrid.api.onFilterChanged();
+    if (document.getElementById('cardGrid').classList.contains('active')) renderCardView();
+}
+
+function resetFilters() {
+    if (!contactGrid) return;
+    contactGrid.api.setFilterModel({});
+    contactGrid.api.setGridOption('quickFilterText','');
+    document.getElementById('gridSearch').value='';
+    document.querySelectorAll('[role="tablist"] .view-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector('[aria-label="Vue par score"] .view-tab').classList.add('active');
+    document.querySelectorAll('.dropdown-item').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.dropdown-item').forEach(t => { if (t.textContent.includes('Tous')) t.classList.add('active'); });
+    if (document.getElementById('cardGrid').classList.contains('active')) renderCardView();
+}
+
+// ========== CARD VIEW ==========
+function switchView(view, el) {
+    el.parentElement.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+
+    const gridEl = document.getElementById('contactsGrid');
+    const cardEl = document.getElementById('cardGrid');
+
+    if (view === 'grid') {
+        gridEl.classList.add('active');
+        cardEl.classList.remove('active');
+        if (contactGrid) setTimeout(() => contactGrid.api.sizeColumnsToFit(), 50);
+    } else if (view === 'card') {
+        gridEl.classList.remove('active');
+        cardEl.classList.add('active');
+        renderCardView();
+    }
+}
+
+function renderCardView() {
+    const cardGrid = document.getElementById('cardGrid');
+    const rows = contactGrid?.api?.getRenderedNodes() || [];
+    const visibleClients = rows.length > 0
+        ? rows.map(r => CLIENTS.find(c => c.rank === r.data.rank)).filter(c => c)
+        : CLIENTS;
+
+    cardGrid.innerHTML = visibleClients.map(c => {
+        const scoreCls = c.score.includes('A') ? 'badge-a' : c.score.includes('B') ? 'badge-b' : 'badge-c';
+        return `
+            <div class="client-card" onclick="openDetail(${c.rank})">
+                <div class="card-header">
+                    <div class="card-name">${c.nom}</div>
+                    <div class="card-score ${scoreCls}">${c.score}</div>
+                </div>
+                <div class="card-type">${c.type}</div>
+                <div class="card-meta">
+                    <span>${c.ville}</span>
+                    <span>${c.terr}</span>
+                </div>
+                ${c.tel ? '<div class="card-contact"><i class="fa-solid fa-phone" style="color:var(--text-light);margin-right:4px"></i><a href="tel:' + c.tel + '">' + c.tel + '</a></div>' : ''}
+                ${c.email ? '<div class="card-contact"><i class="fa-solid fa-envelope" style="color:var(--text-light);margin-right:4px"></i><a href="mailto:' + c.email + '">' + c.email.substring(0, 20) + '...</a></div>' : ''}
+                <div class="card-socials">
+                    ${c.web ? '<a href="' + c.web + '" target="_blank" class="card-social-link" title="Site web"><i class="fa-solid fa-globe"></i></a>' : ''}
+                    ${c.fb ? '<a href="' + c.fb + '" target="_blank" class="card-social-link" title="Facebook"><i class="fa-brands fa-facebook"></i></a>' : ''}
+                    ${c.ig ? '<a href="' + c.ig + '" target="_blank" class="card-social-link" title="Instagram"><i class="fa-brands fa-instagram"></i></a>' : ''}
+                    ${c.linkedin ? '<a href="' + c.linkedin + '" target="_blank" class="card-social-link" title="LinkedIn"><i class="fa-brands fa-linkedin"></i></a>' : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Column chooser
+function toggleColChooser() {
+    const el = document.getElementById('colChooser');
+    if (el.classList.contains('open')) { el.classList.remove('open'); return; }
+    el.innerHTML = COLUMNS.filter(c => c.field !== 'rank').map(c => {
+        const col = contactGrid.api.getColumn(c.field);
+        const visible = col && col.isVisible();
+        return `<label><input type="checkbox" ${visible?'checked':''} onchange="toggleColumn('${c.field}',this.checked)"> ${c.headerName}</label>`;
+    }).join('');
+    el.classList.add('open');
+}
+
+function toggleColumn(field, visible) { contactGrid.api.setColumnsVisible([field], visible); }
+
+document.addEventListener('click', e => {
+    const ch = document.getElementById('colChooser');
+    if (ch.classList.contains('open') && !e.target.closest('.col-chooser') && !e.target.closest('[onclick*="toggleColChooser"]')) ch.classList.remove('open');
+    const dd = document.getElementById('typeDropdown');
+    if (dd.classList.contains('open') && !e.target.closest('#typeDropdown') && !e.target.closest('[onclick*="toggleTypeDropdown"]')) dd.classList.remove('open');
+    const td = document.getElementById('terrDropdown');
+    if (td.classList.contains('open') && !e.target.closest('#terrDropdown') && !e.target.closest('[onclick*="toggleTerrDropdown"]')) td.classList.remove('open');
+});
+
+function toggleTypeDropdown() {
+    const el = document.getElementById('typeDropdown');
+    el.classList.toggle('open');
+}
+
+function toggleTerrDropdown() {
+    const el = document.getElementById('terrDropdown');
+    el.classList.toggle('open');
+}
+
+// ========== STATS ==========
+function renderStats() {
+    const total = CLIENTS.length;
+    const fab = CLIENTS.filter(c => c.type === "Fabricant d'armoires").length;
+    const ebe = CLIENTS.filter(c => c.type === "Ébénisterie").length;
+    const des = CLIENTS.filter(c => c.type === "Designer").length;
+    const autre = CLIENTS.filter(c => c.type === "Autre").length;
+    const scoreA = CLIENTS.filter(c => c.score.includes('A')).length;
+    const scoreB = CLIENTS.filter(c => c.score.includes('B')).length;
+    const scoreC = CLIENTS.filter(c => c.score.includes('C')).length;
+
+    document.getElementById('statsContainer').innerHTML = `
+        <div class="stat-card" onclick="filterByType('all',document.querySelector('#typeDropdown .dropdown-item'))" tabindex="0" role="button" onkeydown="if(event.key==='Enter')filterByType('all',document.querySelector('#typeDropdown .dropdown-item'))">
+            <div class="label">Total entreprises</div>
+            <div class="value">${total}</div>
+            <div class="sub">4 territoires · 3 reps</div>
+        </div>
+        <div class="stat-card" onclick="filterByType('Fabricant d\\'armoires',document.querySelectorAll('#typeDropdown .dropdown-item')[1])" tabindex="0" role="button" onkeydown="if(event.key==='Enter')filterByType('Fabricant d\\'armoires',document.querySelectorAll('#typeDropdown .dropdown-item')[1])">
+            <div class="label">Fabricant d'armoires</div>
+            <div class="value">${fab}</div>
+            <div class="sub">${((fab/total)*100).toFixed(0)}% de la base</div>
+        </div>
+        <div class="stat-card" onclick="filterByType('Ébénisterie',document.querySelectorAll('#typeDropdown .dropdown-item')[2])" tabindex="0" role="button" onkeydown="if(event.key==='Enter')filterByType('Ébénisterie',document.querySelectorAll('#typeDropdown .dropdown-item')[2])">
+            <div class="label">Ébénisterie</div>
+            <div class="value">${ebe}</div>
+            <div class="sub">${((ebe/total)*100).toFixed(0)}% de la base</div>
+        </div>
+        <div class="stat-card" onclick="filterByScore('A',document.querySelectorAll('.view-tab')[1])" tabindex="0" role="button" onkeydown="if(event.key==='Enter')filterByScore('A',document.querySelectorAll('.view-tab')[1])">
+            <div class="label">Score A</div>
+            <div class="value">${scoreA}</div>
+            <div class="sub">${((scoreA/total)*100).toFixed(0)}% prioritaires</div>
+        </div>
+        <div class="stat-card" onclick="filterByScore('B',document.querySelectorAll('.view-tab')[2])" tabindex="0" role="button" onkeydown="if(event.key==='Enter')filterByScore('B',document.querySelectorAll('.view-tab')[2])">
+            <div class="label">Score B</div>
+            <div class="value">${scoreB}</div>
+            <div class="sub">${((scoreB/total)*100).toFixed(0)}% réguliers</div>
+        </div>
+    `;
+}
+
+// ========== OMNISEARCH ==========
+function openOmni() { document.getElementById('omniOverlay').classList.add('open'); setTimeout(()=>document.getElementById('omniInput').focus(),100); }
+function closeOmni() { document.getElementById('omniOverlay').classList.remove('open'); document.getElementById('omniInput').value=''; }
+
+function omniSearch(q) {
+    const res = document.getElementById('omniResults');
+    if (!q || q.length < 2) { res.innerHTML = '<div class="omni-empty">Tapez pour rechercher partout...</div>'; return; }
+    const ql = q.toLowerCase();
+    let html = '';
+
+    // Entreprises
+    const matchC = CLIENTS.filter(c => c.nom.toLowerCase().includes(ql) || c.court.toLowerCase().includes(ql) || c.terr.toLowerCase().includes(ql) || c.ville.toLowerCase().includes(ql) || c.addr.toLowerCase().includes(ql));
+    if (matchC.length) {
+        html += '<div class="omni-group"><div class="omni-group-title">Entreprises</div>';
+        matchC.slice(0,8).forEach(c => {
+            html += `<div class="omni-item" onclick="closeOmni();openDetail(${c.rank})"><div class="oi-icon" style="background:rgba(0,145,174,.08);color:var(--blue)"><i class="fa-solid fa-building"></i></div><div><div class="oi-name">${c.nom}</div><div class="oi-sub">${c.ville} · ${c.type} · ${c.score}</div></div></div>`;
+        });
+        html += '</div>';
+    }
+
+    // Contacts
+    const allContacts = [];
+    CLIENTS.forEach(c => (c.contacts||[]).forEach(ct => allContacts.push({...ct, entreprise:c.court, rank:c.rank})));
+    const matchCt = allContacts.filter(ct => ct.nom.toLowerCase().includes(ql) || ct.entreprise.toLowerCase().includes(ql));
+    if (matchCt.length) {
+        html += '<div class="omni-group"><div class="omni-group-title">Contacts</div>';
+        matchCt.slice(0,5).forEach(ct => {
+            html += `<div class="omni-item" onclick="closeOmni();openDetail(${ct.rank})"><div class="oi-icon" style="background:rgba(0,189,165,.08);color:var(--green)"><i class="fa-solid fa-user"></i></div><div><div class="oi-name">${ct.nom}</div><div class="oi-sub">${ct.entreprise}${ct.role?' · '+ct.role:''}</div></div></div>`;
+        });
+        html += '</div>';
+    }
+
+    // Villes
+    const cities = [...new Set(CLIENTS.map(c => c.ville))].filter(city => city.toLowerCase().includes(ql));
+    if (cities.length) {
+        html += '<div class="omni-group"><div class="omni-group-title">Villes</div>';
+        cities.slice(0,5).forEach(city => {
+            const count = CLIENTS.filter(c => c.ville === city).length;
+            html += `<div class="omni-item"><div class="oi-icon" style="background:rgba(255,122,89,.08);color:var(--accent)"><i class="fa-solid fa-map-pin"></i></div><div><div class="oi-name">${city}</div><div class="oi-sub">${count} entreprise${count>1?'s':''}</div></div></div>`;
+        });
+        html += '</div>';
+    }
+
+    if (!html) html = '<div class="omni-empty">Aucun résultat pour "'+q+'"</div>';
+    res.innerHTML = html;
+}
+
+document.addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); openOmni(); }
+    if (e.key === 'Escape') { closeOmni(); closeDetail(); }
+});
+
+// ========== DETAIL PANEL ==========
+function openDetail(rank) {
+    const c = CLIENTS.find(x => x.rank === rank); if (!c) return;
+    document.getElementById('detailName').textContent = c.nom;
+    const maxV = Math.max(...Object.values(c.vols));
+    const bars = Object.entries(c.vols).sort((a,b)=>a[0]-b[0]).map(([yr,v]) => {
+        const h = maxV > 0 ? (v/maxV*50) : 0;
+        return `<div class="vol-bar" style="height:${h}px"><span class="va">$${(v/1000).toFixed(0)}k</span><span class="vl">${yr}</span></div>`;
+    }).join('');
+    const ctHtml = c.contacts && c.contacts.length > 0
+        ? c.contacts.map(ct => `<div class="contact-item"><strong>${ct.nom}</strong>${ct.role?' — '+ct.role:''}</div>`).join('')
+        : '<div style="color:var(--text-light);font-size:12px">Aucun contact enregistré</div>';
+    const scoreCls = c.score.includes('A') ? 'badge-a' : c.score.includes('B') ? 'badge-b' : 'badge-c';
+    const typeCls = c.type === "Fabricant d'armoires" ? 'badge-fab' : c.type === 'Ébénisterie' ? 'badge-ebe' : c.type === 'Designer' ? 'badge-des' : 'badge-autre';
+
+    document.getElementById('detailBody').innerHTML = `
+        <div class="detail-section">
+            <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+                <span class="badge ${scoreCls}">${c.score}</span>
+                <span class="badge ${typeCls}">${c.type}</span>
+            </div>
+            <div class="field-grid">
+                <div class="field"><div class="label">Territoire</div><div class="val">${c.terr}</div></div>
+                <div class="field"><div class="label">Ville</div><div class="val">${c.ville}</div></div>
+                <div class="field"><div class="label">Représentant</div><div class="val" style="color:var(--blue);font-weight:600">${c.rep}</div></div>
+                <div class="field"><div class="label">Fondée</div><div class="val">${c.founded}</div></div>
+                <div class="field"><div class="label">Employés</div><div class="val">${c.employees}</div></div>
+                <div class="field"><div class="label">CA estimé</div><div class="val">$${(c.revenue/1000).toFixed(0)}k</div></div>
+            </div>
+        </div>
+        <div class="detail-section">
+            <h3>Coordonnées</h3>
+            <div class="field-grid">
+                <div class="field"><div class="label">Adresse</div><div class="val">${c.addr||'—'}</div></div>
+                <div class="field"><div class="label">Téléphone</div><div class="val">${c.tel?'<a href="tel:'+c.tel+'">'+c.tel+'</a>':'—'}</div></div>
+                <div class="field"><div class="label">Email</div><div class="val">${c.email?'<a href="mailto:'+c.email+'">'+c.email+'</a>':'—'}</div></div>
+            </div>
+            <div class="social-links">
+                ${c.web?'<a href="'+c.web+'" target="_blank" class="social-btn" title="Site web" aria-label="Visiter le site web"><i class="fa-solid fa-globe"></i></a>':''}
+                ${c.fb?'<a href="'+c.fb+'" target="_blank" class="social-btn" title="Facebook" aria-label="Ouvrir Facebook"><i class="fa-brands fa-facebook"></i></a>':''}
+                ${c.ig?'<a href="'+c.ig+'" target="_blank" class="social-btn" title="Instagram" aria-label="Ouvrir Instagram"><i class="fa-brands fa-instagram"></i></a>':''}
+                ${c.linkedin?'<a href="'+c.linkedin+'" target="_blank" class="social-btn" title="LinkedIn" aria-label="Ouvrir LinkedIn"><i class="fa-brands fa-linkedin"></i></a>':''}
+                ${c.gmap?'<a href="'+c.gmap+'" target="_blank" class="social-btn" title="Google Maps" aria-label="Ouvrir Google Maps"><i class="fa-solid fa-map"></i></a>':''}
+                <a href="${ODOO+'/web#model=res.partner&view_type=list&search='+encodeURIComponent(c.court)}" target="_blank" class="link-odoo"><i class="fa-solid fa-external-link-alt"></i> Ouvrir Odoo</a>
+            </div>
+        </div>
+        <div class="detail-section">
+            <h3>Volume d'achat</h3>
+            <div style="font-size:12px;color:var(--text-light);margin-bottom:6px">Total: <strong style="color:var(--text-dark)">$${c.total.toLocaleString('fr-CA')}</strong> · Meilleur: <strong style="color:var(--green)">$${c.best.toLocaleString('fr-CA')}</strong></div>
+            <div class="vol-chart">${bars}</div>
+        </div>
+        <div class="detail-section"><h3>Contacts à l'entreprise</h3>${ctHtml}</div>
+        <div class="detail-section"><h3>À propos</h3><p style="font-size:12px;line-height:1.5">${c.desc}</p></div>
+        ${c.brands?'<div class="detail-section"><h3>Marques</h3><p style="font-size:12px">'+c.brands+'</p></div>':''}
+        ${c.competitors?'<div class="detail-section"><h3>Compétiteurs</h3><p style="font-size:12px">'+c.competitors+'</p></div>':''}
+    `;
+    document.getElementById('detailPanel').classList.add('open');
+    document.getElementById('backdrop').classList.add('show');
+}
+
+function closeDetail() {
+    document.getElementById('detailPanel').classList.remove('open');
+    document.getElementById('backdrop').classList.remove('show');
+}
+
+// ========== INIT ==========
+renderStats();
+initGrid();
+loadLiveData();
+</script>
+</body>
+</html>
