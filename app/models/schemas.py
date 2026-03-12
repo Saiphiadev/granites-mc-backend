@@ -127,6 +127,25 @@ class ClientDetailResponse(BaseModel):
     x_brands: Optional[str] = None
     x_specialties: Optional[str] = None
     x_hours: Optional[str] = None
+    # Isabelle fields
+    x_freq_visite: Optional[str] = None
+    x_date_premiere_visite: Optional[str] = None
+    x_meilleure_annee: Optional[str] = None
+    x_ventes_2019: Optional[float] = None
+    x_ventes_2020: Optional[float] = None
+    x_ventes_2021: Optional[float] = None
+    x_ventes_2022: Optional[float] = None
+    x_ventes_2023: Optional[float] = None
+    x_ventes_total: Optional[float] = None
+    x_contact_principal: Optional[str] = None
+    x_contact_secondaire: Optional[str] = None
+    x_echantillons_livres: Optional[str] = None
+    x_historique_visites: Optional[str] = None
+    x_bon_soumission: Optional[str] = None
+    x_provenance: Optional[str] = None
+    x_salle_montre: Optional[str] = None
+    x_notes_isabelle: Optional[str] = None
+    tag_ids: list = []
     child_contacts: list = []
     leads: list = []
     activities: list = []

@@ -1,7 +1,9 @@
 """Router Admin — Endpoints d'administration et migration de données."""
 
+import json
 import random
 from datetime import datetime, timedelta
+from pathlib import Path
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
@@ -1847,4 +1849,273 @@ async def enrich_all():
         "status": "completed_with_errors" if log["errors"] else "success",
     }
 
+    return log
+
+
+# ═══════════════════════════════════════════════════════════════
+# ISABELLE IMPORT — Create all fields + import 450 clients
+# ═══════════════════════════════════════════════════════════════
+
+# Custom fields matching Isabelle's tracking spreadsheet
+ISABELLE_FIELDS = {
+    "x_freq_visite": {"type": "selection", "label": "Fréquence de visite",
+        "selection": [("mensuel", "Mensuel"), ("trimestriel", "Trimestriel"), ("semestriel", "Semestriel")]},
+    "x_date_premiere_visite": {"type": "char", "label": "Première visite", "size": 50},
+    "x_meilleure_annee": {"type": "char", "label": "Meilleure année", "size": 50},
+    "x_ventes_2019": {"type": "float", "label": "Ventes 2019 ($)"},
+    "x_ventes_2020": {"type": "float", "label": "Ventes 2020 ($)"},
+    "x_ventes_2021": {"type": "float", "label": "Ventes 2021 ($)"},
+    "x_ventes_2022": {"type": "float", "label": "Ventes 2022 ($)"},
+    "x_ventes_2023": {"type": "float", "label": "Ventes 2023 ($)"},
+    "x_ventes_total": {"type": "float", "label": "Ventes total ($)"},
+    "x_contact_principal": {"type": "char", "label": "Contact principal", "size": 200},
+    "x_contact_secondaire": {"type": "char", "label": "Contact secondaire", "size": 200},
+    "x_competiteurs": {"type": "text", "label": "Compétiteurs"},
+    "x_marques_interet": {"type": "text", "label": "Marques d'intérêt"},
+    "x_echantillons_livres": {"type": "text", "label": "Échantillons livrés"},
+    "x_historique_visites": {"type": "text", "label": "Historique des visites"},
+    "x_bon_soumission": {"type": "char", "label": "Bon de soumission", "size": 100},
+    "x_provenance": {"type": "char", "label": "Provenance", "size": 100},
+    "x_salle_montre": {"type": "char", "label": "Salle de montre", "size": 100},
+    "x_notes_isabelle": {"type": "text", "label": "Notes Isabelle"},
+}
+
+
+@router.post("/import-isabelle")
+async def import_isabelle_data():
+    """
+    📊 Import complet du fichier de suivi d'Isabelle.
+
+    1. Crée tous les champs custom Isabelle dans res.partner
+    2. Importe les 450 clients avec toutes leurs données
+    3. Fréquence de visite, chiffres de vente 2019-2023, contacts,
+       compétiteurs, échantillons, historique de visites
+    """
+    odoo = get_odoo_client()
+    log = {
+        "step_1_fields": {"status": "pending"},
+        "step_2_import": {"status": "pending"},
+        "errors": [],
+    }
+
+    # Load the extracted data
+    data_path = Path(__file__).parent.parent / "data" / "isabelle_clients.json"
+    if not data_path.exists():
+        # Fallback: use embedded data
+        raise HTTPException(
+            status_code=404,
+            detail="isabelle_clients.json not found. Run the extraction first.",
+        )
+
+    with open(data_path) as f:
+        isabelle_clients = json.load(f)
+
+    # ═══════════════════════════════════════
+    # STEP 1: Create custom fields
+    # ═══════════════════════════════════════
+    try:
+        all_fields = await odoo.fields_get("res.partner", ["string", "type"])
+        model_ids = await odoo.search_read(
+            "ir.model", [["model", "=", "res.partner"]], ["id"], limit=1,
+        )
+        model_id = model_ids[0]["id"] if model_ids else None
+
+        created_fields = []
+        for field_name, field_def in ISABELLE_FIELDS.items():
+            if field_name in all_fields:
+                continue
+            if not model_id:
+                break
+
+            try:
+                values = {
+                    "name": field_name,
+                    "field_description": field_def["label"],
+                    "model_id": model_id,
+                    "ttype": field_def["type"],
+                    "state": "manual",
+                }
+                if field_def["type"] == "char" and "size" in field_def:
+                    values["size"] = field_def["size"]
+                if field_def["type"] == "selection":
+                    # Selection fields need special handling in Odoo 17
+                    values["ttype"] = "selection"
+                    values["selection_ids"] = [
+                        (0, 0, {"value": k, "name": v, "sequence": i * 10})
+                        for i, (k, v) in enumerate(field_def["selection"])
+                    ]
+                await odoo.create("ir.model.fields", values)
+                created_fields.append(field_name)
+            except Exception as e:
+                log["errors"].append(f"Field {field_name}: {str(e)}")
+
+        log["step_1_fields"] = {"status": "done", "created": created_fields}
+    except Exception as e:
+        log["step_1_fields"] = {"status": "error", "error": str(e)}
+        log["errors"].append(f"Step 1: {str(e)}")
+
+    # ═══════════════════════════════════════
+    # STEP 2: Import all clients
+    # ═══════════════════════════════════════
+    try:
+        # Find Canada + Quebec
+        canada = await odoo.search_read("res.country", [["code", "=", "CA"]], ["id"], limit=1)
+        canada_id = canada[0]["id"] if canada else 39
+        quebec = await odoo.search_read(
+            "res.country.state",
+            [["country_id", "=", canada_id], ["code", "=", "QC"]],
+            ["id"], limit=1,
+        )
+        quebec_id = quebec[0]["id"] if quebec else None
+
+        # Territory mapping
+        terr_map = {"3-RI": 8, "T03": 8, "T04": 12, "SHERB": None, "T05": None}
+
+        # Get existing company partners for matching
+        existing = await odoo.search_read(
+            "res.partner", [["is_company", "=", True]],
+            ["id", "name"], limit=1000,
+        )
+        # Build fuzzy match map
+        existing_map = {}
+        for p in existing:
+            key = p["name"].lower().strip()
+            existing_map[key] = p["id"]
+            # Also match shortened versions
+            parts = key.split()
+            if len(parts) >= 2:
+                existing_map[" ".join(parts[:2])] = p["id"]
+
+        created = 0
+        updated = 0
+        skipped = 0
+
+        for client in isabelle_clients:
+            name = client["name"]
+            name_lower = name.lower().strip()
+
+            # Try to find existing partner
+            partner_id = existing_map.get(name_lower)
+            if not partner_id:
+                # Try partial match
+                for ek, eid in existing_map.items():
+                    if name_lower in ek or ek in name_lower:
+                        partner_id = eid
+                        break
+
+            if not partner_id:
+                # Also try Odoo search
+                search_results = await odoo.search_read(
+                    "res.partner",
+                    [["name", "ilike", name], ["is_company", "=", True]],
+                    ["id", "name"], limit=1,
+                )
+                if search_results:
+                    partner_id = search_results[0]["id"]
+
+            # Build update values
+            vals = {"country_id": canada_id}
+            if quebec_id:
+                vals["state_id"] = quebec_id
+
+            terr_id = terr_map.get(client.get("territory"))
+            if terr_id:
+                vals["x_territoire"] = terr_id
+
+            # Frequency
+            freq = client.get("freq_visite", "")
+            if freq:
+                vals["x_freq_visite"] = freq
+
+            # Sales data
+            sales = client.get("sales", {})
+            if sales.get("2019"):
+                vals["x_ventes_2019"] = float(sales["2019"])
+            if sales.get("2020"):
+                vals["x_ventes_2020"] = float(sales["2020"])
+            if sales.get("2021"):
+                vals["x_ventes_2021"] = float(sales["2021"])
+            if sales.get("2022"):
+                vals["x_ventes_2022"] = float(sales["2022"])
+            if sales.get("2023"):
+                vals["x_ventes_2023"] = float(sales["2023"])
+            total = client.get("total_sales", 0)
+            if total:
+                vals["x_ventes_total"] = float(total)
+
+            # Best year
+            if client.get("meilleure_annee"):
+                vals["x_meilleure_annee"] = client["meilleure_annee"]
+
+            # Contacts
+            if client.get("contact_principal"):
+                vals["x_contact_principal"] = client["contact_principal"]
+            if client.get("contact_secondaire"):
+                vals["x_contact_secondaire"] = client["contact_secondaire"]
+
+            # Competitors
+            comps = client.get("competiteurs", [])
+            if comps:
+                vals["x_competiteurs"] = ", ".join(comps)
+
+            # Brand/sample tracking
+            brands = client.get("brand_tracking", {})
+            if brands:
+                brand_summary = []
+                for brand, items in brands.items():
+                    brand_summary.append(f"{brand}: {', '.join(items[:3])}")
+                vals["x_echantillons_livres"] = "\n".join(brand_summary[:20])
+
+            # Visit history from deep_data
+            deep = client.get("deep_data", {})
+            if deep:
+                visit_lines = []
+                for key, val in deep.items():
+                    visit_lines.append(f"{key}: {val}")
+                vals["x_historique_visites"] = "\n".join(visit_lines)
+
+            # Notes
+            notes_parts = []
+            if client.get("notes_debut"):
+                notes_parts.append(f"Début: {client['notes_debut']}")
+            if client.get("bon_soumission"):
+                notes_parts.append(f"Bon soum: {client['bon_soumission']}")
+            if notes_parts:
+                vals["x_notes_isabelle"] = "\n".join(notes_parts)
+
+            # First visit date
+            if client.get("notes_debut") and len(client["notes_debut"]) == 4 and client["notes_debut"].isdigit():
+                vals["x_date_premiere_visite"] = client["notes_debut"]
+
+            try:
+                if partner_id:
+                    # Only update non-empty vals, don't overwrite existing enriched data
+                    safe_vals = {k: v for k, v in vals.items() if v}
+                    await odoo.write("res.partner", [partner_id], safe_vals)
+                    updated += 1
+                else:
+                    vals["name"] = name
+                    vals["is_company"] = True
+                    new_id = await odoo.create("res.partner", vals)
+                    await odoo.write("res.partner", [new_id], {"is_company": True})
+                    created += 1
+            except Exception as e:
+                log["errors"].append(f"Client {name}: {str(e)}")
+                skipped += 1
+
+        log["step_2_import"] = {
+            "status": "done",
+            "total_clients": len(isabelle_clients),
+            "created": created,
+            "updated": updated,
+            "skipped": skipped,
+        }
+    except Exception as e:
+        log["step_2_import"] = {"status": "error", "error": str(e)}
+        log["errors"].append(f"Step 2: {str(e)}")
+
+    log["summary"] = {
+        "total_errors": len(log["errors"]),
+        "status": "completed_with_errors" if log["errors"] else "success",
+    }
     return log

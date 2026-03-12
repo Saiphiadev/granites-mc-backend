@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fiche Client — Granites MC</title>
+<link rel="stylesheet" href="/static/granites-design.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ──────── Fiche Client — Isabelle-ready layout ──────── */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--gmc-font); background: var(--gmc-bg); color: var(--gmc-text); }
+
+.fc-loading { display: flex; align-items: center; justify-content: center; min-height: 100vh; flex-direction: column; gap: 16px; }
+.fc-loading .spinner { width: 40px; height: 40px; border: 3px solid var(--gmc-border); border-top-color: var(--gmc-accent); border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Top bar ── */
+.fc-topbar {
+    background: var(--gmc-sidebar); color: #fff; padding: 0 24px; height: 56px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+}
+.fc-topbar-left { display: flex; align-items: center; gap: 16px; }
+.fc-topbar-left .back-btn {
+    background: rgba(255,255,255,.1); border: none; color: #fff; padding: 6px 14px;
+    border-radius: var(--gmc-radius); cursor: pointer; font-size: 14px; transition: .2s;
+}
+.fc-topbar-left .back-btn:hover { background: rgba(255,255,255,.2); }
+.fc-topbar-left h1 { font-size: 18px; font-weight: 600; }
+.fc-topbar-right { display: flex; align-items: center; gap: 12px; }
+.fc-badge {
+    display: inline-flex; align-items: center; padding: 3px 10px; border-radius: var(--gmc-radius-full);
+    font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px;
+}
+.fc-badge-a { background: rgba(0,189,165,.15); color: #00876a; }
+.fc-badge-b { background: rgba(0,145,174,.15); color: #006d83; }
+.fc-badge-c { background: rgba(245,194,107,.2); color: #8a6d2e; }
+.fc-badge-territory { background: rgba(192,122,74,.12); color: var(--gmc-accent); }
+
+/* ── Layout ── */
+.fc-container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+.fc-grid { display: grid; grid-template-columns: 340px 1fr; gap: 24px; }
+@media (max-width: 1024px) { .fc-grid { grid-template-columns: 1fr; } }
+
+/* ── Card ── */
+.fc-card {
+    background: var(--gmc-bg-elevated); border-radius: var(--gmc-radius-lg);
+    box-shadow: var(--gmc-shadow-sm); border: 1px solid var(--gmc-border-light);
+    overflow: hidden;
+}
+.fc-card-header {
+    padding: 16px 20px; border-bottom: 1px solid var(--gmc-border-light);
+    display: flex; align-items: center; justify-content: space-between;
+}
+.fc-card-header h2 { font-size: 14px; font-weight: 600; color: var(--gmc-text-strong); text-transform: uppercase; letter-spacing: .5px; }
+.fc-card-header .icon { font-size: 16px; }
+.fc-card-body { padding: 20px; }
+
+/* ── Info grid ── */
+.fc-info-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.fc-info-row { display: flex; flex-direction: column; gap: 2px; }
+.fc-info-row label { font-size: 11px; font-weight: 600; color: var(--gmc-text-muted); text-transform: uppercase; letter-spacing: .5px; }
+.fc-info-row .val { font-size: 14px; color: var(--gmc-text-strong); word-break: break-word; }
+.fc-info-row .val a { color: var(--gmc-blue); text-decoration: none; }
+.fc-info-row .val a:hover { text-decoration: underline; }
+.fc-info-row .empty { color: var(--gmc-text-faint); font-style: italic; font-size: 13px; }
+
+/* ── Stats bar ── */
+.fc-stats-bar {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 16px;
+    margin-bottom: 24px;
+}
+.fc-stat {
+    background: var(--gmc-bg-elevated); border-radius: var(--gmc-radius-lg);
+    padding: 16px 20px; text-align: center; box-shadow: var(--gmc-shadow-sm);
+    border: 1px solid var(--gmc-border-light);
+}
+.fc-stat .num { font-size: 24px; font-weight: 700; color: var(--gmc-text-strong); }
+.fc-stat .lbl { font-size: 11px; color: var(--gmc-text-muted); text-transform: uppercase; letter-spacing: .5px; margin-top: 4px; }
+.fc-stat.accent .num { color: var(--gmc-accent); }
+.fc-stat.green .num { color: var(--gmc-green); }
+.fc-stat.blue .num { color: var(--gmc-blue); }
+.fc-stat.red .num { color: var(--gmc-red); }
+
+/* ── Sales chart ── */
+.fc-chart-container { position: relative; height: 200px; }
+.fc-bar-chart {
+    display: flex; align-items: flex-end; justify-content: center; gap: 12px;
+    height: 170px; padding: 0 10px;
+}
+.fc-bar-col { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
+.fc-bar {
+    width: 100%; max-width: 60px; border-radius: 6px 6px 0 0; transition: .3s;
+    position: relative; min-height: 4px;
+}
+.fc-bar:hover { opacity: .85; transform: scaleY(1.02); transform-origin: bottom; }
+.fc-bar-val { font-size: 11px; font-weight: 600; color: var(--gmc-text-strong); white-space: nowrap; }
+.fc-bar-year { font-size: 12px; color: var(--gmc-text-muted); font-weight: 500; }
+
+/* ── Tags ── */
+.fc-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.fc-tag {
+    display: inline-flex; align-items: center; padding: 4px 10px;
+    border-radius: var(--gmc-radius-full); font-size: 12px; font-weight: 500;
+    background: var(--gmc-accent-light); color: var(--gmc-accent); border: 1px solid var(--gmc-accent-border);
+}
+.fc-tag.blue { background: var(--gmc-blue-light); color: var(--gmc-blue); border-color: rgba(0,145,174,.25); }
+.fc-tag.green { background: var(--gmc-green-light); color: #00876a; border-color: rgba(0,189,165,.25); }
+.fc-tag.purple { background: var(--gmc-purple-light); color: var(--gmc-purple); border-color: rgba(106,120,209,.25); }
+.fc-tag.red { background: var(--gmc-red-light); color: var(--gmc-red); border-color: rgba(224,82,82,.25); }
+
+/* ── Social links ── */
+.fc-social { display: flex; gap: 10px; flex-wrap: wrap; }
+.fc-social a {
+    display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px;
+    background: var(--gmc-bg-sunken); border-radius: var(--gmc-radius); font-size: 13px;
+    color: var(--gmc-text); text-decoration: none; transition: .2s; border: 1px solid var(--gmc-border-light);
+}
+.fc-social a:hover { background: var(--gmc-accent-light); border-color: var(--gmc-accent-border); color: var(--gmc-accent); }
+
+/* ── Timeline ── */
+.fc-timeline { display: flex; flex-direction: column; gap: 0; }
+.fc-timeline-item {
+    display: flex; gap: 16px; padding: 12px 0;
+    border-bottom: 1px solid var(--gmc-border-light);
+}
+.fc-timeline-item:last-child { border-bottom: none; }
+.fc-timeline-dot {
+    width: 10px; height: 10px; border-radius: 50%; margin-top: 5px; flex-shrink: 0;
+    background: var(--gmc-accent);
+}
+.fc-timeline-dot.call { background: var(--gmc-blue); }
+.fc-timeline-dot.meeting { background: var(--gmc-green); }
+.fc-timeline-dot.email { background: var(--gmc-purple); }
+.fc-timeline-dot.note { background: var(--gmc-yellow); }
+.fc-timeline-content { flex: 1; }
+.fc-timeline-date { font-size: 11px; color: var(--gmc-text-muted); }
+.fc-timeline-text { font-size: 13px; color: var(--gmc-text-strong); margin-top: 2px; }
+.fc-timeline-type { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .3px; }
+
+/* ── Pipeline table ── */
+.fc-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+.fc-table th {
+    text-align: left; font-size: 11px; font-weight: 600; color: var(--gmc-text-muted);
+    text-transform: uppercase; letter-spacing: .5px; padding: 8px 12px;
+    border-bottom: 2px solid var(--gmc-border);
+}
+.fc-table td { padding: 10px 12px; font-size: 13px; border-bottom: 1px solid var(--gmc-border-light); }
+.fc-table tr:hover td { background: var(--gmc-accent-light); }
+.fc-stage {
+    display: inline-flex; padding: 3px 8px; border-radius: var(--gmc-radius-full);
+    font-size: 11px; font-weight: 600;
+}
+.fc-stage-soumission { background: rgba(0,145,174,.12); color: var(--gmc-blue); }
+.fc-stage-en-attente { background: rgba(245,194,107,.15); color: #8a6d2e; }
+.fc-stage-signe { background: rgba(0,189,165,.12); color: #00876a; }
+.fc-stage-en-cours { background: rgba(106,120,209,.12); color: var(--gmc-purple); }
+.fc-stage-livre { background: rgba(0,189,165,.2); color: #00654f; }
+.fc-stage-perdu { background: rgba(224,82,82,.1); color: var(--gmc-red); }
+
+/* ── Competitors ── */
+.fc-comp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.fc-comp-item {
+    padding: 8px 12px; background: var(--gmc-bg-sunken); border-radius: var(--gmc-radius);
+    font-size: 13px; display: flex; align-items: center; gap: 6px;
+}
+.fc-comp-item .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gmc-red); }
+
+/* ── Right column sections ── */
+.fc-right-stack { display: flex; flex-direction: column; gap: 24px; }
+
+/* ── Empty state ── */
+.fc-empty { text-align: center; padding: 32px; color: var(--gmc-text-muted); font-size: 14px; }
+</style>
+</head>
+<body>
+<div id="app-loading" class="fc-loading">
+    <div class="spinner"></div>
+    <span style="color:var(--gmc-text-muted)">Chargement de la fiche client...</span>
+</div>
+<div id="app-root" style="display:none">
+
+<!-- Top bar -->
+<div class="fc-topbar">
+    <div class="fc-topbar-left">
+        <button class="back-btn" onclick="history.back()">← Retour</button>
+        <h1 id="client-name">—</h1>
+        <span id="badge-score" class="fc-badge"></span>
+        <span id="badge-territory" class="fc-badge fc-badge-territory"></span>
+        <span id="badge-freq" class="fc-badge" style="background:rgba(106,120,209,.12);color:var(--gmc-purple)"></span>
+    </div>
+    <div class="fc-topbar-right">
+        <span id="badge-type" class="fc-badge" style="background:rgba(0,145,174,.12);color:var(--gmc-blue)"></span>
+    </div>
+</div>
+
+<div class="fc-container">
+    <!-- Stats bar -->
+    <div class="fc-stats-bar" id="stats-bar"></div>
+
+    <!-- Main grid -->
+    <div class="fc-grid">
+        <!-- LEFT COLUMN — Identity + Contacts + Social + Tags -->
+        <div>
+            <!-- Coordonnées -->
+            <div class="fc-card" style="margin-bottom:20px">
+                <div class="fc-card-header"><h2>📍 Coordonnées</h2></div>
+                <div class="fc-card-body">
+                    <div class="fc-info-grid" id="info-coords"></div>
+                </div>
+            </div>
+
+            <!-- Contacts -->
+            <div class="fc-card" style="margin-bottom:20px">
+                <div class="fc-card-header"><h2>👥 Contacts</h2></div>
+                <div class="fc-card-body">
+                    <div class="fc-info-grid" id="info-contacts"></div>
+                </div>
+            </div>
+
+            <!-- Réseaux sociaux -->
+            <div class="fc-card" style="margin-bottom:20px">
+                <div class="fc-card-header"><h2>🌐 Réseaux sociaux</h2></div>
+                <div class="fc-card-body">
+                    <div class="fc-social" id="social-links"></div>
+                </div>
+            </div>
+
+            <!-- Étiquettes -->
+            <div class="fc-card" style="margin-bottom:20px">
+                <div class="fc-card-header"><h2>🏷️ Étiquettes</h2></div>
+                <div class="fc-card-body">
+                    <div class="fc-tags" id="tags-container"></div>
+                </div>
+            </div>
+
+            <!-- Notes Isabelle -->
+            <div class="fc-card">
+                <div class="fc-card-header"><h2>📝 Notes terrain</h2></div>
+                <div class="fc-card-body">
+                    <div id="notes-terrain" style="font-size:13px;line-height:1.6;white-space:pre-wrap;color:var(--gmc-text)"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN — Sales, Pipeline, Activities, Competitors -->
+        <div class="fc-right-stack">
+            <!-- Ventes annuelles -->
+            <div class="fc-card">
+                <div class="fc-card-header"><h2>📊 Ventes annuelles</h2></div>
+                <div class="fc-card-body">
+                    <div class="fc-chart-container" id="sales-chart"></div>
+                </div>
+            </div>
+
+            <!-- Pipeline / Soumissions -->
+            <div class="fc-card">
+                <div class="fc-card-header">
+                    <h2>🔄 Pipeline / Soumissions</h2>
+                    <span id="pipeline-count" style="font-size:12px;color:var(--gmc-text-muted)"></span>
+                </div>
+                <div class="fc-card-body" style="padding:0">
+                    <div id="pipeline-table"></div>
+                </div>
+            </div>
+
+            <!-- Compétiteurs -->
+            <div class="fc-card">
+                <div class="fc-card-header"><h2>⚔️ Compétiteurs</h2></div>
+                <div class="fc-card-body">
+                    <div class="fc-comp-grid" id="competitors"></div>
+                </div>
+            </div>
+
+            <!-- Échantillons / Marques -->
+            <div class="fc-card">
+                <div class="fc-card-header"><h2>🧱 Échantillons livrés</h2></div>
+                <div class="fc-card-body">
+                    <div id="samples-container" style="font-size:13px;line-height:1.7;white-space:pre-wrap"></div>
+                </div>
+            </div>
+
+            <!-- Historique d'activités -->
+            <div class="fc-card">
+                <div class="fc-card-header">
+                    <h2>📅 Historique d'activités</h2>
+                    <span id="activity-count" style="font-size:12px;color:var(--gmc-text-muted)"></span>
+                </div>
+                <div class="fc-card-body" style="padding:12px 20px">
+                    <div class="fc-timeline" id="timeline"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<script>
+const API_BASE = window.location.origin;
+const FMT = new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: 0 });
+
+// Get partner_id from URL
+const urlParams = new URLSearchParams(window.location.search);
+const partnerId = urlParams.get('id');
+
+if (!partnerId) {
+    document.getElementById('app-loading').innerHTML = '<p style="color:var(--gmc-red)">Aucun ID client spécifié. Ajoutez ?id=123 à l\'URL.</p>';
+}
+
+// ─── LOAD ALL DATA ───
+async function loadClientData() {
+    try {
+        // Fetch client detail from API
+        const resp = await fetch(`${API_BASE}/api/crm/clients/${partnerId}`);
+        if (!resp.ok) throw new Error(`Erreur ${resp.status}`);
+        const client = await resp.json();
+
+        // Also fetch pipeline for this client
+        let pipeline = [];
+        try {
+            const pResp = await fetch(`${API_BASE}/api/crm/pipeline?limit=100`);
+            if (pResp.ok) {
+                const pData = await pResp.json();
+                pipeline = (pData.leads || []).filter(l => {
+                    const pid = Array.isArray(l.partner_id) ? l.partner_id[0] : l.partner_id;
+                    return pid == partnerId;
+                });
+            }
+        } catch(e) {}
+
+        renderClient(client, pipeline);
+        document.getElementById('app-loading').style.display = 'none';
+        document.getElementById('app-root').style.display = 'block';
+    } catch (e) {
+        document.getElementById('app-loading').innerHTML =
+            `<p style="color:var(--gmc-red)">Erreur: ${e.message}</p>
+             <button onclick="location.reload()" style="margin-top:12px;padding:8px 16px;cursor:pointer">Réessayer</button>`;
+    }
+}
+
+function renderClient(c, pipeline) {
+    // ── Top bar ──
+    document.getElementById('client-name').textContent = c.name || '—';
+    const score = (c.x_score_client || '').replace('+','');
+    const scoreBadge = document.getElementById('badge-score');
+    if (score) {
+        scoreBadge.textContent = `Score ${score}`;
+        scoreBadge.className = `fc-badge fc-badge-${score.toLowerCase()}`;
+    } else { scoreBadge.style.display = 'none'; }
+
+    const terr = c.territoire || '';
+    const terrBadge = document.getElementById('badge-territory');
+    if (terr) { terrBadge.textContent = terr; } else { terrBadge.style.display = 'none'; }
+
+    const freq = c.x_freq_visite || '';
+    const freqBadge = document.getElementById('badge-freq');
+    if (freq) { freqBadge.textContent = `Visite: ${freq}`; } else { freqBadge.style.display = 'none'; }
+
+    const typeClient = c.x_type_client || '';
+    const typeBadge = document.getElementById('badge-type');
+    if (typeClient) { typeBadge.textContent = typeClient; } else { typeBadge.style.display = 'none'; }
+
+    // ── Stats bar ──
+    const sales = {
+        '2019': c.x_ventes_2019 || 0, '2020': c.x_ventes_2020 || 0,
+        '2021': c.x_ventes_2021 || 0, '2022': c.x_ventes_2022 || 0,
+        '2023': c.x_ventes_2023 || 0,
+    };
+    const totalSales = c.x_ventes_total || Object.values(sales).reduce((a,b)=>a+b,0);
+    const bestYear = c.x_meilleure_annee || '';
+    const leadCount = (c.leads || []).length + pipeline.length;
+    const pipelineRev = pipeline.reduce((s,l) => s + (l.expected_revenue||0), 0);
+
+    document.getElementById('stats-bar').innerHTML = `
+        <div class="fc-stat accent"><div class="num">${FMT.format(totalSales)}</div><div class="lbl">Ventes totales</div></div>
+        <div class="fc-stat blue"><div class="num">${bestYear || '—'}</div><div class="lbl">Meilleure année</div></div>
+        <div class="fc-stat green"><div class="num">${leadCount}</div><div class="lbl">Soumissions</div></div>
+        <div class="fc-stat"><div class="num">${FMT.format(pipelineRev)}</div><div class="lbl">Pipeline actif</div></div>
+        <div class="fc-stat"><div class="num">${c.x_date_premiere_visite || '—'}</div><div class="lbl">1ère visite</div></div>
+    `;
+
+    // ── Coordonnées ──
+    const infoFields = [
+        ['Adresse', [c.street, c.city, c.zip].filter(Boolean).join(', ')],
+        ['Téléphone', c.phone],
+        ['Courriel', c.email ? `<a href="mailto:${c.email}">${c.email}</a>` : ''],
+        ['Site web', c.website ? `<a href="${c.website}" target="_blank">${c.website}</a>` : ''],
+        ['Heures', c.x_hours || ''],
+        ['Employés', c.x_employees_estimate || ''],
+        ['Revenus estimés', c.x_revenue_estimate || ''],
+        ['Année fondation', c.x_year_founded || ''],
+        ['REQ', c.x_req_number || ''],
+    ];
+    document.getElementById('info-coords').innerHTML = infoFields.map(([label, val]) =>
+        `<div class="fc-info-row"><label>${label}</label><div class="val">${val || '<span class="empty">—</span>'}</div></div>`
+    ).join('');
+
+    // ── Contacts ──
+    const contactFields = [
+        ['Contact principal', c.x_contact_principal || ''],
+        ['Contact secondaire', c.x_contact_secondaire || ''],
+    ];
+    // Add child contacts from Odoo
+    (c.child_contacts || []).forEach((cc, i) => {
+        contactFields.push([cc.function || `Contact ${i+1}`, `${cc.name || ''} ${cc.phone ? '— '+cc.phone : ''} ${cc.email ? '— '+cc.email : ''}`]);
+    });
+    document.getElementById('info-contacts').innerHTML = contactFields.map(([label, val]) =>
+        `<div class="fc-info-row"><label>${label}</label><div class="val">${val || '<span class="empty">—</span>'}</div></div>`
+    ).join('');
+
+    // ── Social ──
+    const socials = [];
+    if (c.x_facebook) socials.push(['📘 Facebook', c.x_facebook]);
+    if (c.x_instagram) socials.push(['📷 Instagram', c.x_instagram]);
+    if (c.x_linkedin) socials.push(['💼 LinkedIn', c.x_linkedin]);
+    if (c.x_google_maps) socials.push(['📍 Google Maps', c.x_google_maps]);
+    document.getElementById('social-links').innerHTML = socials.length
+        ? socials.map(([label, url]) => `<a href="${url}" target="_blank">${label}</a>`).join('')
+        : '<span class="empty" style="font-size:13px;color:var(--gmc-text-faint)">Aucun réseau social renseigné</span>';
+
+    // ── Tags ──
+    // Tags from description, specialties, brands
+    const tags = [];
+    if (c.x_specialties) c.x_specialties.split(',').forEach(s => tags.push({text: s.trim(), cls: ''}));
+    if (c.x_brands) c.x_brands.split(',').forEach(b => tags.push({text: b.trim(), cls: 'blue'}));
+    if (typeClient) tags.push({text: typeClient, cls: 'green'});
+    if (c.x_marques_interet) c.x_marques_interet.split(',').forEach(m => tags.push({text: m.trim(), cls: 'purple'}));
+    document.getElementById('tags-container').innerHTML = tags.length
+        ? tags.map(t => `<span class="fc-tag ${t.cls}">${t.text}</span>`).join('')
+        : '<span class="empty" style="font-size:13px;color:var(--gmc-text-faint)">Aucune étiquette</span>';
+
+    // ── Notes terrain ──
+    const notes = [];
+    if (c.x_description) notes.push(c.x_description);
+    if (c.x_notes_terrain) notes.push(c.x_notes_terrain);
+    if (c.x_notes_isabelle) notes.push('\n— Notes Isabelle —\n' + c.x_notes_isabelle);
+    if (c.x_historique_visites) notes.push('\n— Historique visites —\n' + c.x_historique_visites);
+    document.getElementById('notes-terrain').textContent = notes.join('\n\n') || 'Aucune note';
+
+    // ── Sales chart ──
+    const maxSale = Math.max(...Object.values(sales), 1);
+    const colors = ['#7c98b6', '#0091ae', '#c07a4a', '#00bda5', '#6a78d1'];
+    const chartBars = Object.entries(sales).map(([yr, val], i) => {
+        const pct = (val / maxSale) * 150;
+        return `<div class="fc-bar-col">
+            <div class="fc-bar-val">${val > 0 ? FMT.format(val) : '—'}</div>
+            <div class="fc-bar" style="height:${Math.max(pct, 4)}px;background:${colors[i]}"></div>
+            <div class="fc-bar-year">${yr}</div>
+        </div>`;
+    }).join('');
+    document.getElementById('sales-chart').innerHTML = `<div class="fc-bar-chart">${chartBars}</div>`;
+
+    // ── Pipeline table ──
+    const allLeads = [...pipeline, ...(c.leads || [])];
+    const uniqueLeads = [];
+    const seenIds = new Set();
+    allLeads.forEach(l => {
+        const lid = l.id || l.name;
+        if (!seenIds.has(lid)) { seenIds.add(lid); uniqueLeads.push(l); }
+    });
+    document.getElementById('pipeline-count').textContent = `${uniqueLeads.length} soumission(s)`;
+
+    if (uniqueLeads.length) {
+        const STAGE_MAP = {'New':'Soumission','Nouveau':'Soumission','Qualification':'En attente','Qualified':'En attente',
+            'Proposition':'En attente','Negotiation':'En cours','Won':'Signé','Gagné':'Signé','Lost':'Perdu','Perdu':'Perdu'};
+        const stageClass = (s) => {
+            const mapped = STAGE_MAP[s] || s || 'Soumission';
+            return 'fc-stage-' + mapped.toLowerCase().replace(/[éè]/g,'e').replace(/ /g,'-');
+        };
+
+        document.getElementById('pipeline-table').innerHTML = `
+            <table class="fc-table">
+                <thead><tr><th>Soumission</th><th>Étape</th><th>Montant</th><th>Probabilité</th><th>Échéance</th></tr></thead>
+                <tbody>${uniqueLeads.map(l => {
+                    const sname = Array.isArray(l.stage_id) ? l.stage_id[1] : (l.stage_name || '');
+                    const mapped = STAGE_MAP[sname] || sname || 'Soumission';
+                    return `<tr>
+                        <td>${l.name || '—'}</td>
+                        <td><span class="fc-stage ${stageClass(sname)}">${mapped}</span></td>
+                        <td>${FMT.format(l.expected_revenue || 0)}</td>
+                        <td>${Math.round(l.probability || 0)}%</td>
+                        <td>${l.date_deadline || '—'}</td>
+                    </tr>`;
+                }).join('')}</tbody>
+            </table>`;
+    } else {
+        document.getElementById('pipeline-table').innerHTML = '<div class="fc-empty">Aucune soumission active</div>';
+    }
+
+    // ── Competitors ──
+    const compText = c.x_competiteurs || '';
+    const comps = compText ? compText.split(',').map(s => s.trim()).filter(Boolean) : [];
+    document.getElementById('competitors').innerHTML = comps.length
+        ? comps.map(comp => `<div class="fc-comp-item"><span class="dot"></span>${comp}</div>`).join('')
+        : '<div class="fc-empty" style="grid-column:1/-1">Aucun compétiteur identifié</div>';
+
+    // ── Samples ──
+    const samples = c.x_echantillons_livres || '';
+    document.getElementById('samples-container').textContent = samples || 'Aucun échantillon enregistré';
+
+    // ── Activity Timeline ──
+    const activities = c.activities || [];
+    document.getElementById('activity-count').textContent = `${activities.length} activité(s)`;
+    if (activities.length) {
+        document.getElementById('timeline').innerHTML = activities.slice(0, 20).map(a => {
+            const typeName = Array.isArray(a.activity_type_id) ? a.activity_type_id[1] : (a.type || 'Note');
+            const tl = typeName.toLowerCase();
+            const dotClass = tl.includes('appel') || tl.includes('call') ? 'call'
+                : tl.includes('réunion') || tl.includes('meet') ? 'meeting'
+                : tl.includes('email') || tl.includes('mail') ? 'email' : 'note';
+            return `<div class="fc-timeline-item">
+                <div class="fc-timeline-dot ${dotClass}"></div>
+                <div class="fc-timeline-content">
+                    <div class="fc-timeline-date">${a.date_deadline || a.date || '—'} · <span class="fc-timeline-type">${typeName}</span></div>
+                    <div class="fc-timeline-text">${a.summary || a.note || '—'}</div>
+                </div>
+            </div>`;
+        }).join('');
+    } else {
+        document.getElementById('timeline').innerHTML = '<div class="fc-empty">Aucune activité récente</div>';
+    }
+}
+
+// ── Init ──
+if (partnerId) loadClientData();
+</script>
+</body>
+</html>

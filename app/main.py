@@ -100,6 +100,12 @@ async def serve_contacts():
     return FileResponse(str(STATIC_DIR / "contacts.html"))
 
 
+@app.get("/app/fiche-client", include_in_schema=False)
+async def serve_fiche_client():
+    """Fiche Client détaillée — vue Isabelle."""
+    return FileResponse(str(STATIC_DIR / "fiche-client.html"))
+
+
 @app.get("/health", response_model=HealthResponse, tags=["System"])
 async def health():
     """Vérifie l'état du backend et des connexions."""

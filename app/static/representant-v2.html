@@ -586,64 +586,10 @@ function renderTimeline() {
     timelineDiv.appendChild(tl);
 }
 
-// ========== CLIENT DETAIL PANEL ==========
+// ========== CLIENT DETAIL — navigate to fiche-client ==========
 function showClientDetail(client) {
-    const detailPanel = document.getElementById('detailPanel');
-    const detailName = document.getElementById('detailName');
-    const detailBody = document.getElementById('detailBody');
-
-    detailName.textContent = client.name;
-
-    detailBody.innerHTML = `
-        <div class="field-grid">
-            <div class="field">
-                <div class="label">Score</div>
-                <div class="val"><span class="gmc-badge gmc-score-${(client.score||'c')[0].toLowerCase()}">${client.score}</span></div>
-            </div>
-            <div class="field">
-                <div class="label">Territoire</div>
-                <div class="val">${client.territoire || '—'}</div>
-            </div>
-            <div class="field">
-                <div class="label">Ville</div>
-                <div class="val">${client.city || '—'}</div>
-            </div>
-            <div class="field">
-                <div class="label">Code postal</div>
-                <div class="val">${client.zip || '—'}</div>
-            </div>
-            <div class="field">
-                <div class="label">Type</div>
-                <div class="val">${client.type_client || '—'}</div>
-            </div>
-            <div class="field">
-                <div class="label">Pipeline</div>
-                <div class="val">${formatCurrency(client.pipeline_revenue || 0)}</div>
-            </div>
-            <div class="field" style="grid-column:1/-1">
-                <div class="label">Adresse</div>
-                <div class="val">${client.street || '—'}</div>
-            </div>
-            <div class="field" style="grid-column:1/-1">
-                <div class="label">Contacts</div>
-                <div class="val">
-                    ${client.phone ? `<a href="tel:${client.phone}">${client.phone}</a><br>` : ''}
-                    ${client.email ? `<a href="mailto:${client.email}">${client.email}</a><br>` : ''}
-                    ${client.website ? `<a href="https://${client.website}" target="_blank">${client.website}</a>` : ''}
-                </div>
-            </div>
-            <div class="field" style="grid-column:1/-1">
-                <div class="label">Description</div>
-                <div class="val">${client.description || '—'}</div>
-            </div>
-        </div>
-        <a href="${ODOO}/web#model=res.partner&id=${client.id}" target="_blank" class="link-odoo">
-            <i class="fa-solid fa-arrow-up-right-from-square"></i> Voir dans Odoo
-        </a>
-    `;
-
-    document.getElementById('backdrop').classList.add('show');
-    detailPanel.classList.add('open');
+    // Navigate to the full client detail page
+    window.location.href = `/app/fiche-client?id=${client.id}`;
 }
 
 function closeDetail() {
