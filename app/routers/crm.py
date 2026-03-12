@@ -15,6 +15,20 @@ from app.services.odoo import get_odoo_client
 router = APIRouter(prefix="/api/crm", tags=["CRM"])
 
 
+def _s(val, default=""):
+    """Sanitize Odoo field value: convert False/None to default string."""
+    if val is False or val is None:
+        return default
+    return val
+
+
+def _i(val, default=0):
+    """Sanitize Odoo integer field: convert False/None to default int."""
+    if val is False or val is None:
+        return default
+    return val
+
+
 @router.get("/clients", response_model=ClientListResponse)
 async def list_clients(
     territoire_id: Optional[int] = Query(None, description="Filter by territory ID"),
@@ -159,36 +173,36 @@ async def get_client_detail(partner_id: int):
 
     return ClientDetailResponse(
         id=partner["id"],
-        name=partner.get("name", ""),
+        name=_s(partner.get("name"), ""),
         is_company=partner.get("is_company", True),
         territoire=terr_name,
-        x_score_client=partner.get("x_score_client", ""),
-        city=partner.get("city", ""),
-        phone=partner.get("phone", ""),
-        email=partner.get("email", ""),
-        website=partner.get("website", ""),
-        street=partner.get("street", ""),
-        zip=partner.get("zip", ""),
-        state_id=partner.get("state_id"),
-        x_notes_terrain=partner.get("x_notes_terrain", ""),
-        x_competiteurs=partner.get("x_competiteurs", ""),
-        x_marques_interet=partner.get("x_marques_interet", ""),
-        x_date_derniere_visite=partner.get("x_date_derniere_visite"),
-        x_nb_visites=partner.get("x_nb_visites", 0),
-        x_type_client=partner.get("x_type_client", ""),
-        x_echantillons_notes=partner.get("x_echantillons_notes", ""),
-        x_facebook=partner.get("x_facebook", ""),
-        x_instagram=partner.get("x_instagram", ""),
-        x_linkedin=partner.get("x_linkedin", ""),
-        x_google_maps=partner.get("x_google_maps", ""),
-        x_description=partner.get("x_description", ""),
-        x_year_founded=partner.get("x_year_founded", ""),
-        x_employees_estimate=partner.get("x_employees_estimate", ""),
-        x_revenue_estimate=partner.get("x_revenue_estimate", ""),
-        x_req_number=partner.get("x_req_number", ""),
-        x_brands=partner.get("x_brands", ""),
-        x_specialties=partner.get("x_specialties", ""),
-        x_hours=partner.get("x_hours", ""),
+        x_score_client=_s(partner.get("x_score_client")),
+        city=_s(partner.get("city")),
+        phone=_s(partner.get("phone")),
+        email=_s(partner.get("email")),
+        website=_s(partner.get("website")),
+        street=_s(partner.get("street")),
+        zip=_s(partner.get("zip")),
+        state_id=partner.get("state_id") if partner.get("state_id") else None,
+        x_notes_terrain=_s(partner.get("x_notes_terrain")),
+        x_competiteurs=_s(partner.get("x_competiteurs")),
+        x_marques_interet=_s(partner.get("x_marques_interet")),
+        x_date_derniere_visite=_s(partner.get("x_date_derniere_visite"), None),
+        x_nb_visites=_i(partner.get("x_nb_visites")),
+        x_type_client=_s(partner.get("x_type_client")),
+        x_echantillons_notes=_s(partner.get("x_echantillons_notes")),
+        x_facebook=_s(partner.get("x_facebook")),
+        x_instagram=_s(partner.get("x_instagram")),
+        x_linkedin=_s(partner.get("x_linkedin")),
+        x_google_maps=_s(partner.get("x_google_maps")),
+        x_description=_s(partner.get("x_description")),
+        x_year_founded=_s(partner.get("x_year_founded")),
+        x_employees_estimate=_s(partner.get("x_employees_estimate")),
+        x_revenue_estimate=_s(partner.get("x_revenue_estimate")),
+        x_req_number=_s(partner.get("x_req_number")),
+        x_brands=_s(partner.get("x_brands")),
+        x_specialties=_s(partner.get("x_specialties")),
+        x_hours=_s(partner.get("x_hours")),
         child_contacts=child_contacts,
         leads=leads,
         activities=activities,

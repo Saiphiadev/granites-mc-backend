@@ -837,6 +837,8 @@ async def migrate_enriched_data():
                     **update_vals,
                 }
                 new_id = await odoo.create("res.partner", create_vals)
+                # Force is_company=True (Odoo may ignore it during create)
+                await odoo.write("res.partner", [new_id], {"is_company": True})
                 result.created_partners.append({
                     "rank": client["rank"],
                     "name": client["name"],
