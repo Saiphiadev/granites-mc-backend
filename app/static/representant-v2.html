@@ -322,6 +322,13 @@ let PIPELINE = [
   {num:"SOU-26009",nom:"Salle de bain design",client:"Arm. Décor",montant:6300,etape:"En cours",rep:"Nathalie B.",date:"28 fév 2026",prob:45},
   {num:"SOU-26036",nom:"Rénovation complète bureau",client:"Nova Design",montant:38000,etape:"Signé",rep:"Nathalie B.",date:"11 mars 2026",prob:90},
   {num:"SOU-26037",nom:"Cuisine haut de gamme",client:"Ebe Des Cantons",montant:19800,etape:"Soumission",rep:"Isabelle T.",date:"12 mars 2026",prob:55},
+  {num:"SOU-26005",nom:"Armoires résidentielles",client:"Atelier DLJ",montant:12400,etape:"Livré",rep:"Isabelle T.",date:"15 fév 2026",prob:100},
+  {num:"SOU-26002",nom:"Réno cuisine complète",client:"L. Chênevert",montant:8900,etape:"Livré",rep:"Isabelle T.",date:"10 fév 2026",prob:100},
+  {num:"SOU-26008",nom:"Comptoir granite résidentiel",client:"Cuis. Chaput",montant:6200,etape:"Perdu",rep:"Isabelle T.",date:"20 fév 2026",prob:0},
+  {num:"SOU-26004",nom:"Vanité double SDB",client:"Bois-Briand",montant:15500,etape:"Livré",rep:"Nathalie B.",date:"12 fév 2026",prob:100},
+  {num:"SOU-26001",nom:"Cuisine condo Sherbrooke",client:"SMA",montant:11200,etape:"Livré",rep:"Nathalie B.",date:"8 fév 2026",prob:100},
+  {num:"SOU-26007",nom:"Projet commercial annulé",client:"Arm. Décor",montant:9800,etape:"Perdu",rep:"Nathalie B.",date:"18 fév 2026",prob:0},
+  {num:"SOU-26003",nom:"Mobilier bureau",client:"Anny-Max",montant:4500,etape:"Perdu",rep:"Isabelle T.",date:"5 fév 2026",prob:0},
 ];
 
 // Keep pristine copies of static data for user switching
@@ -451,9 +458,9 @@ async function loadLoginUsers() {
                 <div style="width:36px;height:36px;border-radius:50%;background:var(--gmc-blue);display:flex;align-items:center;justify-content:center;color:white;font-weight:600;font-size:13px">IT</div>
                 <div><div style="font-weight:600;color:var(--gmc-text-strong);font-size:13px">Isabelle T.</div><div style="font-size:11px;color:var(--gmc-text-muted)">Représentant</div></div>
             </div>
-            <div onclick="doLoginFallback('Yvon R.')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;border:1px solid var(--gmc-border);margin-bottom:6px" onmouseover="this.style.background='var(--gmc-bg)'" onmouseout="this.style.background='white'">
-                <div style="width:36px;height:36px;border-radius:50%;background:var(--gmc-green);display:flex;align-items:center;justify-content:center;color:white;font-weight:600;font-size:13px">YR</div>
-                <div><div style="font-weight:600;color:var(--gmc-text-strong);font-size:13px">Yvon R.</div><div style="font-size:11px;color:var(--gmc-text-muted)">Représentant</div></div>
+            <div onclick="doLoginFallback('Nathalie Beaulac')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;border:1px solid var(--gmc-border);margin-bottom:6px" onmouseover="this.style.background='var(--gmc-bg)'" onmouseout="this.style.background='white'">
+                <div style="width:36px;height:36px;border-radius:50%;background:var(--gmc-green);display:flex;align-items:center;justify-content:center;color:white;font-weight:600;font-size:13px">NB</div>
+                <div><div style="font-weight:600;color:var(--gmc-text-strong);font-size:13px">Nathalie Beaulac</div><div style="font-size:11px;color:var(--gmc-text-muted)">Administrateur</div></div>
             </div>
         `;
     }
@@ -473,12 +480,18 @@ async function doLogin(email) {
     }
 }
 
-function doLoginFallback(name) {
+async function doLoginFallback(name) {
     currentUser = {id: 0, name: name, email: '', role: 'rep'};
     storeUser(currentUser);
     document.getElementById('loginModal')?.remove();
     updateUIForUser();
     renderDashboard();
+    renderKanban();
+    renderActivityCharts();
+    initClientGrid();
+    initPipeGrid();
+    initActGrid();
+    await loadCalendarEvents();
 }
 
 function confirmLogout() {
@@ -574,8 +587,11 @@ async function loadLiveData() {
     const lb = document.getElementById('liveBadge'); if (lb) lb.style.display = isLive ? 'inline-flex' : 'none';
     renderDashboard();
     renderKanban();
+    renderActivityCharts();
     initClientGrid();
     initPipeGrid();
+    initActGrid();
+    await loadCalendarEvents();
 }
 
 function updateUIForUser() {
@@ -730,7 +746,7 @@ function initClientGrid() {
         rowData: getClientRowData(),
         defaultColDef: { resizable:true, sortable:true, filter:false, floatingFilter:false, minWidth:70 },
         rowSelection:'multiple', animateRows:true, pagination:true, paginationPageSize:25,
-        enableCellTextSelection:true,
+        enableCellTextSelection:true, domLayout:'autoHeight',
         onRowDoubleClicked: (e) => openDetail(e.data.rank),
         getRowStyle: (p) => p.data && p.data.score && p.data.score.includes('A') ? {fontWeight:'500'} : null,
     });
@@ -794,8 +810,15 @@ function setPipeView(etape, el) {
 // ========== AG GRID — ACTIVITÉS ==========
 let actGrid;
 function initActGrid() {
+    if (actGrid) {
+        try { actGrid.api.setGridOption('rowData', []); } catch(e) {}
+        actGrid = null;
+    }
+    const el = document.getElementById('actGrid');
+    if (!el) return;
+    el.innerHTML = '';
     const acts = getRepProfile().activities;
-    actGrid = agGrid.createGrid(document.getElementById('actGrid'), {
+    actGrid = agGrid.createGrid(el, {
         columnDefs: [
             {field:'type',headerName:'Type',width:100,sortable:true,filter:true},
             {field:'client',headerName:'Client',width:140,sortable:true,filter:true},
@@ -1322,11 +1345,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         initPipeGrid();
         initActGrid();
         await loadCalendarEvents();
-        // Then try to load live data in background
-        loadLiveData().then(() => {
-            renderMorningBriefing();
-            renderActivityCharts();
-        });
+        // Then try to load live data in background (re-renders everything)
+        loadLiveData();
     } else {
         // Show login, then init after login
         renderDashboard();
