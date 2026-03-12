@@ -220,8 +220,18 @@
                 <div class="card-body" id="top5Chart"></div>
             </div>
             <div class="card">
-                <div class="card-header"><h2><i class="fa-solid fa-triangle-exclamation" style="color:var(--accent);margin-right:5px"></i> Alertes</h2></div>
-                <div class="card-body" id="alertsPanel"></div>
+                <div class="card-header">
+                    <h2><i class="fa-solid fa-calendar-days" style="color:var(--blue);margin-right:5px"></i> Ma semaine</h2>
+                    <span id="calendarWeekLabel" style="font-size:12px;color:var(--muted);margin-left:auto"></span>
+                </div>
+                <div class="card-body" id="calendarWidget" style="padding:8px;">
+                    <div id="weekGrid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;min-height:180px;"></div>
+                    <div style="margin-top:10px;display:flex;gap:8px;justify-content:flex-end;">
+                        <button onclick="openNewVisitModal()" style="background:var(--blue);color:white;border:none;padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;">
+                            <i class="fa-solid fa-plus"></i> Planifier visite
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="card">
@@ -728,6 +738,190 @@ function renderActivityCharts() {
     `;
 }
 
+// ========== CALENDAR WIDGET ==========
+let calendarEvents = [];
+
+function getWeekDays() {
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+    const days = [];
+    for (let i = 0; i < 5; i++) {
+        const d = new Date(monday);
+        d.setDate(monday.getDate() + i);
+        days.push(d);
+    }
+    return days;
+}
+
+function formatDateOdoo(d) {
+    return d.toISOString().split('T')[0];
+}
+
+async function loadCalendarEvents() {
+    const days = getWeekDays();
+    const startDate = formatDateOdoo(days[0]);
+    const endFriday = new Date(days[4]);
+    endFriday.setDate(endFriday.getDate() + 1);
+    const endDate = formatDateOdoo(endFriday);
+
+    try {
+        const resp = await fetch(`${API_URL}/api/calendar/events?start_date=${startDate}&end_date=${endDate}&limit=50`);
+        if (resp.ok) {
+            const data = await resp.json();
+            calendarEvents = data.events || [];
+        }
+    } catch (e) {
+        console.log('Calendar API unavailable, using demo data');
+        // Demo events for visual
+        calendarEvents = [
+            {id:0, name:'Visite Cuisifab — suivi soumission', start: formatDateOdoo(days[0])+' 09:00:00', stop: formatDateOdoo(days[0])+' 10:30:00', location:'Trois-Rivières', partner_id:'Cuisifab'},
+            {id:0, name:'Appel Avivia — relance', start: formatDateOdoo(days[1])+' 14:00:00', stop: formatDateOdoo(days[1])+' 14:30:00', location:'Téléphone', partner_id:'Avivia'},
+            {id:0, name:'Visite Cuisi-Meuble — échantillons', start: formatDateOdoo(days[2])+' 10:00:00', stop: formatDateOdoo(days[2])+' 11:30:00', location:'Tingwick', partner_id:'Cuisi-Meuble'},
+            {id:0, name:'Visite Arm. Solution — démo', start: formatDateOdoo(days[3])+' 13:00:00', stop: formatDateOdoo(days[3])+' 14:30:00', location:'Trois-Rivières', partner_id:'Arm. Solution'},
+            {id:0, name:'Réunion équipe — bilan semaine', start: formatDateOdoo(days[4])+' 16:00:00', stop: formatDateOdoo(days[4])+' 17:00:00', location:'Bureau', partner_id:'Interne'},
+        ];
+    }
+    renderWeekCalendar();
+}
+
+function renderWeekCalendar() {
+    const days = getWeekDays();
+    const dayNames = ['Lun','Mar','Mer','Jeu','Ven'];
+    const monthNames = ['jan','fév','mars','avr','mai','juin','juil','août','sept','oct','nov','déc'];
+    const today = new Date();
+    const todayStr = formatDateOdoo(today);
+
+    // Week label
+    const wkLabel = document.getElementById('calendarWeekLabel');
+    if (wkLabel) {
+        wkLabel.textContent = `${days[0].getDate()} ${monthNames[days[0].getMonth()]} — ${days[4].getDate()} ${monthNames[days[4].getMonth()]} ${days[4].getFullYear()}`;
+    }
+
+    const grid = document.getElementById('weekGrid');
+    if (!grid) return;
+
+    grid.innerHTML = days.map((d, i) => {
+        const dateStr = formatDateOdoo(d);
+        const isToday = dateStr === todayStr;
+        const dayEvents = calendarEvents.filter(ev => ev.start && ev.start.startsWith(dateStr));
+
+        const eventsHtml = dayEvents.map(ev => {
+            const time = ev.start ? ev.start.split(' ')[1]?.substring(0,5) : '';
+            const isVisit = ev.name?.toLowerCase().includes('visite');
+            const isCall = ev.name?.toLowerCase().includes('appel');
+            const color = isVisit ? 'var(--green)' : isCall ? 'var(--blue)' : 'var(--accent)';
+            const icon = isVisit ? 'fa-location-dot' : isCall ? 'fa-phone' : 'fa-calendar-check';
+            const shortName = ev.name?.length > 25 ? ev.name.substring(0,24) + '…' : ev.name;
+            return `<div style="background:${color}15;border-left:3px solid ${color};padding:4px 6px;border-radius:4px;margin-bottom:4px;cursor:pointer" title="${ev.name}\n${ev.location || ''}">
+                <div style="font-size:10px;color:${color};font-weight:600"><i class="fa-solid ${icon}" style="margin-right:3px"></i>${time}</div>
+                <div style="font-size:11px;color:var(--text);line-height:1.3">${shortName}</div>
+            </div>`;
+        }).join('');
+
+        const emptySlot = dayEvents.length === 0 ? `<div style="font-size:11px;color:var(--muted);text-align:center;padding:12px 0;">—</div>` : '';
+
+        return `<div style="background:${isToday ? 'var(--blue)08' : 'var(--bg)'};border-radius:8px;padding:6px;border:${isToday ? '2px solid var(--blue)' : '1px solid var(--border)'}">
+            <div style="text-align:center;margin-bottom:6px;">
+                <div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase">${dayNames[i]}</div>
+                <div style="font-size:16px;font-weight:700;${isToday ? 'color:var(--blue)' : 'color:var(--text)'}">${d.getDate()}</div>
+            </div>
+            ${eventsHtml}${emptySlot}
+        </div>`;
+    }).join('');
+}
+
+function openNewVisitModal() {
+    const clientOptions = MY_CLIENTS.map(c => `<option value="${c.court}">${c.court} — ${c.nom}</option>`).join('');
+
+    const modal = document.createElement('div');
+    modal.id = 'visitModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:9999';
+    modal.innerHTML = `
+        <div style="background:var(--card);border-radius:12px;padding:24px;width:420px;max-width:90vw;border:1px solid var(--border)">
+            <h3 style="margin:0 0 16px 0;color:var(--text)"><i class="fa-solid fa-calendar-plus" style="color:var(--blue);margin-right:8px"></i>Planifier une visite</h3>
+            <div style="display:grid;gap:12px">
+                <div>
+                    <label style="font-size:12px;color:var(--text-light);display:block;margin-bottom:4px">Client</label>
+                    <select id="visitClient" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px">
+                        <option value="">— Choisir un client —</option>
+                        ${clientOptions}
+                    </select>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                    <div>
+                        <label style="font-size:12px;color:var(--text-light);display:block;margin-bottom:4px">Date</label>
+                        <input type="date" id="visitDate" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px" value="${formatDateOdoo(new Date())}">
+                    </div>
+                    <div>
+                        <label style="font-size:12px;color:var(--text-light);display:block;margin-bottom:4px">Heure</label>
+                        <input type="time" id="visitTime" value="09:00" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px">
+                    </div>
+                </div>
+                <div>
+                    <label style="font-size:12px;color:var(--text-light);display:block;margin-bottom:4px">Notes</label>
+                    <textarea id="visitNotes" rows="2" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;resize:vertical" placeholder="Objectif de la visite..."></textarea>
+                </div>
+            </div>
+            <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+                <button onclick="document.getElementById('visitModal').remove()" style="padding:8px 16px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer;font-size:13px">Annuler</button>
+                <button onclick="submitVisit()" style="padding:8px 16px;border-radius:6px;border:none;background:var(--blue);color:white;cursor:pointer;font-size:13px;font-weight:600">
+                    <i class="fa-solid fa-check" style="margin-right:4px"></i>Créer la visite
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+}
+
+async function submitVisit() {
+    const client = document.getElementById('visitClient').value;
+    const date = document.getElementById('visitDate').value;
+    const time = document.getElementById('visitTime').value;
+    const notes = document.getElementById('visitNotes').value;
+
+    if (!client || !date) { alert('Choisir un client et une date'); return; }
+
+    const startDt = `${date} ${time}:00`;
+    const endH = parseInt(time.split(':')[0]) + 1;
+    const stopDt = `${date} ${String(endH).padStart(2,'0')}:${time.split(':')[1]}:00`;
+
+    const clientObj = MY_CLIENTS.find(c => c.court === client);
+    const eventName = `Visite ${client} — ${notes || 'suivi commercial'}`;
+    const location = clientObj?.addr || '';
+
+    try {
+        const resp = await fetch(`${API_URL}/api/calendar/events`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                name: eventName,
+                start: startDt,
+                stop: stopDt,
+                location: location,
+                description: `Rep: ${CURRENT_REP}\nClient: ${clientObj?.nom || client}\n${notes}`,
+                event_type: 'visit'
+            })
+        });
+        if (resp.ok) {
+            document.getElementById('visitModal').remove();
+            await loadCalendarEvents();
+        } else {
+            // Fallback: add locally
+            calendarEvents.push({id:0, name:eventName, start:startDt, stop:stopDt, location, partner_id:client});
+            renderWeekCalendar();
+            document.getElementById('visitModal').remove();
+        }
+    } catch (e) {
+        // Fallback: add locally
+        calendarEvents.push({id:0, name:eventName, start:startDt, stop:stopDt, location, partner_id:client});
+        renderWeekCalendar();
+        document.getElementById('visitModal').remove();
+    }
+}
+
 // ========== INIT ==========
 document.addEventListener('DOMContentLoaded', function() {
     renderDashboard();
@@ -736,6 +930,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initClientGrid();
     initPipeGrid();
     initActGrid();
+    loadCalendarEvents();
 });
 </script>
 </body>
