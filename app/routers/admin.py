@@ -503,7 +503,109 @@ TERRITORY_MAP = {
 }
 
 
+# ─── Type client selection values ───
+
+TYPE_CLIENT_OPTIONS = [
+    "Fabricant d'armoires",
+    "Ébénisterie",
+    "Designer",
+    "Particulier",
+    "Constructeur",
+    "Autre",
+]
+
+
 # ─── Endpoints ───
+
+@router.get("/field-info/{field_name}")
+async def get_field_info(field_name: str):
+    """
+    Retourne les détails d'un champ Odoo incluant les valeurs de sélection.
+    """
+    odoo = get_odoo_client()
+
+    try:
+        fields = await odoo.fields_get(
+            "res.partner", ["string", "type", "selection"]
+        )
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Erreur Odoo: {str(e)}")
+
+    if field_name not in fields:
+        raise HTTPException(status_code=404, detail=f"Champ {field_name} non trouvé")
+
+    return fields[field_name]
+
+
+@router.post("/fix-type-client-selection")
+async def fix_type_client_selection():
+    """
+    Ajoute les options de sélection manquantes au champ x_type_client.
+    """
+    odoo = get_odoo_client()
+
+    try:
+        # Get current field info with selection values
+        fields = await odoo.fields_get(
+            "res.partner", ["string", "type", "selection"]
+        )
+
+        if "x_type_client" not in fields:
+            return {"error": "x_type_client field not found"}
+
+        field_info = fields["x_type_client"]
+        field_type = field_info.get("type", "")
+
+        if field_type != "selection":
+            return {
+                "status": "not_selection",
+                "type": field_type,
+                "message": "x_type_client is not a selection field, no fix needed",
+            }
+
+        # Get current selection values
+        current_selection = field_info.get("selection", [])
+        current_keys = [s[0] for s in current_selection] if current_selection else []
+
+        # Find the field ID
+        field_records = await odoo.search_read(
+            "ir.model.fields",
+            [["model", "=", "res.partner"], ["name", "=", "x_type_client"]],
+            ["id"],
+            limit=1,
+        )
+
+        if not field_records:
+            return {"error": "Field record not found in ir.model.fields"}
+
+        field_id = field_records[0]["id"]
+
+        # Add missing selection values
+        added = []
+        for i, option in enumerate(TYPE_CLIENT_OPTIONS):
+            if option not in current_keys:
+                try:
+                    await odoo.create("ir.model.fields.selection", {
+                        "field_id": field_id,
+                        "value": option,
+                        "name": option,
+                        "sequence": (len(current_keys) + i) * 10,
+                    })
+                    added.append(option)
+                except Exception as e:
+                    # Try alternative: might need to write directly
+                    pass
+
+        return {
+            "status": "ok",
+            "current_options": current_keys,
+            "added_options": added,
+            "all_options": current_keys + added,
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Erreur: {str(e)}")
+
 
 @router.get("/check-fields", response_model=FieldCheckResponse)
 async def check_custom_fields():
@@ -605,12 +707,60 @@ async def migrate_enriched_data():
     )
 
     # Step 1: Check and create missing fields
+    valid_type_client_values = set()
     try:
-        all_fields = await odoo.fields_get("res.partner", ["string", "type"])
+        all_fields = await odoo.fields_get("res.partner", ["string", "type", "selection"])
         model_ids = await odoo.search_read(
             "ir.model", [["model", "=", "res.partner"]], ["id"], limit=1,
         )
         model_id = model_ids[0]["id"] if model_ids else None
+
+        # Check x_type_client selection values
+        if "x_type_client" in all_fields:
+            tc_info = all_fields["x_type_client"]
+            if tc_info.get("type") == "selection":
+                sel = tc_info.get("selection", [])
+                valid_type_client_values = {s[0] for s in sel} if sel else set()
+
+                # Try to add missing selection options
+                if valid_type_client_values:
+                    field_recs = await odoo.search_read(
+                        "ir.model.fields",
+                        [["model", "=", "res.partner"], ["name", "=", "x_type_client"]],
+                        ["id"], limit=1,
+                    )
+                    if field_recs:
+                        fid = field_recs[0]["id"]
+                        for opt in TYPE_CLIENT_OPTIONS:
+                            if opt not in valid_type_client_values:
+                                try:
+                                    await odoo.create("ir.model.fields.selection", {
+                                        "field_id": fid, "value": opt,
+                                        "name": opt, "sequence": 100,
+                                    })
+                                    valid_type_client_values.add(opt)
+                                    result.created_fields.append(f"x_type_client option: {opt}")
+                                except Exception:
+                                    pass
+                else:
+                    # No existing values yet — try adding them all
+                    field_recs = await odoo.search_read(
+                        "ir.model.fields",
+                        [["model", "=", "res.partner"], ["name", "=", "x_type_client"]],
+                        ["id"], limit=1,
+                    )
+                    if field_recs:
+                        fid = field_recs[0]["id"]
+                        for i, opt in enumerate(TYPE_CLIENT_OPTIONS):
+                            try:
+                                await odoo.create("ir.model.fields.selection", {
+                                    "field_id": fid, "value": opt,
+                                    "name": opt, "sequence": i * 10,
+                                })
+                                valid_type_client_values.add(opt)
+                                result.created_fields.append(f"x_type_client option: {opt}")
+                            except Exception:
+                                pass
 
         for field_name, field_def in REQUIRED_FIELDS.items():
             if field_name not in all_fields and model_id:
@@ -657,9 +807,8 @@ async def migrate_enriched_data():
             if score_clean in ("A", "B", "C"):
                 update_vals["x_score_client"] = score_clean
 
-        # Custom fields
+        # Custom fields (excluding x_type_client which is handled separately)
         custom_map = {
-            "type_client": "x_type_client",
             "facebook": "x_facebook",
             "instagram": "x_instagram",
             "linkedin": "x_linkedin",
@@ -679,6 +828,11 @@ async def migrate_enriched_data():
             val = client.get(src_key, "")
             if val:
                 update_vals[odoo_field] = val
+
+        # Handle x_type_client (selection field) separately
+        type_client = client.get("type_client", "")
+        if type_client and valid_type_client_values and type_client in valid_type_client_values:
+            update_vals["x_type_client"] = type_client
 
         # Territory mapping
         territoire = client.get("territoire", "")
