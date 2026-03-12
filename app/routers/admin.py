@@ -503,16 +503,23 @@ TERRITORY_MAP = {
 }
 
 
-# ─── Type client selection values ───
+# ─── Type client selection mapping ───
+# Maps our enriched data labels to Odoo selection keys
 
-TYPE_CLIENT_OPTIONS = [
-    "Fabricant d'armoires",
-    "Ébénisterie",
-    "Designer",
-    "Particulier",
-    "Constructeur",
-    "Autre",
-]
+TYPE_CLIENT_MAP = {
+    "Fabricant d'armoires": "cuisiniste",
+    "Ébénisterie": "ebeniste",
+    "Designer": "designer",
+    "Particulier": "particulier",
+    "Constructeur": "entrepreneur",
+    "Autre": "autre",
+}
+
+# New selection options to add if missing
+TYPE_CLIENT_NEW_OPTIONS = {
+    "particulier": "Particulier",
+    "autre": "Autre",
+}
 
 
 # ─── Endpoints ───
@@ -582,18 +589,17 @@ async def fix_type_client_selection():
 
         # Add missing selection values
         added = []
-        for i, option in enumerate(TYPE_CLIENT_OPTIONS):
-            if option not in current_keys:
+        for key, label in TYPE_CLIENT_NEW_OPTIONS.items():
+            if key not in current_keys:
                 try:
                     await odoo.create("ir.model.fields.selection", {
                         "field_id": field_id,
-                        "value": option,
-                        "name": option,
-                        "sequence": (len(current_keys) + i) * 10,
+                        "value": key,
+                        "name": label,
+                        "sequence": (len(current_keys) + len(added)) * 10,
                     })
-                    added.append(option)
+                    added.append(key)
                 except Exception as e:
-                    # Try alternative: might need to write directly
                     pass
 
         return {
@@ -715,50 +721,30 @@ async def migrate_enriched_data():
         )
         model_id = model_ids[0]["id"] if model_ids else None
 
-        # Check x_type_client selection values
+        # Check x_type_client selection values and add missing ones
         if "x_type_client" in all_fields:
             tc_info = all_fields["x_type_client"]
             if tc_info.get("type") == "selection":
                 sel = tc_info.get("selection", [])
                 valid_type_client_values = {s[0] for s in sel} if sel else set()
 
-                # Try to add missing selection options
-                if valid_type_client_values:
-                    field_recs = await odoo.search_read(
-                        "ir.model.fields",
-                        [["model", "=", "res.partner"], ["name", "=", "x_type_client"]],
-                        ["id"], limit=1,
-                    )
-                    if field_recs:
-                        fid = field_recs[0]["id"]
-                        for opt in TYPE_CLIENT_OPTIONS:
-                            if opt not in valid_type_client_values:
-                                try:
-                                    await odoo.create("ir.model.fields.selection", {
-                                        "field_id": fid, "value": opt,
-                                        "name": opt, "sequence": 100,
-                                    })
-                                    valid_type_client_values.add(opt)
-                                    result.created_fields.append(f"x_type_client option: {opt}")
-                                except Exception:
-                                    pass
-                else:
-                    # No existing values yet — try adding them all
-                    field_recs = await odoo.search_read(
-                        "ir.model.fields",
-                        [["model", "=", "res.partner"], ["name", "=", "x_type_client"]],
-                        ["id"], limit=1,
-                    )
-                    if field_recs:
-                        fid = field_recs[0]["id"]
-                        for i, opt in enumerate(TYPE_CLIENT_OPTIONS):
+                # Add missing selection options (particulier, autre)
+                field_recs = await odoo.search_read(
+                    "ir.model.fields",
+                    [["model", "=", "res.partner"], ["name", "=", "x_type_client"]],
+                    ["id"], limit=1,
+                )
+                if field_recs:
+                    fid = field_recs[0]["id"]
+                    for key, label in TYPE_CLIENT_NEW_OPTIONS.items():
+                        if key not in valid_type_client_values:
                             try:
                                 await odoo.create("ir.model.fields.selection", {
-                                    "field_id": fid, "value": opt,
-                                    "name": opt, "sequence": i * 10,
+                                    "field_id": fid, "value": key,
+                                    "name": label, "sequence": 100,
                                 })
-                                valid_type_client_values.add(opt)
-                                result.created_fields.append(f"x_type_client option: {opt}")
+                                valid_type_client_values.add(key)
+                                result.created_fields.append(f"x_type_client option: {key}")
                             except Exception:
                                 pass
 
@@ -829,10 +815,12 @@ async def migrate_enriched_data():
             if val:
                 update_vals[odoo_field] = val
 
-        # Handle x_type_client (selection field) separately
+        # Handle x_type_client (selection field) — map label to Odoo key
         type_client = client.get("type_client", "")
-        if type_client and valid_type_client_values and type_client in valid_type_client_values:
-            update_vals["x_type_client"] = type_client
+        if type_client:
+            odoo_key = TYPE_CLIENT_MAP.get(type_client)
+            if odoo_key and odoo_key in valid_type_client_values:
+                update_vals["x_type_client"] = odoo_key
 
         # Territory mapping
         territoire = client.get("territoire", "")
