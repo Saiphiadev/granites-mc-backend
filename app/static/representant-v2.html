@@ -310,7 +310,7 @@ let CLIENTS = [
 
 let PIPELINE = [
   {num:"SOU-26031",nom:"Commercial 12 cuisines",client:"Cuisifab",montant:45000,etape:"Soumission",rep:"Isabelle T.",date:"8 mars 2026",prob:65},
-  {num:"SOU-26025",nom:"Projet condo Magog",client:"Avivia",montant:28000,etape:"En attente",rep:"Nathalie B.",date:"5 mars 2026",prob:45},
+  {num:"SOU-26025",nom:"Projet condo Magog",client:"Avivia",montant:42000,etape:"En attente",rep:"Nathalie B.",date:"5 mars 2026",prob:45},
   {num:"SOU-26019",nom:"Cuisine design résidentiel",client:"Cuisi-Meuble",montant:18500,etape:"Signé",rep:"Isabelle T.",date:"3 mars 2026",prob:95},
   {num:"SOU-26028",nom:"Réno cuisine complète",client:"Arm. Solution",montant:7600,etape:"Soumission",rep:"Isabelle T.",date:"6 mars 2026",prob:60},
   {num:"SOU-26033",nom:"Projet résidentiel",client:"Prefab",montant:8500,etape:"Soumission",rep:"Nathalie B.",date:"9 mars 2026",prob:20},
@@ -320,13 +320,81 @@ let PIPELINE = [
   {num:"SOU-26010",nom:"Cuisine complète Sherbrooke",client:"Antiq. Design",montant:14200,etape:"Soumission",rep:"Nathalie B.",date:"1 mars 2026",prob:35},
   {num:"SOU-26034",nom:"Projet condo TR",client:"BMS",montant:9700,etape:"Soumission",rep:"Isabelle T.",date:"10 mars 2026",prob:25},
   {num:"SOU-26009",nom:"Salle de bain design",client:"Arm. Décor",montant:6300,etape:"En cours",rep:"Nathalie B.",date:"28 fév 2026",prob:45},
-  {num:"SOU-26036",nom:"Rénovation complète bureau",client:"Nova Design",montant:31000,etape:"Signé",rep:"Nathalie B.",date:"11 mars 2026",prob:90},
+  {num:"SOU-26036",nom:"Rénovation complète bureau",client:"Nova Design",montant:38000,etape:"Signé",rep:"Nathalie B.",date:"11 mars 2026",prob:90},
   {num:"SOU-26037",nom:"Cuisine haut de gamme",client:"Ebe Des Cantons",montant:19800,etape:"Soumission",rep:"Isabelle T.",date:"12 mars 2026",prob:55},
 ];
 
 // Keep pristine copies of static data for user switching
 const ORIG_CLIENTS = CLIENTS.map(c => ({...c, vols:{...c.vols}, contacts: c.contacts ? c.contacts.map(ct => ({...ct})) : []}));
 const ORIG_PIPELINE = PIPELINE.map(p => ({...p}));
+
+// Per-rep profile data (visites, objectifs, activités, timeline)
+const REP_PROFILES = {
+    'isabelle': {
+        objectifVisites: 15,
+        visites: 12,
+        appels: 24,
+        emails: 18,
+        soumissions: 7,
+        activityData: [2,3,1,4,2,3],
+        timeline: [
+            {time:'10 mars',type:'Appel',desc:'Suivi avec Cuisifab'},
+            {time:'9 mars',type:'Visite',desc:'Atelier Bruno Pichet — Ste-Marguerite'},
+            {time:'8 mars',type:'Soumission',desc:'Cuisine design résidentiel signée'},
+            {time:'7 mars',type:'Appel',desc:'Relance Arm. BM — Estrie'},
+            {time:'6 mars',type:'Visite',desc:'PG Massicotte — suivi projet'},
+        ],
+        activities: [
+            {type:'Visite',client:'Cuisifab',date:'8 mars 2026',notes:'Visite chantier commercial'},
+            {type:'Appel',client:'Éb. Cantons',date:'7 mars 2026',notes:'Suivi relance volume'},
+            {type:'Email',client:'Arm. Solution',date:'6 mars 2026',notes:'Devis complémentaire'},
+            {type:'Visite',client:'B. Pichet',date:'5 mars 2026',notes:'Prise de mesures'},
+            {type:'Appel',client:'Bois B',date:'4 mars 2026',notes:'Nouvelle commande'},
+        ],
+        demoCalendar: function(days, fmt) { return [
+            {id:0, name:'Visite Cuisifab — suivi soumission', start: fmt(days[0])+' 09:00:00', stop: fmt(days[0])+' 10:30:00', location:'5075 Boul. des Forges, Trois-Rivières', partner_id:'Cuisifab'},
+            {id:0, name:'Appel Éb. Cantons — relance volume', start: fmt(days[1])+' 14:00:00', stop: fmt(days[1])+' 14:30:00', location:'Téléphone', partner_id:'Éb. Cantons'},
+            {id:0, name:'Visite Arm. Solution — démo produit', start: fmt(days[2])+' 10:00:00', stop: fmt(days[2])+' 11:30:00', location:'430 rue Vachon, TR', partner_id:'Arm. Solution'},
+            {id:0, name:'Visite B. Pichet — prise mesures', start: fmt(days[3])+' 13:00:00', stop: fmt(days[3])+' 14:30:00', location:'St-Maurice', partner_id:'B. Pichet'},
+            {id:0, name:'Réunion équipe — bilan semaine', start: fmt(days[4])+' 16:00:00', stop: fmt(days[4])+' 17:00:00', location:'Bureau', partner_id:'Interne'},
+        ]; }
+    },
+    'nathalie': {
+        objectifVisites: 12,
+        visites: 9,
+        appels: 18,
+        emails: 14,
+        soumissions: 6,
+        activityData: [3,2,2,1,3,2],
+        timeline: [
+            {time:'11 mars',type:'Soumission',desc:'Rénovation bureau Nova Design — signée'},
+            {time:'10 mars',type:'Visite',desc:'Antiquité Design — Saint-Rosaire'},
+            {time:'9 mars',type:'Appel',desc:'Relance Cuisines MRS — comptoir'},
+            {time:'8 mars',type:'Visite',desc:'Arm. Décor — salle de bain'},
+            {time:'7 mars',type:'Email',desc:'Devis Cuisi-Meuble — CNC'},
+        ],
+        activities: [
+            {type:'Visite',client:'Antiq. Design',date:'10 mars 2026',notes:'Visite showroom'},
+            {type:'Appel',client:'Cuisines MRS',date:'9 mars 2026',notes:'Relance comptoir commercial'},
+            {type:'Email',client:'Cuisi-Meuble',date:'8 mars 2026',notes:'Envoi devis CNC'},
+            {type:'Visite',client:'Arm. Décor',date:'7 mars 2026',notes:'Projet salle de bain'},
+            {type:'Appel',client:'BMS',date:'6 mars 2026',notes:'Confirmation livraison'},
+        ],
+        demoCalendar: function(days, fmt) { return [
+            {id:0, name:'Visite Antiq. Design — showroom', start: fmt(days[0])+' 10:00:00', stop: fmt(days[0])+' 11:30:00', location:'16 rue Poirier, Saint-Rosaire', partner_id:'Antiq. Design'},
+            {id:0, name:'Appel Cuisines MRS — relance', start: fmt(days[1])+' 09:00:00', stop: fmt(days[1])+' 09:30:00', location:'Téléphone', partner_id:'Cuisines MRS'},
+            {id:0, name:'Visite BMS — suivi commande', start: fmt(days[2])+' 13:00:00', stop: fmt(days[2])+' 14:30:00', location:'371 rang du Pays-Brûlé, St-Célestin', partner_id:'BMS'},
+            {id:0, name:'Visite Avivia — projet condo', start: fmt(days[3])+' 10:00:00', stop: fmt(days[3])+' 12:00:00', location:'20 route Goulet, St-Séverin', partner_id:'Avivia'},
+            {id:0, name:'Réunion équipe — bilan semaine', start: fmt(days[4])+' 16:00:00', stop: fmt(days[4])+' 17:00:00', location:'Bureau', partner_id:'Interne'},
+        ]; }
+    }
+};
+
+function getRepProfile() {
+    if (!currentUser) return REP_PROFILES['isabelle'];
+    const firstName = (currentUser.name || '').split(' ')[0].toLowerCase();
+    return REP_PROFILES[firstName] || REP_PROFILES['isabelle'];
+}
 
 // Filter clients and pipeline for this rep (static fallback)
 let MY_CLIENTS = CLIENTS.filter(c => c.rep === CURRENT_REP);
@@ -726,13 +794,7 @@ function setPipeView(etape, el) {
 // ========== AG GRID — ACTIVITÉS ==========
 let actGrid;
 function initActGrid() {
-    const acts = [
-        {type:'Visite',client:'Cuisifab',date:'8 mars 2026',notes:'Visite chantier'},
-        {type:'Appel',client:'Avivia',date:'7 mars 2026',notes:'Suivi soumission'},
-        {type:'Email',client:'Cuisi-Meuble',date:'6 mars 2026',notes:'Devis supplémentaire'},
-        {type:'Visite',client:'Arm. Solution',date:'5 mars 2026',notes:'Nouvelle affaire'},
-        {type:'Appel',client:'BMS',date:'4 mars 2026',notes:'Commande confirmée'},
-    ];
+    const acts = getRepProfile().activities;
     actGrid = agGrid.createGrid(document.getElementById('actGrid'), {
         columnDefs: [
             {field:'type',headerName:'Type',width:100,sortable:true,filter:true},
@@ -857,8 +919,9 @@ function renderDashboard() {
     const ch = t21>0?((t22-t21)/t21*100).toFixed(0):0;
     const totalPipe = MY_PIPELINE.reduce((s,p)=>s+p.montant,0);
     const avgConv = MY_PIPELINE.length > 0 ? Math.round(MY_PIPELINE.reduce((s,p)=>s+p.prob,0)/MY_PIPELINE.length) : 0;
-    const objectif = 15;
-    const visites = 12;
+    const prof = getRepProfile();
+    const objectif = prof.objectifVisites;
+    const visites = prof.visites;
 
     document.getElementById('dashboardStats').innerHTML = `
         <div class="gmc-stat" onclick="showSection('clients',document.querySelectorAll('.gmc-nav-item')[1])"><div class="gmc-stat-label">Mes clients</div><div class="gmc-stat-value">${MY_CLIENTS.length}</div><div class="gmc-stat-sub">${MY_CLIENTS.filter(c=>c.score.includes('A')).length} score A</div></div>
@@ -882,14 +945,8 @@ function renderDashboard() {
     }).join('')}</div>`;
 
 
-    // Timeline
-    const events = [
-        {time:'10 mars',type:'Appel',desc:'Suivi avec Cuisifab'},
-        {time:'9 mars',type:'Visite',desc:'Atelier Avivia — Magog'},
-        {time:'8 mars',type:'Soumission',desc:'Cuisine design résidentiel signée'},
-        {time:'7 mars',type:'Appel',desc:'Confirmation commande BMS'},
-        {time:'6 mars',type:'Visite',desc:'Rénovation salle de bain'},
-    ];
+    // Timeline — per-rep
+    const events = getRepProfile().timeline;
     document.getElementById('timelinePanel').innerHTML = `<div class="timeline">${events.map(e => `
         <div class="timeline-item">
             <div class="time">${e.time}</div>
@@ -930,7 +987,8 @@ function renderKanban(filterStage) {
 // ========== ACTIVITY CHARTS ==========
 function renderActivityCharts() {
     const months = ['Oct','Nov','Déc','Jan','Fév','Mars'];
-    const data = [2,3,1,4,2,3]; // Isabelle's visits
+    const prof = getRepProfile();
+    const data = prof.activityData;
     const maxM = Math.max(...data);
     document.getElementById('activityChart').innerHTML = months.map((m,i)=>`
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
@@ -942,27 +1000,28 @@ function renderActivityCharts() {
         </div>
     `).join('');
 
+    const convRate = prof.soumissions > 0 ? Math.round((MY_PIPELINE.filter(p=>p.etape==='Signé').length / prof.soumissions) * 100) : 0;
     document.getElementById('metricsPanel').innerHTML = `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
             <div style="padding:10px;background:var(--gmc-bg);border-radius:var(--gmc-radius);text-align:center">
                 <div style="font-size:10px;color:var(--gmc-text-muted);margin-bottom:4px">VISITES</div>
-                <div style="font-size:20px;font-weight:700">12</div>
-                <div style="font-size:11px;color:var(--gmc-green);font-weight:600">↑ Objectif: 15</div>
+                <div style="font-size:20px;font-weight:700">${prof.visites}</div>
+                <div style="font-size:11px;color:var(--gmc-green);font-weight:600">↑ Objectif: ${prof.objectifVisites}</div>
             </div>
             <div style="padding:10px;background:var(--gmc-bg);border-radius:var(--gmc-radius);text-align:center">
                 <div style="font-size:10px;color:var(--gmc-text-muted);margin-bottom:4px">APPELS</div>
-                <div style="font-size:20px;font-weight:700">24</div>
-                <div style="font-size:11px;color:var(--gmc-text-muted)">8/mois en moyenne</div>
+                <div style="font-size:20px;font-weight:700">${prof.appels}</div>
+                <div style="font-size:11px;color:var(--gmc-text-muted)">${Math.round(prof.appels/3)}/mois en moyenne</div>
             </div>
             <div style="padding:10px;background:var(--gmc-bg);border-radius:var(--gmc-radius);text-align:center">
                 <div style="font-size:10px;color:var(--gmc-text-muted);margin-bottom:4px">EMAILS</div>
-                <div style="font-size:20px;font-weight:700">18</div>
-                <div style="font-size:11px;color:var(--gmc-text-muted)">6/mois en moyenne</div>
+                <div style="font-size:20px;font-weight:700">${prof.emails}</div>
+                <div style="font-size:11px;color:var(--gmc-text-muted)">${Math.round(prof.emails/3)}/mois en moyenne</div>
             </div>
             <div style="padding:10px;background:var(--gmc-bg);border-radius:var(--gmc-radius);text-align:center">
                 <div style="font-size:10px;color:var(--gmc-text-muted);margin-bottom:4px">SOUMISSIONS</div>
-                <div style="font-size:20px;font-weight:700">7</div>
-                <div style="font-size:11px;color:var(--gmc-green);font-weight:600">34% conversion</div>
+                <div style="font-size:20px;font-weight:700">${prof.soumissions}</div>
+                <div style="font-size:11px;color:var(--gmc-green);font-weight:600">${convRate}% conversion</div>
             </div>
         </div>
     `;
@@ -997,7 +1056,8 @@ async function loadCalendarEvents() {
     const endDate = formatDateOdoo(endFriday);
 
     try {
-        const resp = await fetch(`${API_URL}/api/calendar/events?start_date=${startDate}&end_date=${endDate}&limit=50`);
+        const calUserParam = currentUser?.id ? `&user_id=${currentUser.id}` : '';
+        const resp = await fetch(`${API_URL}/api/calendar/events?start_date=${startDate}&end_date=${endDate}&limit=50${calUserParam}`);
         if (resp.ok) {
             const data = await resp.json();
             calendarEvents = data.events || [];
@@ -1005,13 +1065,7 @@ async function loadCalendarEvents() {
     } catch (e) {
         console.log('Calendar API unavailable, using demo data');
         // Demo events for visual
-        calendarEvents = [
-            {id:0, name:'Visite Cuisifab — suivi soumission', start: formatDateOdoo(days[0])+' 09:00:00', stop: formatDateOdoo(days[0])+' 10:30:00', location:'Trois-Rivières', partner_id:'Cuisifab'},
-            {id:0, name:'Appel Avivia — relance', start: formatDateOdoo(days[1])+' 14:00:00', stop: formatDateOdoo(days[1])+' 14:30:00', location:'Téléphone', partner_id:'Avivia'},
-            {id:0, name:'Visite Cuisi-Meuble — échantillons', start: formatDateOdoo(days[2])+' 10:00:00', stop: formatDateOdoo(days[2])+' 11:30:00', location:'Tingwick', partner_id:'Cuisi-Meuble'},
-            {id:0, name:'Visite Arm. Solution — démo', start: formatDateOdoo(days[3])+' 13:00:00', stop: formatDateOdoo(days[3])+' 14:30:00', location:'Trois-Rivières', partner_id:'Arm. Solution'},
-            {id:0, name:'Réunion équipe — bilan semaine', start: formatDateOdoo(days[4])+' 16:00:00', stop: formatDateOdoo(days[4])+' 17:00:00', location:'Bureau', partner_id:'Interne'},
-        ];
+        calendarEvents = getRepProfile().demoCalendar(days, formatDateOdoo);
     }
     renderWeekCalendar();
 }
@@ -1192,7 +1246,8 @@ async function renderFullCalendar() {
     // Fetch events for this week
     let events = [];
     try {
-        const resp = await fetch(`${API_URL}/api/calendar/events?start_date=${startDate}&end_date=${endDate}&limit=100`);
+        const calNavUserParam = currentUser?.id ? `&user_id=${currentUser.id}` : '';
+        const resp = await fetch(`${API_URL}/api/calendar/events?start_date=${startDate}&end_date=${endDate}&limit=100${calNavUserParam}`);
         if (resp.ok) { const data = await resp.json(); events = data.events || []; }
     } catch(e) {
         events = calendarEvents; // fallback to loaded events
