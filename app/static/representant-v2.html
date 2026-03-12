@@ -238,7 +238,7 @@
             <div style="flex:1;overflow-y:auto">
                 <div class="gmc-kanban" id="kanbanContainer"></div>
                 <div style="display:none" id="pipeGridContainer">
-                    <div class="gmc-grid"><div id="pipeGrid" class="ag-theme-alpine" style="height:100%;width:100%"></div></div>
+                    <div class="gmc-grid" style="height:500px"><div id="pipeGrid" class="ag-theme-alpine" style="height:100%;width:100%"></div></div>
                 </div>
             </div>
         </div>
@@ -285,7 +285,7 @@ let CLIENTS = [
   {rank:2,nom:"Espaces Rubic",court:"Rubic",terr:"T03",score:"A+",best:169560,total:391248,vols:{2019:47813,2020:86720,2021:169560,2022:87155},web:"https://espacesrubic.com/",addr:"397 rue Rose-Ellis, Drummondville",tel:"819-850-6125",email:"info@espacesrubic.com",fb:"",contacts:[],desc:"Cuisines design avant-garde",pay:"",rep:"Yvon R."},
   {rank:3,nom:"Avivia Inc",court:"Avivia",terr:"3-RI",score:"A+",best:161399,total:504653,vols:{2019:67925,2020:161399,2021:136557,2022:138772},web:"https://avivia.ca/",addr:"20 route Goulet, St-Séverin",tel:"418-365-7821",email:"",fb:"",contacts:[],desc:"Fabricant québécois armoires familial",pay:"",rep:"Isabelle T."},
   {rank:4,nom:"Cuisi-Meuble S.M.",court:"Cuisi-Meuble",terr:"T03",score:"A+",best:133631,total:438031,vols:{2019:116621,2020:115316,2021:133631,2022:72463},web:"https://cuisimeublesm.com/",addr:"1031 ch. Warwick, Tingwick",tel:"819-359-3110",email:"info@cuisimeublesm.com",fb:"",contacts:[{nom:"Simon",role:""},{nom:"Benjamin",role:""}],desc:"Armoires sur mesure, CNC",pay:"",rep:"Isabelle T."},
-  {rank:5,nom:"Cuisines M.R.S.",court:"Cuisines MRS",terr:"T03",score:"A",best:111642,total:295138,vols:{2019:71514,2020:18661,2021:93321,2022:111642},web:"https://cuisimax.com/fr/1_cuisines-mrs",addr:"180 Boul. Bois-Francs S, Victoriaville",tel:"819-758-1594",email:"info@cuisimax.com",fb:"",contacts:[{nom:"Kelly",role:""},{nom:"Marianne",role:""}],desc:"Fabricant armoires depuis 1967",pay:"5%, net 30j",rep:"Isabelle T."},
+  {rank:5,nom:"Cuisines M.R.S.",court:"Cuisines MRS",terr:"T03",score:"A",best:111642,total:295138,vols:{2019:71514,2020:18661,2021:93321,2022:111642},web:"https://cuisimax.com/fr/1_cuisines-mrs",addr:"180 Boul. Bois-Francs S, Victoriaville",tel:"819-758-1594",email:"info@cuisimax.com",fb:"",contacts:[{nom:"Kelly",role:""},{nom:"Marianne",role:""}],desc:"Fabricant armoires depuis 1967",pay:"5%, net 30j",rep:"Nathalie B."},
   {rank:6,nom:"Éb. des Cantons-de-l'Est",court:"Éb. Cantons",terr:"T03",score:"A",best:86864,total:187256,vols:{2019:42350,2020:52791,2021:86864,2022:5251},web:"http://www.ebenisterie.ca/",addr:"47 rue Aristide, Granby",tel:"450-375-5054",email:"",fb:"",contacts:[{nom:"Stéphan Gagnon",role:"Dir. opérations"}],desc:"Ébénisterie classique/commerciale",pay:"",rep:"Isabelle T."},
   {rank:7,nom:"Armoires N.S.",court:"Armoires NS",terr:"T04",score:"A",best:65819,total:104840,vols:{2019:65819,2020:28800,2021:10221},web:"",addr:"Québec",tel:"",email:"",fb:"",contacts:[{nom:"Laurie Bédard",role:""}],desc:"Fabricant armoires",pay:"",rep:"Marc L."},
   {rank:8,nom:"Andréanne Allard Designer",court:"A. Allard",terr:"3-RI",score:"A",best:57892,total:74413,vols:{2019:57892,2020:15216,2021:1305},web:"https://andreanneallard.com/",addr:"5235 rue De La Châtelaine, TR",tel:"819-995-0173",email:"",fb:"",contacts:[],desc:"Designer intérieur 20 ans exp",pay:"",rep:"Isabelle T."},
@@ -295,8 +295,8 @@ let CLIENTS = [
   {rank:12,nom:"Atelier Bruno Pichet",court:"B. Pichet",terr:"3-RI",score:"B+",best:32769,total:87677,vols:{2019:21545,2020:17099,2021:32769,2022:16264},web:"https://brunopichet.com/",addr:"2281 rang Ste-Marguerite, St-Maurice",tel:"819-375-5337",email:"",fb:"",contacts:[],desc:"Maître ébéniste sur mesure",pay:"",rep:"Isabelle T."},
   {rank:13,nom:"Pascal & Stéfanie Bois B",court:"Bois B",terr:"3-RI",score:"B+",best:30760,total:34047,vols:{2021:3287,2022:30760},web:"",addr:"Trois-Rivières",tel:"",email:"",fb:"",contacts:[],desc:"Ébéniste, forte croissance 2022",pay:"",rep:"Isabelle T."},
   {rank:14,nom:"Atelier DLJ",court:"Atelier DLJ",terr:"3-RI",score:"B+",best:30621,total:76501,vols:{2019:15951,2020:14084,2021:30621,2022:15845},web:"",addr:"Trois-Rivières",tel:"",email:"",fb:"",contacts:[],desc:"Atelier ébénisterie, Mauricie",pay:"",rep:"Isabelle T."},
-  {rank:15,nom:"Antiquité Design",court:"Antiq. Design",terr:"T03",score:"B+",best:28606,total:86290,vols:{2019:8364,2020:26545,2021:28606,2022:22775},web:"https://www.antiquitedesign.com/",addr:"16 rue Poirier, Saint-Rosaire",tel:"819-690-4457",email:"",fb:"",contacts:[{nom:"Marie-Lise Frenette",role:"Designer"}],desc:"Design rustique, maisons ancestrales",pay:"",rep:"Isabelle T."},
-  {rank:16,nom:"Armoire Décor Inc",court:"Arm. Décor",terr:"3-RI",score:"B",best:28487,total:54128,vols:{2019:16043,2020:3995,2021:28487,2022:5603},web:"https://armoiredecor.com/",addr:"12488 rue Notre-Dame O, TR",tel:"819-377-1871",email:"info@armoiredecor.com",fb:"",contacts:[],desc:"Armoires sur mesure depuis 1979",pay:"",rep:"Isabelle T."},
+  {rank:15,nom:"Antiquité Design",court:"Antiq. Design",terr:"T03",score:"B+",best:28606,total:86290,vols:{2019:8364,2020:26545,2021:28606,2022:22775},web:"https://www.antiquitedesign.com/",addr:"16 rue Poirier, Saint-Rosaire",tel:"819-690-4457",email:"",fb:"",contacts:[{nom:"Marie-Lise Frenette",role:"Designer"}],desc:"Design rustique, maisons ancestrales",pay:"",rep:"Nathalie B."},
+  {rank:16,nom:"Armoire Décor Inc",court:"Arm. Décor",terr:"3-RI",score:"B",best:28487,total:54128,vols:{2019:16043,2020:3995,2021:28487,2022:5603},web:"https://armoiredecor.com/",addr:"12488 rue Notre-Dame O, TR",tel:"819-377-1871",email:"info@armoiredecor.com",fb:"",contacts:[],desc:"Armoires sur mesure depuis 1979",pay:"",rep:"Nathalie B."},
   {rank:17,nom:"Bois-Briand Cuisines",court:"Bois-Briand",terr:"3-RI",score:"B",best:27210,total:60924,vols:{2019:18737,2020:27210,2021:13893,2022:1084},web:"https://nova-design.ca/",addr:"2105 rue Charbonneau, TR",tel:"819-840-6906",email:"info@nova-design.ca",fb:"",contacts:[],desc:"Fab armoires cuisine/SDB",pay:"",rep:"Isabelle T."},
   {rank:18,nom:"Armoires C. Tremblay",court:"C. Tremblay",terr:"T03",score:"B",best:26839,total:67036,vols:{2019:13788,2020:9716,2021:26839,2022:16693},web:"https://www.armoirestremblay.com/",addr:"3108 rue Bernard-Pilon, St-Mathieu-de-Beloeil",tel:"450-446-2182",email:"",fb:"",contacts:[],desc:"Famille depuis 1984",pay:"",rep:"Yvon R."},
   {rank:19,nom:"Armoires B.M.S.",court:"BMS",terr:"3-RI",score:"B",best:25182,total:54783,vols:{2019:20375,2020:4845,2021:25182,2022:4381},web:"https://www.armoiresbms.com/",addr:"371 rang du Pays-Brûlé, St-Célestin",tel:"819-229-3315",email:"info@armoiresbms.com",fb:"",contacts:[{nom:"Alain",role:""},{nom:"Andrée",role:""}],desc:"Armoires et mobilier commercial",pay:"Escompte 2%, net 10j",rep:"Isabelle T."},
@@ -309,17 +309,19 @@ let CLIENTS = [
 ];
 
 let PIPELINE = [
-  {nom:"Commercial 12 cuisines",client:"Cuisifab",montant:45000,etape:"Soumission",rep:"Isabelle T.",date:"8 mars 2026",prob:65},
-  {nom:"Projet condo Magog",client:"Avivia",montant:28000,etape:"En attente",rep:"Isabelle T.",date:"5 mars 2026",prob:45},
-  {nom:"Cuisine design résidentiel",client:"Cuisi-Meuble",montant:18500,etape:"Signé",rep:"Isabelle T.",date:"3 mars 2026",prob:95},
-  {nom:"Réno cuisine complète",client:"Arm. Solution",montant:7600,etape:"Soumission",rep:"Isabelle T.",date:"6 mars 2026",prob:60},
-  {nom:"Projet résidentiel",client:"Prefab",montant:8500,etape:"Soumission",rep:"Yvon R.",date:"9 mars 2026",prob:20},
-  {nom:"Réno SDB",client:"SMA",montant:3200,etape:"Soumission",rep:"Isabelle T.",date:"10 mars 2026",prob:15},
-  {nom:"Comptoir commercial",client:"Cuisines MRS",montant:22400,etape:"Soumission",rep:"Isabelle T.",date:"4 mars 2026",prob:50},
-  {nom:"Vanité sur mesure",client:"B. Pichet",montant:5800,etape:"En attente",rep:"Isabelle T.",date:"2 mars 2026",prob:40},
-  {nom:"Cuisine complète Sherbrooke",client:"Antiq. Design",montant:14200,etape:"Soumission",rep:"Isabelle T.",date:"1 mars 2026",prob:35},
-  {nom:"Projet condo TR",client:"BMS",montant:9700,etape:"Soumission",rep:"Isabelle T.",date:"10 mars 2026",prob:25},
-  {nom:"Salle de bain design",client:"Arm. Décor",montant:6300,etape:"Soumission",rep:"Isabelle T.",date:"28 fév 2026",prob:45},
+  {num:"SOU-26031",nom:"Commercial 12 cuisines",client:"Cuisifab",montant:45000,etape:"Soumission",rep:"Isabelle T.",date:"8 mars 2026",prob:65},
+  {num:"SOU-26025",nom:"Projet condo Magog",client:"Avivia",montant:28000,etape:"En attente",rep:"Nathalie B.",date:"5 mars 2026",prob:45},
+  {num:"SOU-26019",nom:"Cuisine design résidentiel",client:"Cuisi-Meuble",montant:18500,etape:"Signé",rep:"Isabelle T.",date:"3 mars 2026",prob:95},
+  {num:"SOU-26028",nom:"Réno cuisine complète",client:"Arm. Solution",montant:7600,etape:"Soumission",rep:"Isabelle T.",date:"6 mars 2026",prob:60},
+  {num:"SOU-26033",nom:"Projet résidentiel",client:"Prefab",montant:8500,etape:"Soumission",rep:"Nathalie B.",date:"9 mars 2026",prob:20},
+  {num:"SOU-26035",nom:"Réno SDB",client:"SMA",montant:3200,etape:"Soumission",rep:"Isabelle T.",date:"10 mars 2026",prob:15},
+  {num:"SOU-26022",nom:"Comptoir commercial",client:"Cuisines MRS",montant:22400,etape:"En attente",rep:"Nathalie B.",date:"4 mars 2026",prob:50},
+  {num:"SOU-26015",nom:"Vanité sur mesure",client:"B. Pichet",montant:5800,etape:"En cours",rep:"Isabelle T.",date:"2 mars 2026",prob:40},
+  {num:"SOU-26010",nom:"Cuisine complète Sherbrooke",client:"Antiq. Design",montant:14200,etape:"Soumission",rep:"Nathalie B.",date:"1 mars 2026",prob:35},
+  {num:"SOU-26034",nom:"Projet condo TR",client:"BMS",montant:9700,etape:"Soumission",rep:"Isabelle T.",date:"10 mars 2026",prob:25},
+  {num:"SOU-26009",nom:"Salle de bain design",client:"Arm. Décor",montant:6300,etape:"En cours",rep:"Nathalie B.",date:"28 fév 2026",prob:45},
+  {num:"SOU-26036",nom:"Rénovation complète bureau",client:"Nova Design",montant:31000,etape:"Signé",rep:"Nathalie B.",date:"11 mars 2026",prob:90},
+  {num:"SOU-26037",nom:"Cuisine haut de gamme",client:"Ebe Des Cantons",montant:19800,etape:"Soumission",rep:"Isabelle T.",date:"12 mars 2026",prob:55},
 ];
 
 // Filter clients and pipeline for this rep (static fallback)
@@ -472,8 +474,9 @@ async function loadLiveData() {
             const liveLeads = pipeData.leads || [];
             if (liveLeads.length > 0) {
                 // Replace pipeline with live data
-                const livePipeline = liveLeads.map(l => ({
+                const livePipeline = liveLeads.map((l, i) => ({
                     id: l.id,
+                    num: 'SOU-' + String(l.id).padStart(5, '0'),
                     nom: l.name,
                     client: l.partner_name || '',
                     montant: l.expected_revenue || 0,
@@ -661,10 +664,11 @@ let pipeGrid;
 function initPipeGrid() {
     pipeGrid = agGrid.createGrid(document.getElementById('pipeGrid'), {
         columnDefs: [
+            {field:'num',headerName:'N°',width:110,sortable:true,cellStyle:{fontWeight:'600',color:'var(--gmc-accent)'}},
             {field:'nom',headerName:'Soumission',minWidth:200,sortable:true,filter:false,cellStyle:{fontWeight:'600'}},
             {field:'client',headerName:'Client',width:140,sortable:true,filter:true},
             {field:'montant',headerName:'Montant',width:120,sortable:true,valueFormatter:currencyFormatter,cellStyle:{color:'var(--gmc-green)',fontWeight:'600'}},
-            {field:'etape',headerName:'Étape',width:120,sortable:true,filter:true,cellRenderer:etapeRenderer},
+            {field:'etape',headerName:'Étape',width:130,sortable:true,filter:true,cellRenderer:etapeRenderer},
             {field:'prob',headerName:'Probabilité',width:100,sortable:true,valueFormatter:p=>p.value?p.value+'%':''},
             {field:'date',headerName:'Date',width:120,sortable:true,filter:true},
         ],
@@ -679,10 +683,14 @@ function exportPipeGrid() { if(pipeGrid) pipeGrid.api.exportDataAsCsv({fileName:
 function setPipeView(etape, el) {
     el.parentElement.querySelectorAll('.gmc-view-tab').forEach(t => t.classList.remove('active'));
     el.classList.add('active');
-    if (!pipeGrid) return;
-    if (etape === 'all') { pipeGrid.api.setFilterModel(null); }
-    else { pipeGrid.api.setFilterModel({ etape: { type:'equals', filter: etape }}); }
-    pipeGrid.api.onFilterChanged();
+    // Filter both kanban and grid
+    if (etape === 'all') {
+        renderKanban();
+        if (pipeGrid) { pipeGrid.api.setFilterModel(null); pipeGrid.api.onFilterChanged(); }
+    } else {
+        renderKanban(etape);
+        if (pipeGrid) { pipeGrid.api.setFilterModel({ etape: { filterType:'text', type:'equals', filter: etape }}); pipeGrid.api.onFilterChanged(); }
+    }
 }
 
 // ========== AG GRID — ACTIVITÉS ==========
@@ -861,8 +869,8 @@ function renderDashboard() {
 }
 
 // ========== KANBAN RENDERING ==========
-function renderKanban() {
-    const stages = ['Soumission','En attente','Signé','En cours','Livré','Perdu'];
+function renderKanban(filterStage) {
+    const stages = filterStage ? [filterStage] : ['Soumission','En attente','Signé','En cours','Livré','Perdu'];
     const kanban = stages.map(stage => {
         const items = MY_PIPELINE.filter(p => p.etape === stage);
         const total = items.reduce((s,p)=>s+p.montant,0);
@@ -875,6 +883,7 @@ function renderKanban() {
                 </div>
                 ${items.map(p => `
                     <div class="gmc-kanban-card">
+                        <div style="font-size:10px;color:var(--gmc-accent);font-weight:700;margin-bottom:2px">${p.num||''}</div>
                         <div style="font-weight:600;margin-bottom:4px;color:var(--gmc-text-strong);font-size:13px">${p.nom}</div>
                         <div style="font-size:11px;color:var(--gmc-text-muted);margin-bottom:6px">${p.client}</div>
                         <div style="font-weight:600;color:var(--gmc-green);font-size:13px;margin-bottom:4px">$${(p.montant/1000).toFixed(0)}k</div>
