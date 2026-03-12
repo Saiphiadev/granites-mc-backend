@@ -68,6 +68,20 @@ class ClientBase(BaseModel):
     x_date_derniere_visite: Optional[str] = None
     x_nb_visites: Optional[int] = None
     lead_count: int = 0
+    # Enriched fields
+    x_type_client: Optional[str] = None
+    x_facebook: Optional[str] = None
+    x_instagram: Optional[str] = None
+    x_linkedin: Optional[str] = None
+    x_google_maps: Optional[str] = None
+    x_description: Optional[str] = None
+    x_year_founded: Optional[str] = None
+    x_employees_estimate: Optional[str] = None
+    x_revenue_estimate: Optional[str] = None
+    x_req_number: Optional[str] = None
+    x_brands: Optional[str] = None
+    x_specialties: Optional[str] = None
+    x_hours: Optional[str] = None
 
 
 class ClientListItem(ClientBase):
@@ -100,6 +114,19 @@ class ClientDetailResponse(BaseModel):
     x_nb_visites: Optional[int] = None
     x_type_client: Optional[str] = None
     x_echantillons_notes: Optional[str] = None
+    # Enriched fields
+    x_facebook: Optional[str] = None
+    x_instagram: Optional[str] = None
+    x_linkedin: Optional[str] = None
+    x_google_maps: Optional[str] = None
+    x_description: Optional[str] = None
+    x_year_founded: Optional[str] = None
+    x_employees_estimate: Optional[str] = None
+    x_revenue_estimate: Optional[str] = None
+    x_req_number: Optional[str] = None
+    x_brands: Optional[str] = None
+    x_specialties: Optional[str] = None
+    x_hours: Optional[str] = None
     child_contacts: list = []
     leads: list = []
     activities: list = []

@@ -89,6 +89,23 @@ class OdooClient:
         """Count matching records."""
         return await self._call_kw(model, "search_count", [domain])
 
+    async def create(self, model: str, values: dict) -> int:
+        """Create a record and return its ID."""
+        return await self._call_kw(model, "create", [values])
+
+    async def write(self, model: str, ids: list[int], values: dict) -> bool:
+        """Update records by IDs."""
+        return await self._call_kw(model, "write", [ids, values])
+
+    async def fields_get(
+        self, model: str, attributes: list[str] | None = None
+    ) -> dict:
+        """Get field definitions for a model."""
+        kwargs = {}
+        if attributes:
+            kwargs["attributes"] = attributes
+        return await self._call_kw(model, "fields_get", [], kwargs)
+
     # ─── Méthodes métier spécifiques Granites MC ───
 
     async def get_partner(self, partner_id: int) -> dict:
@@ -98,6 +115,7 @@ class OdooClient:
             "is_company",
             "phone",
             "email",
+            "website",
             "street",
             "city",
             "state_id",
@@ -111,6 +129,18 @@ class OdooClient:
             "x_date_derniere_visite",
             "x_nb_visites",
             "x_echantillons_notes",
+            "x_facebook",
+            "x_instagram",
+            "x_linkedin",
+            "x_google_maps",
+            "x_description",
+            "x_year_founded",
+            "x_employees_estimate",
+            "x_revenue_estimate",
+            "x_req_number",
+            "x_brands",
+            "x_specialties",
+            "x_hours",
             "activity_ids",
             "message_ids",
         ]

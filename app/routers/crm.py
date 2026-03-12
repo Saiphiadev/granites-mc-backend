@@ -49,7 +49,14 @@ async def list_clients(
 
     # Try with custom fields first, fallback to basic fields
     basic_fields = ["id", "name", "city", "phone", "email", "website", "street", "zip"]
-    custom_fields = ["x_territoire", "x_score_client", "x_notes_terrain"]
+    custom_fields = [
+        "x_territoire", "x_score_client", "x_notes_terrain",
+        "x_competiteurs", "x_marques_interet", "x_type_client",
+        "x_facebook", "x_instagram", "x_linkedin", "x_google_maps",
+        "x_description", "x_year_founded", "x_employees_estimate",
+        "x_revenue_estimate", "x_req_number", "x_brands",
+        "x_specialties", "x_hours",
+    ]
 
     try:
         clients = await odoo.search_read(
@@ -86,11 +93,24 @@ async def list_clients(
             "street": c.get("street", "") or "",
             "zip": c.get("zip", "") or "",
             "x_notes_terrain": c.get("x_notes_terrain", "") or "",
-            "x_competiteurs": "",
-            "x_marques_interet": "",
+            "x_competiteurs": c.get("x_competiteurs", "") or "",
+            "x_marques_interet": c.get("x_marques_interet", "") or "",
             "x_date_derniere_visite": None,
             "x_nb_visites": 0,
             "lead_count": 0,
+            "x_type_client": c.get("x_type_client", "") or "",
+            "x_facebook": c.get("x_facebook", "") or "",
+            "x_instagram": c.get("x_instagram", "") or "",
+            "x_linkedin": c.get("x_linkedin", "") or "",
+            "x_google_maps": c.get("x_google_maps", "") or "",
+            "x_description": c.get("x_description", "") or "",
+            "x_year_founded": c.get("x_year_founded", "") or "",
+            "x_employees_estimate": c.get("x_employees_estimate", "") or "",
+            "x_revenue_estimate": c.get("x_revenue_estimate", "") or "",
+            "x_req_number": c.get("x_req_number", "") or "",
+            "x_brands": c.get("x_brands", "") or "",
+            "x_specialties": c.get("x_specialties", "") or "",
+            "x_hours": c.get("x_hours", "") or "",
         })
 
     return ClientListResponse(
@@ -157,6 +177,18 @@ async def get_client_detail(partner_id: int):
         x_nb_visites=partner.get("x_nb_visites", 0),
         x_type_client=partner.get("x_type_client", ""),
         x_echantillons_notes=partner.get("x_echantillons_notes", ""),
+        x_facebook=partner.get("x_facebook", ""),
+        x_instagram=partner.get("x_instagram", ""),
+        x_linkedin=partner.get("x_linkedin", ""),
+        x_google_maps=partner.get("x_google_maps", ""),
+        x_description=partner.get("x_description", ""),
+        x_year_founded=partner.get("x_year_founded", ""),
+        x_employees_estimate=partner.get("x_employees_estimate", ""),
+        x_revenue_estimate=partner.get("x_revenue_estimate", ""),
+        x_req_number=partner.get("x_req_number", ""),
+        x_brands=partner.get("x_brands", ""),
+        x_specialties=partner.get("x_specialties", ""),
+        x_hours=partner.get("x_hours", ""),
         child_contacts=child_contacts,
         leads=leads,
         activities=activities,

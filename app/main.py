@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.models.schemas import HealthResponse
-from app.routers import coach, voix, crm
+from app.routers import coach, voix, crm, admin
 from app.services.odoo import get_odoo_client
 
 
@@ -63,6 +63,7 @@ app.add_middleware(
 app.include_router(coach.router)
 app.include_router(voix.router)
 app.include_router(crm.router)
+app.include_router(admin.router)
 
 
 @app.get("/", include_in_schema=False)
