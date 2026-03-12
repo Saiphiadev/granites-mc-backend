@@ -15,7 +15,7 @@ from fastapi.responses import FileResponse
 
 from app.config import get_settings
 from app.models.schemas import HealthResponse
-from app.routers import coach, voix, crm, admin
+from app.routers import coach, voix, crm, admin, calendar
 from app.services.odoo import get_odoo_client
 
 
@@ -68,6 +68,7 @@ app.include_router(coach.router)
 app.include_router(voix.router)
 app.include_router(crm.router)
 app.include_router(admin.router)
+app.include_router(calendar.router)
 
 
 # Static interface files
