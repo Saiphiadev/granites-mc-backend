@@ -177,7 +177,7 @@
         <div class="nav-item" onclick="showSection('pipeline',this)"><i class="fa-solid fa-filter-circle-dollar"></i> Pipeline</div>
         <div class="nav-item" onclick="showSection('activity',this)"><i class="fa-solid fa-chart-line"></i> Activités</div>
     </div>
-    <div class="sidebar-user"><div class="avatar">IT</div><div class="info"><div class="name">Isabelle T.</div><div>Représentant</div></div></div>
+    <div class="sidebar-user" style="cursor:pointer" onclick="logout()" title="Cliquer pour changer d'utilisateur"><div class="avatar">IT</div><div class="info"><div class="name">Isabelle T.</div><div>Représentant</div></div><i class="fa-solid fa-right-from-bracket" style="color:rgba(255,255,255,.4);margin-left:auto;font-size:12px"></i></div>
 </nav>
 
 <!-- Omnisearch overlay -->
@@ -396,28 +396,190 @@ let PIPELINE = [
   {nom:"Salle de bain design",client:"Arm. Décor",montant:6300,etape:"Soumis",rep:"Isabelle T.",date:"28 fév 2026",prob:45},
 ];
 
-// Filter clients and pipeline for this rep
-const MY_CLIENTS = CLIENTS.filter(c => c.rep === CURRENT_REP);
-const MY_PIPELINE = PIPELINE.filter(p => p.rep === CURRENT_REP);
+// Filter clients and pipeline for this rep (static fallback)
+let MY_CLIENTS = CLIENTS.filter(c => c.rep === CURRENT_REP);
+let MY_PIPELINE = PIPELINE.filter(p => p.rep === CURRENT_REP);
 
-// ========== API SYNC ==========
-async function syncWithRailway() {
+// ========== AUTH & SESSION ==========
+let currentUser = null; // {id, name, email, role}
+let isLive = false;
+
+function getStoredUser() {
+    try { return JSON.parse(localStorage.getItem('gmc_user')); } catch(e) { return null; }
+}
+function storeUser(u) { localStorage.setItem('gmc_user', JSON.stringify(u)); }
+
+function showLoginModal() {
+    const modal = document.createElement('div');
+    modal.id = 'loginModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:99999';
+    modal.innerHTML = `
+        <div style="background:white;border-radius:14px;padding:32px;width:380px;max-width:90vw;text-align:center">
+            <div style="width:50px;height:50px;background:var(--accent);border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-weight:800;color:white;font-size:18px">G</div>
+            <h2 style="margin:0 0 4px;color:var(--text-dark);font-size:18px">Granites MC CRM</h2>
+            <p style="color:var(--text-light);font-size:13px;margin:0 0 20px">Connectez-vous pour accéder à votre tableau de bord</p>
+            <div id="loginUserList" style="text-align:left;max-height:300px;overflow-y:auto">
+                <div style="text-align:center;padding:20px;color:var(--text-light)"><i class="fa-solid fa-spinner fa-spin"></i> Chargement...</div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    loadLoginUsers();
+}
+
+async function loadLoginUsers() {
+    const container = document.getElementById('loginUserList');
     try {
-        const response = await fetch(API_URL + '/api/clients');
-        if (response.ok) {
-            const data = await response.json();
-            if (data && Array.isArray(data)) {
-                // Merge with static data
-                CLIENTS = data.map(d => {
-                    const existing = CLIENTS.find(c => c.rank === d.rank);
-                    return {...existing, ...d};
+        const resp = await fetch(`${API_URL}/api/crm/auth/users`);
+        if (!resp.ok) throw new Error('API error');
+        const data = await resp.json();
+        const users = data.users || [];
+        container.innerHTML = users.map(u => `
+            <div onclick="doLogin('${u.email}')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;transition:.15s;border:1px solid var(--border);margin-bottom:6px" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='white'">
+                <div style="width:36px;height:36px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;color:white;font-weight:600;font-size:13px">${u.name.split(' ').map(w=>w[0]).join('').substring(0,2)}</div>
+                <div>
+                    <div style="font-weight:600;color:var(--text-dark);font-size:13px">${u.name}</div>
+                    <div style="font-size:11px;color:var(--text-light)">${u.email || 'Pas d\'email'}</div>
+                </div>
+            </div>
+        `).join('');
+    } catch (e) {
+        // Fallback: allow manual selection from static list
+        container.innerHTML = `
+            <div style="text-align:center;padding:12px;color:var(--text-light);font-size:12px;margin-bottom:10px">API indisponible — mode démo</div>
+            <div onclick="doLoginFallback('Isabelle T.')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;border:1px solid var(--border);margin-bottom:6px" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='white'">
+                <div style="width:36px;height:36px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;color:white;font-weight:600;font-size:13px">IT</div>
+                <div><div style="font-weight:600;color:var(--text-dark);font-size:13px">Isabelle T.</div><div style="font-size:11px;color:var(--text-light)">Représentant</div></div>
+            </div>
+            <div onclick="doLoginFallback('Yvon R.')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;border:1px solid var(--border);margin-bottom:6px" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='white'">
+                <div style="width:36px;height:36px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;color:white;font-weight:600;font-size:13px">YR</div>
+                <div><div style="font-weight:600;color:var(--text-dark);font-size:13px">Yvon R.</div><div style="font-size:11px;color:var(--text-light)">Représentant</div></div>
+            </div>
+        `;
+    }
+}
+
+async function doLogin(email) {
+    try {
+        const resp = await fetch(`${API_URL}/api/crm/auth/login?email=${encodeURIComponent(email)}`, {method:'POST'});
+        if (!resp.ok) throw new Error('Login failed');
+        const data = await resp.json();
+        currentUser = data.user;
+        storeUser(currentUser);
+        document.getElementById('loginModal')?.remove();
+        await loadLiveData();
+    } catch(e) {
+        alert('Erreur de connexion: ' + e.message);
+    }
+}
+
+function doLoginFallback(name) {
+    currentUser = {id: 0, name: name, email: '', role: 'rep'};
+    storeUser(currentUser);
+    document.getElementById('loginModal')?.remove();
+    updateUIForUser();
+    renderDashboard();
+}
+
+function logout() {
+    localStorage.removeItem('gmc_user');
+    currentUser = null;
+    isLive = false;
+    showLoginModal();
+}
+
+// ========== LIVE DATA LOADING ==========
+async function loadLiveData() {
+    try {
+        // Load clients from Odoo
+        const clientResp = await fetch(`${API_URL}/api/crm/clients?limit=500`);
+        if (clientResp.ok) {
+            const clientData = await clientResp.json();
+            const liveClients = clientData.clients || [];
+            if (liveClients.length > 0) {
+                // Merge live data with static data (keep static volume data)
+                CLIENTS = CLIENTS.map(c => {
+                    const live = liveClients.find(l => l.name?.includes(c.court) || c.nom?.includes(l.name?.split(' ')[0]));
+                    if (live) {
+                        return {
+                            ...c,
+                            odooId: live.id,
+                            nom: live.name || c.nom,
+                            email: live.email || c.email,
+                            tel: live.phone || c.tel,
+                            web: live.website || c.web,
+                            addr: [live.street, live.city, live.zip].filter(Boolean).join(', ') || c.addr,
+                            score: live.x_score_client || c.score,
+                            terr: live.territoire || c.terr,
+                            liveData: live,
+                        };
+                    }
+                    return c;
                 });
-                document.getElementById('liveBadge').style.display = 'inline-flex';
+                isLive = true;
             }
         }
-    } catch(e) { console.log('API sync skipped'); }
+    } catch(e) { console.log('Client sync failed:', e); }
+
+    try {
+        // Load pipeline from Odoo
+        const pipeResp = await fetch(`${API_URL}/api/crm/pipeline?limit=200${currentUser?.id ? '&user_id='+currentUser.id : ''}`);
+        if (pipeResp.ok) {
+            const pipeData = await pipeResp.json();
+            const liveLeads = pipeData.leads || [];
+            if (liveLeads.length > 0) {
+                // Replace pipeline with live data
+                const livePipeline = liveLeads.map(l => ({
+                    id: l.id,
+                    nom: l.name,
+                    client: l.partner_name || '',
+                    montant: l.expected_revenue || 0,
+                    etape: l.stage_name || 'Nouveau',
+                    rep: l.user_name || '',
+                    date: l.create_date?.split(' ')[0] || '',
+                    prob: l.probability || 0,
+                    liveData: l,
+                }));
+                // Merge: use live leads + keep static ones that don't have live equivalents
+                PIPELINE = livePipeline.length > 0 ? livePipeline : PIPELINE;
+            }
+        }
+    } catch(e) { console.log('Pipeline sync failed:', e); }
+
+    // Re-filter for current user
+    updateUIForUser();
+    document.getElementById('liveBadge').style.display = isLive ? 'inline-flex' : 'none';
+    renderDashboard();
+    renderKanban();
+    initClientGrid();
+    initPipeGrid();
 }
-syncWithRailway();
+
+function updateUIForUser() {
+    if (!currentUser) return;
+
+    // Update sidebar user info
+    const initials = currentUser.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+    const userEl = document.querySelector('.sidebar-user');
+    if (userEl) {
+        userEl.innerHTML = `<div class="avatar">${initials}</div><div class="info"><div class="name">${currentUser.name}</div><div>${currentUser.role === 'admin' ? 'Administrateur' : 'Représentant'}</div></div>`;
+    }
+
+    // If live, filter by current user; if fallback, filter by static rep name
+    if (isLive && currentUser.id) {
+        // For live data, show all clients (no user-based filter on clients yet)
+        MY_CLIENTS = CLIENTS;
+        // Filter pipeline by user
+        MY_PIPELINE = PIPELINE.filter(p => {
+            if (p.liveData) return p.liveData.user_id?.[0] === currentUser.id || p.liveData.user_id === currentUser.id;
+            return true; // show all if no live data
+        });
+    } else {
+        // Fallback static filtering
+        MY_CLIENTS = CLIENTS.filter(c => c.rep === currentUser.name);
+        MY_PIPELINE = PIPELINE.filter(p => p.rep === currentUser.name);
+    }
+}
 
 // ========== NAVIGATION ==========
 function showSection(id, el) {
@@ -1049,14 +1211,34 @@ async function renderFullCalendar() {
 }
 
 // ========== INIT ==========
-document.addEventListener('DOMContentLoaded', function() {
-    renderDashboard();
-    renderKanban();
-    renderActivityCharts();
-    initClientGrid();
-    initPipeGrid();
-    initActGrid();
-    loadCalendarEvents();
+document.addEventListener('DOMContentLoaded', async function() {
+    // Check for stored session
+    const stored = getStoredUser();
+    if (stored && stored.name) {
+        currentUser = stored;
+        updateUIForUser();
+        renderDashboard();
+        renderKanban();
+        renderActivityCharts();
+        initClientGrid();
+        initPipeGrid();
+        initActGrid();
+        loadCalendarEvents();
+        // Then try to load live data in background
+        loadLiveData().then(() => {
+            renderActivityCharts();
+        });
+    } else {
+        // Show login, then init after login
+        renderDashboard();
+        renderKanban();
+        renderActivityCharts();
+        initClientGrid();
+        initPipeGrid();
+        initActGrid();
+        loadCalendarEvents();
+        showLoginModal();
+    }
 });
 </script>
 </body>

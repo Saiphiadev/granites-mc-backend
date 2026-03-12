@@ -224,13 +224,20 @@ async def get_client_detail(partner_id: int):
 
 
 @router.get("/pipeline", response_model=dict)
-async def get_pipeline(limit: int = Query(500, ge=1, le=5000)):
+async def get_pipeline(
+    limit: int = Query(500, ge=1, le=5000),
+    user_id: Optional[int] = Query(None, description="Filter by assigned user/rep ID"),
+):
     """
-    Retourne tous les crm.lead (opportunités) du pipeline.
+    Retourne les crm.lead (opportunités) du pipeline.
 
-    Inclut le nom du partenaire associé et les informations de stage.
+    Supporte le filtre par user_id pour voir le pipeline d'un rep spécifique.
     """
     odoo = get_odoo_client()
+
+    domain = []
+    if user_id:
+        domain.append(["user_id", "=", user_id])
 
     fields = [
         "id",
@@ -249,7 +256,7 @@ async def get_pipeline(limit: int = Query(500, ge=1, le=5000)):
     try:
         leads = await odoo.search_read(
             "crm.lead",
-            [],
+            domain,
             fields,
             limit=limit,
             order="create_date desc",
@@ -484,4 +491,127 @@ async def get_representatives():
     return {
         "count": len(representatives),
         "reps": representatives,
+    }
+
+
+@router.post("/auth/login", response_model=dict)
+async def login(email: str = Query(..., description="User email for login")):
+    """
+    Authentification simple par email.
+
+    Recherche un utilisateur Odoo par email et retourne son profil + rôle.
+    Pour le prototype — pas de mot de passe, juste identification par email.
+    """
+    odoo = get_odoo_client()
+
+    try:
+        users = await odoo.search_read(
+            "res.users",
+            [["email", "=", email], ["active", "=", True]],
+            ["id", "name", "email", "phone", "login", "groups_id"],
+            limit=1,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Erreur Odoo: {str(e)}")
+
+    if not users:
+        raise HTTPException(status_code=404, detail=f"Aucun utilisateur trouvé avec l'email: {email}")
+
+    user = users[0]
+    user_id = user["id"]
+
+    # Determine role (admin vs rep)
+    # Check if user has admin/manager groups
+    try:
+        group_ids = user.get("groups_id", [])
+        admin_groups = await odoo.search_read(
+            "res.groups",
+            [["id", "in", group_ids], ["name", "ilike", "manager"]],
+            ["id", "name"],
+            limit=5,
+        )
+        is_admin = len(admin_groups) > 0
+    except Exception:
+        is_admin = False
+
+    # Get team membership
+    try:
+        teams = await odoo.search_read(
+            "crm.team",
+            [["member_ids", "in", [user_id]]],
+            ["id", "name"],
+        )
+    except Exception:
+        teams = []
+
+    # Get assigned clients count
+    try:
+        # For now, all company partners — later filter by salesperson_id or territory
+        client_count = await odoo.search_count(
+            "res.partner",
+            [["is_company", "=", True]],
+        )
+    except Exception:
+        client_count = 0
+
+    # Get pipeline stats for this user
+    try:
+        user_leads = await odoo.search_read(
+            "crm.lead",
+            [["user_id", "=", user_id]],
+            ["expected_revenue"],
+        )
+        pipeline_revenue = sum(l.get("expected_revenue", 0) or 0 for l in user_leads)
+        lead_count = len(user_leads)
+    except Exception:
+        pipeline_revenue = 0
+        lead_count = 0
+
+    return {
+        "status": "ok",
+        "user": {
+            "id": user_id,
+            "name": user.get("name", ""),
+            "email": user.get("email", ""),
+            "phone": _s(user.get("phone")),
+            "role": "admin" if is_admin else "rep",
+            "teams": [{"id": t["id"], "name": t["name"]} for t in teams],
+        },
+        "stats": {
+            "client_count": client_count,
+            "lead_count": lead_count,
+            "pipeline_revenue": pipeline_revenue,
+        },
+    }
+
+
+@router.get("/auth/users", response_model=dict)
+async def list_auth_users():
+    """
+    Liste les utilisateurs disponibles pour le login (prototype).
+
+    Retourne un dropdown-ready des users Odoo actifs.
+    """
+    odoo = get_odoo_client()
+
+    try:
+        users = await odoo.search_read(
+            "res.users",
+            [["active", "=", True]],
+            ["id", "name", "email"],
+            order="name asc",
+        )
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Erreur Odoo: {str(e)}")
+
+    return {
+        "count": len(users),
+        "users": [
+            {
+                "id": u["id"],
+                "name": u.get("name", ""),
+                "email": _s(u.get("email")),
+            }
+            for u in users
+        ],
     }
