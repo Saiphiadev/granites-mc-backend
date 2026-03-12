@@ -994,6 +994,10 @@
                     <i class="fas fa-users"></i>
                     <span>Représentants</span>
                 </a></li>
+                <li><a href="#" class="nav-link" data-section="calendar" aria-label="Calendrier">
+                    <i class="fas fa-calendar-days"></i>
+                    <span>Calendrier</span>
+                </a></li>
                 <li><a href="#" class="nav-link" data-section="activities" aria-label="Activités">
                     <i class="fas fa-chart-line"></i>
                     <span>Activités</span>
@@ -1143,6 +1147,31 @@
                         </h2>
                         <div class="data-table-wrapper">
                             <div id="activities-grid" class="ag-theme-quartz" style="height: 100%;"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Calendar Section -->
+                <section id="calendar-section" class="content-section" aria-labelledby="page-title">
+                    <div class="chart-container" style="margin-bottom:16px">
+                        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+                            <h2 class="chart-title" style="margin:0">
+                                <i class="fas fa-calendar-days"></i>
+                                Calendrier des représentants
+                            </h2>
+                            <span style="flex:1"></span>
+                            <button onclick="adminCalPrev()" style="background:none;border:1px solid #dfe3eb;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:13px"><i class="fas fa-chevron-left"></i></button>
+                            <span id="adminCalWeekLabel" style="font-size:14px;font-weight:600;min-width:200px;text-align:center"></span>
+                            <button onclick="adminCalNext()" style="background:none;border:1px solid #dfe3eb;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:13px"><i class="fas fa-chevron-right"></i></button>
+                            <button onclick="adminCalToday()" style="background:#0091ae;color:white;border:none;padding:6px 16px;border-radius:6px;font-size:13px;cursor:pointer">Aujourd'hui</button>
+                        </div>
+                        <div style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap" id="adminCalRepFilter"></div>
+                        <div id="adminCalGrid" style="background:white;border-radius:10px;border:1px solid #dfe3eb;overflow:hidden;min-height:500px"></div>
+                        <div style="margin-top:12px;display:flex;gap:16px;align-items:center;font-size:12px;color:#7c98b6">
+                            <span><span style="display:inline-block;width:10px;height:10px;background:#00bda5;border-radius:2px;margin-right:4px"></span> Visite</span>
+                            <span><span style="display:inline-block;width:10px;height:10px;background:#0091ae;border-radius:2px;margin-right:4px"></span> Appel</span>
+                            <span><span style="display:inline-block;width:10px;height:10px;background:#ff7a59;border-radius:2px;margin-right:4px"></span> Réunion</span>
+                            <span><span style="display:inline-block;width:10px;height:10px;background:#6a78d1;border-radius:2px;margin-right:4px"></span> Suivi</span>
                         </div>
                     </div>
                 </section>
@@ -1716,6 +1745,9 @@
                 case 'pipeline':
                     renderPipeline();
                     break;
+                case 'calendar':
+                    renderAdminCalendar();
+                    break;
             }
         }
 
@@ -1840,6 +1872,127 @@
             setupOmnisearch();
             setupEventListeners();
             renderDashboard();
+        }
+
+        // ===== ADMIN CALENDAR =====
+        const CAL_API = 'https://granites-mc-backend-production-f93a.up.railway.app/api/calendar';
+        let adminCalOffset = 0;
+        let adminCalRepFilterId = null; // null = all reps
+
+        function adminCalPrev() { adminCalOffset--; renderAdminCalendar(); }
+        function adminCalNext() { adminCalOffset++; renderAdminCalendar(); }
+        function adminCalToday() { adminCalOffset = 0; renderAdminCalendar(); }
+
+        function getAdminWeekDays() {
+            const now = new Date();
+            const day = now.getDay();
+            const monday = new Date(now);
+            monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1) + (adminCalOffset * 7));
+            monday.setHours(0,0,0,0);
+            const days = [];
+            for (let i = 0; i < 5; i++) {
+                const d = new Date(monday);
+                d.setDate(monday.getDate() + i);
+                days.push(d);
+            }
+            return days;
+        }
+
+        function fmtDate(d) { return d.toISOString().split('T')[0]; }
+
+        async function renderAdminCalendar() {
+            const days = getAdminWeekDays();
+            const dayNames = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi'];
+            const mths = ['jan.','fév.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+            const today = new Date();
+            const todayStr = fmtDate(today);
+            const startDate = fmtDate(days[0]);
+            const endFr = new Date(days[4]); endFr.setDate(endFr.getDate()+1);
+            const endDate = fmtDate(endFr);
+
+            // Week label
+            const lbl = document.getElementById('adminCalWeekLabel');
+            if (lbl) lbl.textContent = `${days[0].getDate()} ${mths[days[0].getMonth()]} — ${days[4].getDate()} ${mths[days[4].getMonth()]} ${days[4].getFullYear()}`;
+
+            // Fetch events and users
+            let events = [], users = [];
+            try {
+                const [evResp, usResp] = await Promise.all([
+                    fetch(`${CAL_API}/events?start_date=${startDate}&end_date=${endDate}&limit=200`),
+                    fetch(`${CAL_API}/users`)
+                ]);
+                if (evResp.ok) { const d = await evResp.json(); events = d.events || []; }
+                if (usResp.ok) { const d = await usResp.json(); users = d.users || []; }
+            } catch(e) {
+                console.log('Calendar API unavailable');
+            }
+
+            // Rep filter buttons
+            const filterEl = document.getElementById('adminCalRepFilter');
+            if (filterEl && users.length > 0) {
+                filterEl.innerHTML = `<button onclick="adminCalRepFilterId=null;renderAdminCalendar()" style="padding:4px 12px;border-radius:16px;border:1px solid ${adminCalRepFilterId === null ? '#0091ae' : '#dfe3eb'};background:${adminCalRepFilterId === null ? 'rgba(0,145,174,.1)' : 'white'};color:${adminCalRepFilterId === null ? '#0091ae' : '#33475b'};cursor:pointer;font-size:12px;font-weight:500">Tous</button>` +
+                    users.map(u => `<button onclick="adminCalRepFilterId=${u.id};renderAdminCalendar()" style="padding:4px 12px;border-radius:16px;border:1px solid ${adminCalRepFilterId === u.id ? '#0091ae' : '#dfe3eb'};background:${adminCalRepFilterId === u.id ? 'rgba(0,145,174,.1)' : 'white'};color:${adminCalRepFilterId === u.id ? '#0091ae' : '#33475b'};cursor:pointer;font-size:12px;font-weight:500">${u.name}</button>`).join('');
+            }
+
+            // Filter events by rep if needed
+            if (adminCalRepFilterId) {
+                events = events.filter(ev => {
+                    const uid = typeof ev.user_id === 'object' ? ev.user_id[0] : ev.user_id;
+                    return uid === adminCalRepFilterId;
+                });
+            }
+
+            // Render grid
+            const hours = [8,9,10,11,12,13,14,15,16,17];
+            const grid = document.getElementById('adminCalGrid');
+            if (!grid) return;
+
+            let html = '<div style="display:grid;grid-template-columns:60px repeat(5,1fr);gap:0">';
+            // Header
+            html += '<div style="background:#f5f8fa;border-bottom:1px solid #dfe3eb;padding:8px"></div>';
+            days.forEach((d,i) => {
+                const ds = fmtDate(d);
+                const isT = ds === todayStr;
+                html += `<div style="background:${isT ? 'rgba(0,145,174,.06)' : '#f5f8fa'};border-bottom:1px solid #dfe3eb;border-left:1px solid #dfe3eb;padding:8px;text-align:center">
+                    <div style="font-size:11px;color:#7c98b6;font-weight:500">${dayNames[i]}</div>
+                    <div style="font-size:18px;font-weight:700;${isT ? 'color:#0091ae' : 'color:#33475b'}">${d.getDate()}</div>
+                </div>`;
+            });
+
+            hours.forEach(h => {
+                html += `<div style="border-bottom:1px solid #eaf0f6;padding:4px 6px;text-align:right;font-size:10px;color:#7c98b6">${String(h).padStart(2,'0')}:00</div>`;
+                days.forEach(d => {
+                    const ds = fmtDate(d);
+                    const isT = ds === todayStr;
+                    const hEvents = events.filter(ev => {
+                        if (!ev.start) return false;
+                        const ed = ev.start.split(' ')[0];
+                        const eh = parseInt(ev.start.split(' ')[1]?.split(':')[0] || '0');
+                        return ed === ds && eh === h;
+                    });
+                    let c = '';
+                    hEvents.forEach(ev => {
+                        const time = ev.start.split(' ')[1]?.substring(0,5) || '';
+                        const endT = ev.stop ? ev.stop.split(' ')[1]?.substring(0,5) : '';
+                        const isV = ev.name?.toLowerCase().includes('visite');
+                        const isC = ev.name?.toLowerCase().includes('appel');
+                        const isS = ev.name?.toLowerCase().includes('suivi');
+                        const color = isV ? '#00bda5' : isC ? '#0091ae' : isS ? '#6a78d1' : '#ff7a59';
+                        const icon = isV ? 'fa-location-dot' : isC ? 'fa-phone' : isS ? 'fa-rotate' : 'fa-calendar-check';
+                        // Show rep name
+                        const repName = typeof ev.user_id === 'string' ? ev.user_id : (users.find(u => u.id === (typeof ev.user_id === 'object' ? ev.user_id[0] : ev.user_id))?.name || '');
+                        const shortN = ev.name?.length > 28 ? ev.name.substring(0,27)+'…' : ev.name;
+                        c += `<div style="background:${color}14;border-left:3px solid ${color};padding:4px 6px;border-radius:4px;margin-bottom:2px;cursor:pointer;font-size:11px" title="${ev.name}\n${time}–${endT}\n${ev.location||''}\nRep: ${repName}">
+                            <div style="font-weight:600;color:${color};font-size:10px"><i class="fas ${icon}" style="margin-right:3px"></i>${time}–${endT}</div>
+                            <div style="color:#33475b;line-height:1.3">${shortN}</div>
+                            ${repName ? `<div style="font-size:9px;color:#7c98b6;margin-top:1px"><i class="fas fa-user" style="margin-right:2px"></i>${repName}</div>` : ''}
+                        </div>`;
+                    });
+                    html += `<div style="border-bottom:1px solid #eaf0f6;border-left:1px solid #dfe3eb;padding:2px 4px;min-height:48px;background:${isT ? 'rgba(0,145,174,.02)' : 'transparent'}">${c}</div>`;
+                });
+            });
+            html += '</div>';
+            grid.innerHTML = html;
         }
 
         init();

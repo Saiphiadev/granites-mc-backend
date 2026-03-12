@@ -339,3 +339,117 @@ async def get_sync_status():
 
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Erreur: {str(e)}")
+
+
+@router.post("/seed-demo")
+async def seed_demo_events():
+    """
+    Génère ~11 événements fictifs pour démonstration.
+    Utilisé pour le prototype — à retirer en production.
+    """
+    odoo = get_odoo_client()
+
+    demo_events = [
+        {
+            "name": "Visite Cuisifab 3ri — suivi soumission comptoirs",
+            "start": "2026-03-12 09:00:00",
+            "stop": "2026-03-12 10:30:00",
+            "partner_ids": [(4, 423)],
+            "location": "5075 Boul. des Forges, Trois-Rivières",
+            "description": "Suivi de la soumission envoyée le 5 mars. Vérifier intérêt pour gamme quartz premium.",
+        },
+        {
+            "name": "Appel Avivia Cuisines — relance échantillons",
+            "start": "2026-03-12 14:00:00",
+            "stop": "2026-03-12 14:30:00",
+            "location": "Téléphone",
+            "description": "Relancer suite à l'envoi d'échantillons de granit.",
+        },
+        {
+            "name": "Visite Cuisi-Meuble S.M. — présentation nouveautés",
+            "start": "2026-03-13 10:00:00",
+            "stop": "2026-03-13 11:30:00",
+            "partner_ids": [(4, 561)],
+            "location": "Tingwick",
+            "description": "Présentation des nouvelles collections 2026.",
+        },
+        {
+            "name": "Réunion équipe — bilan mensuel mars",
+            "start": "2026-03-13 15:00:00",
+            "stop": "2026-03-13 16:30:00",
+            "location": "Bureau Granites MC, Trois-Rivières",
+            "description": "Bilan des ventes mars, objectifs Q2.",
+        },
+        {
+            "name": "Visite Armoires Distinction — démo logiciel",
+            "start": "2026-03-16 09:30:00",
+            "stop": "2026-03-16 11:00:00",
+            "partner_ids": [(4, 424)],
+            "location": "Sherbrooke",
+            "description": "Démonstration du nouveau configurateur en ligne.",
+        },
+        {
+            "name": "Appel Armoires B.M.S. — suivi commande",
+            "start": "2026-03-16 13:30:00",
+            "stop": "2026-03-16 14:00:00",
+            "partner_ids": [(4, 564)],
+            "location": "Téléphone",
+            "description": "Confirmer réception commande #2847.",
+        },
+        {
+            "name": "Visite Cuisines M.R.S. / Cuisimax — négociation annuelle",
+            "start": "2026-03-17 10:00:00",
+            "stop": "2026-03-17 12:00:00",
+            "partner_ids": [(4, 562)],
+            "location": "Victoriaville",
+            "description": "Négociation du contrat annuel 2026-2027.",
+        },
+        {
+            "name": "Suivi Armoires N.S. — qualité livraison",
+            "start": "2026-03-17 14:00:00",
+            "stop": "2026-03-17 15:00:00",
+            "partner_ids": [(4, 563)],
+            "location": "Téléphone",
+            "description": "Suivi qualité suite à dernière livraison.",
+        },
+        {
+            "name": "Visite Groupe BMR — prospection nouveau compte",
+            "start": "2026-03-18 09:00:00",
+            "stop": "2026-03-18 10:30:00",
+            "location": "Boucherville",
+            "description": "Première rencontre avec directeur achats.",
+        },
+        {
+            "name": "Visite Armoire B.M. — échantillons nouveaux finis",
+            "start": "2026-03-19 10:00:00",
+            "stop": "2026-03-19 11:30:00",
+            "partner_ids": [(4, 565)],
+            "location": "Drummondville",
+            "description": "Nouveaux échantillons finis mat et texturés.",
+        },
+        {
+            "name": "Appel SMA Solutions — planification visite Q2",
+            "start": "2026-03-19 15:00:00",
+            "stop": "2026-03-19 15:30:00",
+            "location": "Téléphone",
+            "description": "Planifier visites Q2, confirmer objectifs volume.",
+        },
+    ]
+
+    created = []
+    errors = []
+
+    for ev in demo_events:
+        try:
+            event_id = await odoo.create("calendar.event", ev)
+            created.append({"id": event_id, "name": ev["name"]})
+        except Exception as e:
+            errors.append({"name": ev["name"], "error": str(e)})
+
+    return {
+        "status": "ok",
+        "created_count": len(created),
+        "error_count": len(errors),
+        "created": created,
+        "errors": errors,
+    }
