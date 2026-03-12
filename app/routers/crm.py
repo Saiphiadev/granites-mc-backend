@@ -508,7 +508,7 @@ async def login(email: str = Query(..., description="User email for login")):
         users = await odoo.search_read(
             "res.users",
             [["email", "=", email], ["active", "=", True]],
-            ["id", "name", "email", "phone", "login", "groups_id"],
+            ["id", "name", "email", "phone", "login"],
             limit=1,
         )
     except Exception as e:
@@ -521,18 +521,9 @@ async def login(email: str = Query(..., description="User email for login")):
     user_id = user["id"]
 
     # Determine role (admin vs rep)
-    # Check if user has admin/manager groups
-    try:
-        group_ids = user.get("groups_id", [])
-        admin_groups = await odoo.search_read(
-            "res.groups",
-            [["id", "in", group_ids], ["name", "ilike", "manager"]],
-            ["id", "name"],
-            limit=5,
-        )
-        is_admin = len(admin_groups) > 0
-    except Exception:
-        is_admin = False
+    # Simple role detection: admin emails, otherwise rep
+    admin_emails = ["pgirardin@saiphia.ca", "nathalie.beaulac@granitesmc.com"]
+    is_admin = (user.get("email") or "").lower() in admin_emails
 
     # Get team membership
     try:
