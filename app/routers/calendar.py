@@ -59,7 +59,7 @@ def _format_event(ev: dict) -> dict:
         "user_id": _safe(ev.get("user_id")),
         "partner_id": _safe(ev.get("partner_id")),
         "partner_ids": partner_ids,
-        "state": _safe(ev.get("state")),
+        "state": _safe(ev.get("state"), "open"),
         "show_as": _safe(ev.get("show_as"), "busy"),
         "privacy": _safe(ev.get("privacy"), "public"),
         "categ_ids": ev.get("categ_ids", []),
@@ -110,7 +110,7 @@ async def check_calendar_module():
             "key_fields": [
                 f for f in ["name", "start", "stop", "duration", "location",
                            "description", "partner_ids", "user_id", "allday",
-                           "state", "show_as", "privacy", "categ_ids",
+                           "show_as", "privacy", "categ_ids",
                            "partner_id", "res_model", "res_id",
                            "google_id", "microsoft_id"]
                 if f in fields
@@ -159,7 +159,7 @@ async def list_events(
     fields = [
         "id", "name", "start", "stop", "allday", "duration",
         "location", "description", "user_id", "partner_id",
-        "partner_ids", "state", "show_as", "privacy", "categ_ids",
+        "partner_ids", "show_as", "privacy", "categ_ids",
     ]
 
     try:
@@ -187,7 +187,7 @@ async def get_event(event_id: int):
         records = await odoo.read("calendar.event", [event_id], [
             "id", "name", "start", "stop", "allday", "duration",
             "location", "description", "user_id", "partner_id",
-            "partner_ids", "attendee_ids", "state", "show_as",
+            "partner_ids", "attendee_ids", "show_as",
             "privacy", "categ_ids", "recurrency", "interval",
         ])
     except Exception as e:
