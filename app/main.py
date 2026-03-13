@@ -73,8 +73,13 @@ app.include_router(calendar.router)
 
 # Static interface files
 STATIC_DIR = Path(__file__).parent / "static"
+TAILADMIN_DIR = STATIC_DIR / "tailadmin"
 if STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+# TailAdmin static assets (CSS, JS, images) — served at root level for TailAdmin's relative paths
+if TAILADMIN_DIR.exists():
+    app.mount("/app/src", StaticFiles(directory=str(TAILADMIN_DIR / "src")), name="tailadmin-src")
 
 
 @app.get("/", include_in_schema=False)
@@ -100,11 +105,49 @@ async def serve_contacts():
     return FileResponse(str(STATIC_DIR / "contacts.html"))
 
 
+# ── TailAdmin CRM pages ──────────────────────────────────────────────
+
 @app.get("/app/crm", include_in_schema=False)
 async def serve_crm_dashboard():
-    """CRM Dashboard — TailAdmin moderne."""
-    return FileResponse(str(STATIC_DIR / "crm-dashboard.html"))
+    """CRM Dashboard — TailAdmin."""
+    return FileResponse(str(TAILADMIN_DIR / "index.html"))
 
+
+@app.get("/app/crm/clients", include_in_schema=False)
+async def serve_crm_clients():
+    """Liste des clients — TailAdmin."""
+    return FileResponse(str(TAILADMIN_DIR / "basic-tables.html"))
+
+
+@app.get("/app/crm/client", include_in_schema=False)
+async def serve_crm_client_profile():
+    """Fiche client — TailAdmin."""
+    return FileResponse(str(TAILADMIN_DIR / "profile.html"))
+
+
+@app.get("/app/crm/calendrier", include_in_schema=False)
+async def serve_crm_calendar():
+    """Calendrier — TailAdmin."""
+    return FileResponse(str(TAILADMIN_DIR / "calendar.html"))
+
+
+@app.get("/app/crm/nouveau", include_in_schema=False)
+async def serve_crm_new_client():
+    """Formulaire nouveau client — TailAdmin."""
+    return FileResponse(str(TAILADMIN_DIR / "form-elements.html"))
+
+
+# TailAdmin static files (style.css, bundle.js, gmc-overrides.css, etc.)
+@app.get("/app/{filename}", include_in_schema=False)
+async def serve_tailadmin_asset(filename: str):
+    """Serve TailAdmin static assets (CSS, JS, etc.)."""
+    fpath = TAILADMIN_DIR / filename
+    if fpath.exists() and fpath.is_file():
+        return FileResponse(str(fpath))
+    return {"error": "not found"}
+
+
+# ── Legacy pages ──────────────────────────────────────────────────────
 
 @app.get("/app/fiche-client", include_in_schema=False)
 async def serve_fiche_client():

@@ -1,0 +1,17 @@
+/* Granites MC — Brand Color Overrides
+   Only changes: brand colors (terra cotta) + accent (navy)
+   Applied on top of TailAdmin's style.css */
+
+:root {
+  --color-brand-50: #fdf3ec;
+  --color-brand-100: #fbe4d2;
+  --color-brand-200: #f0c6a0;
+  --color-brand-300: #dba67a;
+  --color-brand-400: #c9885a;
+  --color-brand-500: #c07a4a;
+  --color-brand-600: #a8673b;
+  --color-brand-700: #8b5430;
+  --color-brand-800: #6e4226;
+  --color-brand-900: #52311c;
+  --color-brand-950: #3d2414;
+}
