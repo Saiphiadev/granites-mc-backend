@@ -2136,6 +2136,7 @@ async def import_isabelle_data():
 BAD_NAMES = [
     "6mois 3ri", "6mois t03", "6mois sher", "6mois t04", "6mois t05",
     "54 jours / 3 mois", "108 jours /6 mois", "48 semaines", "6mois",
+    "Mr", "Mc", "Lg", "A3", "Ac",
 ]
 
 
