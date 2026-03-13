@@ -4,12 +4,8 @@
  * This file is appended to each relevant page without modifying TailAdmin's core.
  */
 
-// Load ApexCharts from CDN (bundle.js encapsulates its own copy, not globally accessible)
-if (typeof ApexCharts === 'undefined') {
-  const script = document.createElement('script');
-  script.src = 'https://cdn.jsdelivr.net/npm/apexcharts@3.49.0/dist/apexcharts.min.js';
-  document.head.appendChild(script);
-}
+// ApexCharts CDN is loaded via <script> tag in HTML (before this file)
+// bundle.js encapsulates its own copy, not globally accessible
 
 const GMC_API = window.location.origin;
 
