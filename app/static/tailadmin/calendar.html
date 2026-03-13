@@ -7,7 +7,7 @@
       content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
     />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>Calendar | Granites MC — CRM Intelligence</title>
+    <title>Calendrier | Granites MC</title>
   <link rel="icon" href="favicon.ico"><link href="style.css" rel="stylesheet"><link href="gmc-overrides.css" rel="stylesheet"></head>
   <body
     x-data="{ page: 'calendar', 'loaded': true, 'darkMode': false, 'stickyMenu': false, 'sidebarToggle': false, 'scrollTop': false }"
@@ -167,16 +167,16 @@
           </li>
           <!-- Menu Item Dashboard -->
 
-          <!-- Menu Item Calendar -->
+          <!-- Menu Item Calendrier -->
           <li>
             <a
               href="/app/crm/calendrier"
-              @click="selected = (selected === 'Calendar' ? '':'Calendar')"
+              @click="selected = (selected === 'Calendrier' ? '':'Calendrier')"
               class="menu-item group"
-              :class=" (selected === 'Calendar') && (page === 'calendar') ? 'menu-item-active' : 'menu-item-inactive'"
+              :class=" (selected === 'Calendrier') && (page === 'calendar') ? 'menu-item-active' : 'menu-item-inactive'"
             >
               <svg
-                :class="(selected === 'Calendar') && (page === 'calendar') ? 'menu-item-icon-active'  :'menu-item-icon-inactive'"
+                :class="(selected === 'Calendrier') && (page === 'calendar') ? 'menu-item-icon-active'  :'menu-item-icon-inactive'"
                 width="24"
                 height="24"
                 viewBox="0 0 24 24"
@@ -197,7 +197,7 @@
               >Calendrier</span>
             </a>
           </li>
-          <!-- Menu Item Calendar -->
+          <!-- Menu Item Calendrier -->
 
           <!-- Menu Item Profile -->
           <li>
@@ -1435,7 +1435,7 @@
             <img src="src/images/user/owner.jpg" alt="User" />
           </span>
 
-          <span class="text-theme-sm mr-1 block font-medium"> Musharof </span>
+          <span class="text-theme-sm mr-1 block font-medium">Patrick G.</span>
 
           <svg
             :class="dropdownOpen && 'rotate-180'"
@@ -1581,7 +1581,7 @@
         <main>
           <div class="mx-auto max-w-(--breakpoint-2xl) p-4 md:p-6">
             <!-- Breadcrumb Start -->
-            <div x-data="{ pageName: `Calendar`}">
+            <div x-data="{ pageName: `Calendrier`}">
               <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
   <h2
     class="text-xl font-semibold text-gray-800 dark:text-white/90"
@@ -1922,5 +1922,5 @@
       <!-- ===== Content Area End ===== -->
     </div>
     <!-- ===== Page Wrapper End ===== -->
-  <script defer src="bundle.js"></script></body>
+  <script defer src="bundle.js"></script><script src="https://cdn.jsdelivr.net/npm/apexcharts@3.49.0/dist/apexcharts.min.js"></script><script defer src="gmc-data.js"></script></body>
 </html>

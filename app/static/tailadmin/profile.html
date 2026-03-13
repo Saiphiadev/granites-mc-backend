@@ -7,10 +7,10 @@
       content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
     />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>Profile | Granites MC — CRM Intelligence</title>
+    <title>Fiche Client | Granites MC</title>
   <link rel="icon" href="favicon.ico"><link href="style.css" rel="stylesheet"><link href="gmc-overrides.css" rel="stylesheet"></head>
   <body
-    x-data="{ page: 'profile', 'loaded': true, 'darkMode': false, 'stickyMenu': false, 'sidebarToggle': false, 'scrollTop': false, 'isProfileInfoModal': false, 'isProfileAddressModal': false }"
+    x-data="{ page: 'profile', 'loaded': true, 'darkMode': false, 'stickyMenu': false, 'sidebarToggle': false, 'scrollTop': false, 'isFiche ClientInfoModal': false, 'isFiche ClientAddressModal': false }"
     x-init="
          darkMode = JSON.parse(localStorage.getItem('darkMode'));
          $watch('darkMode', value => localStorage.setItem('darkMode', JSON.stringify(value)))"
@@ -199,16 +199,16 @@
           </li>
           <!-- Menu Item Calendar -->
 
-          <!-- Menu Item Profile -->
+          <!-- Menu Item Fiche Client -->
           <li>
             <a
               href="/app/crm/client"
-              @click="selected = (selected === 'Profile' ? '':'Profile')"
+              @click="selected = (selected === 'Fiche Client' ? '':'Fiche Client')"
               class="menu-item group"
-              :class=" (selected === 'Profile') && (page === 'profile') ? 'menu-item-active' : 'menu-item-inactive'"
+              :class=" (selected === 'Fiche Client') && (page === 'profile') ? 'menu-item-active' : 'menu-item-inactive'"
             >
               <svg
-                :class="(selected === 'Profile') && (page === 'profile') ?  'menu-item-icon-active'  :'menu-item-icon-inactive'"
+                :class="(selected === 'Fiche Client') && (page === 'profile') ?  'menu-item-icon-active'  :'menu-item-icon-inactive'"
                 width="24"
                 height="24"
                 viewBox="0 0 24 24"
@@ -229,7 +229,7 @@
               >Fiche Client</span>
             </a>
           </li>
-          <!-- Menu Item Profile -->
+          <!-- Menu Item Fiche Client -->
 
           <!-- Menu Item Forms -->
           <li>
@@ -1435,7 +1435,7 @@
             <img src="src/images/user/owner.jpg" alt="User" />
           </span>
 
-          <span class="text-theme-sm mr-1 block font-medium"> Musharof </span>
+          <span class="text-theme-sm mr-1 block font-medium">Patrick G.</span>
 
           <svg
             :class="dropdownOpen && 'rotate-180'"
@@ -1581,7 +1581,7 @@
         <main>
           <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
             <!-- Breadcrumb Start -->
-            <div x-data="{ pageName: `Profile`}">
+            <div x-data="{ pageName: `Fiche Client`}">
               <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
   <h2
     class="text-xl font-semibold text-gray-800 dark:text-white/90"
@@ -1630,7 +1630,7 @@
               <h3
                 class="mb-5 text-lg font-semibold text-gray-800 dark:text-white/90 lg:mb-7"
               >
-                Profile
+                Fiche Client
               </h3>
 
               <div
@@ -1745,7 +1745,7 @@
                   </div>
 
                   <button
-                    @click="isProfileInfoModal = true"
+                    @click="isFiche ClientInfoModal = true"
                     class="flex w-full items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 lg:inline-flex lg:w-auto"
                   >
                     <svg
@@ -1792,9 +1792,7 @@
                         </p>
                         <p
                           class="text-sm font-medium text-gray-800 dark:text-white/90"
-                        >
-                          Musharof
-                        </p>
+                        >Patrick G.</p>
                       </div>
 
                       <div>
@@ -1852,7 +1850,7 @@
                   </div>
 
                   <button
-                    @click="isProfileInfoModal = true"
+                    @click="isFiche ClientInfoModal = true"
                     class="flex w-full items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 lg:inline-flex lg:w-auto"
                   >
                     <svg
@@ -1945,7 +1943,7 @@
                   </div>
 
                   <button
-                    @click="isProfileAddressModal = true"
+                    @click="isFiche ClientAddressModal = true"
                     class="flex w-full items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 lg:inline-flex lg:w-auto"
                   >
                     <svg
@@ -1978,19 +1976,19 @@
 
     <!-- BEGIN MODAL -->
     <div
-  x-show="isProfileInfoModal"
+  x-show="isFiche ClientInfoModal"
   class="fixed inset-0 flex items-center justify-center p-5 overflow-y-auto z-99999"
 >
   <div
     class="modal-close-btn fixed inset-0 h-full w-full bg-gray-400/50 backdrop-blur-[32px]"
   ></div>
   <div
-    @click.outside="isProfileInfoModal = false"
+    @click.outside="isFiche ClientInfoModal = false"
     class="no-scrollbar relative w-full max-w-[700px] overflow-y-auto rounded-3xl bg-white p-4 dark:bg-gray-900 lg:p-11"
   >
     <!-- close btn -->
     <button
-      @click="isProfileInfoModal = false"
+      @click="isFiche ClientInfoModal = false"
       class="transition-color absolute right-5 top-5 z-999 flex h-11 w-11 items-center justify-center rounded-full bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:bg-gray-700 dark:bg-white/[0.05] dark:text-gray-400 dark:hover:bg-white/[0.07] dark:hover:text-gray-300"
     >
       <svg
@@ -2157,7 +2155,7 @@
       </div>
       <div class="flex items-center gap-3 px-2 mt-6 lg:justify-end">
         <button
-          @click="isProfileInfoModal = false"
+          @click="isFiche ClientInfoModal = false"
           type="button"
           class="flex w-full justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] sm:w-auto"
         >
@@ -2174,19 +2172,19 @@
   </div>
 </div>
 <div
-  x-show="isProfileAddressModal"
+  x-show="isFiche ClientAddressModal"
   class="fixed inset-0 flex items-center justify-center p-5 overflow-y-auto z-99999"
 >
   <div
     class="modal-close-btn fixed inset-0 h-full w-full bg-gray-400/50 backdrop-blur-[32px]"
   ></div>
   <div
-    @click.outside="isProfileAddressModal = false"
+    @click.outside="isFiche ClientAddressModal = false"
     class="no-scrollbar relative flex w-full max-w-[700px] flex-col overflow-y-auto rounded-3xl bg-white p-6 dark:bg-gray-900 lg:p-11"
   >
     <!-- close btn -->
     <button
-      @click="isProfileAddressModal = false"
+      @click="isFiche ClientAddressModal = false"
       class="transition-color absolute right-5 top-5 z-999 flex h-11 w-11 items-center justify-center rounded-full bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:bg-gray-700 dark:bg-white/[0.05] dark:text-gray-400 dark:hover:bg-white/[0.07] dark:hover:text-gray-300"
     >
       <svg
@@ -2272,7 +2270,7 @@
       </div>
       <div class="flex items-center gap-3 mt-6 lg:justify-end">
         <button
-          @click="isProfileAddressModal = false"
+          @click="isFiche ClientAddressModal = false"
           type="button"
           class="flex w-full justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] sm:w-auto"
         >

@@ -7,9 +7,7 @@
       content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
     />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>
-      Line Chart | Granites MC — CRM Intelligence
-    </title>
+    <title>Statistiques | Granites MC</title>
   <link rel="icon" href="favicon.ico"><link href="style.css" rel="stylesheet"><link href="gmc-overrides.css" rel="stylesheet"></head>
   <body
     x-data="{ page: 'lineChart', 'loaded': true, 'darkMode': false, 'stickyMenu': false, 'sidebarToggle': false, 'scrollTop': false }"
@@ -556,7 +554,7 @@
                     class="menu-dropdown-item group"
                     :class="page === 'lineChart' ? 'menu-dropdown-item-active' : 'menu-dropdown-item-inactive'"
                   >
-                    Line Chart
+                    Statistiques
                   </a>
                 </li>
                 <li>
@@ -1437,7 +1435,7 @@
             <img src="src/images/user/owner.jpg" alt="User" />
           </span>
 
-          <span class="text-theme-sm mr-1 block font-medium"> Musharof </span>
+          <span class="text-theme-sm mr-1 block font-medium">Patrick G.</span>
 
           <svg
             :class="dropdownOpen && 'rotate-180'"
@@ -1583,7 +1581,7 @@
         <main>
           <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
             <!-- Breadcrumb Start -->
-            <div x-data="{ pageName: `Line Chart`}">
+            <div x-data="{ pageName: `Statistiques`}">
               <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
   <h2
     class="text-xl font-semibold text-gray-800 dark:text-white/90"
@@ -1634,17 +1632,17 @@
                   <h3
                     class="text-base font-medium text-gray-800 dark:text-white/90"
                   >
-                    Line Chart 1
+                    Statistiques 1
                   </h3>
                 </div>
                 <div
                   class="p-5 border-t border-gray-100 dark:border-gray-800 sm:p-6"
                 >
-                  <!-- ====== Line Chart One Start -->
+                  <!-- ====== Statistiques One Start -->
                   <div class="max-w-full overflow-x-auto custom-scrollbar">
                     <div id="chartThree" class="min-w-[1000px]"></div>
                   </div>
-                  <!-- ====== Line Chart One End -->
+                  <!-- ====== Statistiques One End -->
                 </div>
               </div>
             </div>
@@ -1655,5 +1653,5 @@
       <!-- ===== Content Area End ===== -->
     </div>
     <!-- ===== Page Wrapper End ===== -->
-  <script defer src="bundle.js"></script></body>
+  <script defer src="bundle.js"></script><script src="https://cdn.jsdelivr.net/npm/apexcharts@3.49.0/dist/apexcharts.min.js"></script><script defer src="gmc-data.js"></script></body>
 </html>

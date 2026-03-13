@@ -137,6 +137,24 @@ async def serve_crm_new_client():
     return FileResponse(str(TAILADMIN_DIR / "form-elements.html"))
 
 
+@app.get("/app/crm/pipeline", include_in_schema=False)
+async def serve_crm_pipeline():
+    """Pipeline CRM — TailAdmin."""
+    return FileResponse(str(TAILADMIN_DIR / "bar-chart.html"))
+
+
+@app.get("/app/crm/stats", include_in_schema=False)
+async def serve_crm_stats():
+    """Statistiques CRM — TailAdmin."""
+    return FileResponse(str(TAILADMIN_DIR / "line-chart.html"))
+
+
+@app.get("/app/crm/login", include_in_schema=False)
+async def serve_crm_login():
+    """Connexion CRM — TailAdmin."""
+    return FileResponse(str(TAILADMIN_DIR / "signin.html"))
+
+
 # TailAdmin static files (style.css, bundle.js, gmc-overrides.css, etc.)
 @app.get("/app/{filename}", include_in_schema=False)
 async def serve_tailadmin_asset(filename: str):
