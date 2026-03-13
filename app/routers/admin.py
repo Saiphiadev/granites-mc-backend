@@ -2089,14 +2089,24 @@ async def import_isabelle_data():
 
             try:
                 if partner_id:
-                    # Only update non-empty vals, don't overwrite existing enriched data
                     safe_vals = {k: v for k, v in vals.items() if v}
-                    await odoo.write("res.partner", [partner_id], safe_vals)
+                    try:
+                        await odoo.write("res.partner", [partner_id], safe_vals)
+                    except Exception:
+                        # Retry without problematic fields
+                        for drop_field in ["x_competiteurs", "x_marques_interet", "x_echantillons_livres"]:
+                            safe_vals.pop(drop_field, None)
+                        await odoo.write("res.partner", [partner_id], safe_vals)
                     updated += 1
                 else:
                     vals["name"] = name
                     vals["is_company"] = True
-                    new_id = await odoo.create("res.partner", vals)
+                    try:
+                        new_id = await odoo.create("res.partner", vals)
+                    except Exception:
+                        for drop_field in ["x_competiteurs", "x_marques_interet", "x_echantillons_livres"]:
+                            vals.pop(drop_field, None)
+                        new_id = await odoo.create("res.partner", vals)
                     await odoo.write("res.partner", [new_id], {"is_company": True})
                     created += 1
             except Exception as e:
