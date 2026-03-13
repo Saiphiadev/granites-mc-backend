@@ -2184,84 +2184,93 @@ async def cleanup_imports():
 @router.post("/fix-competiteurs", summary="Fix x_competiteurs field type + re-import")
 async def fix_competiteurs():
     """
-    Corrige le champ x_competiteurs (selection → text) et ré-importe les données.
-    1. Supprime le champ selection existant
-    2. Recrée en type text
-    3. Ré-écrit les compétiteurs pour tous les clients Isabelle
+    Corrige le champ x_competiteurs (many2many → text) et ré-importe les données.
+    1. Retire le champ des vues Odoo si présent
+    2. Supprime le champ many2many existant
+    3. Recrée en type text
+    4. Ré-écrit les compétiteurs pour tous les clients Isabelle
     """
     odoo = get_odoo_client()
     log = {"steps": [], "errors": [], "updated": 0}
 
-    # Step 1: Find and delete the old field
-    try:
+    async def _fix_field(field_name: str, label: str):
+        """Fix a single field: remove from views, delete, recreate as text."""
         old_fields = await odoo.search_read(
             "ir.model.fields",
-            [["name", "=", "x_competiteurs"], ["model", "=", "res.partner"]],
+            [["name", "=", field_name], ["model", "=", "res.partner"]],
             ["id", "ttype"],
         )
-        if old_fields:
-            old_type = old_fields[0].get("ttype", "?")
-            log["steps"].append(f"Found x_competiteurs as type '{old_type}' (id={old_fields[0]['id']})")
-
-            if old_type != "text":
-                await odoo._call_kw(
-                    "ir.model.fields", "unlink", [[old_fields[0]["id"]]], {}
-                )
-                log["steps"].append("Deleted old selection field")
-
-                # Step 2: Recreate as text
-                model_ids = await odoo.search_read(
-                    "ir.model", [["model", "=", "res.partner"]], ["id"], limit=1
-                )
-                model_id = model_ids[0]["id"] if model_ids else None
-                if model_id:
-                    await odoo._call_kw(
-                        "ir.model.fields", "create",
-                        [{"name": "x_competiteurs", "field_description": "Compétiteurs",
-                          "model_id": model_id, "ttype": "text"}], {}
-                    )
-                    log["steps"].append("Recreated x_competiteurs as text")
-            else:
-                log["steps"].append("Already text type, skipping recreate")
-        else:
-            # Create it fresh
+        if not old_fields:
+            # Create fresh
             model_ids = await odoo.search_read(
                 "ir.model", [["model", "=", "res.partner"]], ["id"], limit=1
             )
-            model_id = model_ids[0]["id"] if model_ids else None
-            if model_id:
+            if model_ids:
                 await odoo._call_kw(
                     "ir.model.fields", "create",
-                    [{"name": "x_competiteurs", "field_description": "Compétiteurs",
-                      "model_id": model_id, "ttype": "text"}], {}
+                    [{"name": field_name, "field_description": label,
+                      "model_id": model_ids[0]["id"], "ttype": "text"}], {}
                 )
-                log["steps"].append("Created x_competiteurs as text (was missing)")
+            log["steps"].append(f"Created {field_name} as text (was missing)")
+            return
+
+        old_type = old_fields[0].get("ttype", "?")
+        log["steps"].append(f"Found {field_name} as type '{old_type}' (id={old_fields[0]['id']})")
+
+        if old_type == "text":
+            log["steps"].append(f"{field_name} already text, skipping")
+            return
+
+        # Step 1: Remove field from all views that reference it
+        views = await odoo.search_read(
+            "ir.ui.view",
+            [["model", "=", "res.partner"], ["arch_db", "ilike", field_name]],
+            ["id", "name", "arch_db"],
+        )
+        for view in views:
+            arch = view.get("arch_db", "")
+            if field_name in arch:
+                import re
+                # Remove <field name="x_competiteurs" .../> or <field name="x_competiteurs">...</field>
+                new_arch = re.sub(
+                    rf'<field[^>]*name=["\']?{field_name}["\']?[^>]*/>', '', arch
+                )
+                new_arch = re.sub(
+                    rf'<field[^>]*name=["\']?{field_name}["\']?[^>]*>.*?</field>', '', new_arch,
+                    flags=re.DOTALL,
+                )
+                if new_arch != arch:
+                    await odoo.write("ir.ui.view", [view["id"]], {"arch_db": new_arch})
+                    log["steps"].append(f"Removed {field_name} from view '{view.get('name')}'")
+
+        # Step 2: Delete the old field
+        await odoo._call_kw(
+            "ir.model.fields", "unlink", [[old_fields[0]["id"]]], {}
+        )
+        log["steps"].append(f"Deleted old {field_name} field ({old_type})")
+
+        # Step 3: Recreate as text
+        model_ids = await odoo.search_read(
+            "ir.model", [["model", "=", "res.partner"]], ["id"], limit=1
+        )
+        if model_ids:
+            await odoo._call_kw(
+                "ir.model.fields", "create",
+                [{"name": field_name, "field_description": label,
+                  "model_id": model_ids[0]["id"], "ttype": "text"}], {}
+            )
+            log["steps"].append(f"Recreated {field_name} as text")
+
+    # Fix x_competiteurs
+    try:
+        await _fix_field("x_competiteurs", "Compétiteurs")
     except Exception as e:
-        log["errors"].append(f"Field fix: {str(e)}")
+        log["errors"].append(f"x_competiteurs fix: {str(e)}")
         return log
 
-    # Also fix x_marques_interet if needed
+    # Fix x_marques_interet
     try:
-        mi_fields = await odoo.search_read(
-            "ir.model.fields",
-            [["name", "=", "x_marques_interet"], ["model", "=", "res.partner"]],
-            ["id", "ttype"],
-        )
-        if mi_fields and mi_fields[0].get("ttype") != "text":
-            model_ids = await odoo.search_read(
-                "ir.model", [["model", "=", "res.partner"]], ["id"], limit=1
-            )
-            model_id = model_ids[0]["id"] if model_ids else None
-            await odoo._call_kw(
-                "ir.model.fields", "unlink", [[mi_fields[0]["id"]]], {}
-            )
-            if model_id:
-                await odoo._call_kw(
-                    "ir.model.fields", "create",
-                    [{"name": "x_marques_interet", "field_description": "Marques d'intérêt",
-                      "model_id": model_id, "ttype": "text"}], {}
-                )
-            log["steps"].append("Fixed x_marques_interet → text")
+        await _fix_field("x_marques_interet", "Marques d'intérêt")
     except Exception as e:
         log["errors"].append(f"x_marques_interet fix: {str(e)}")
 
