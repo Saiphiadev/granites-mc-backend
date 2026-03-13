@@ -7,6 +7,7 @@
   <link rel="icon" href="/static/tailadmin/favicon.ico">
   <link href="/static/tailadmin/style.css" rel="stylesheet">
   <style>
+    [x-cloak] { display: none !important; }
     /* Granites MC brand overrides */
     :root {
       --color-brand-50: #fdf3ec;
@@ -184,7 +185,7 @@
       <main class="p-4 md:p-6 max-w-[1536px] mx-auto w-full">
 
         <!-- ===== DASHBOARD VIEW ===== -->
-        <template x-if="currentView === 'dashboard'">
+        <div x-show="currentView === 'dashboard'">
           <div>
             <!-- KPI Cards -->
             <div class="kpi-grid mb-6">
@@ -297,10 +298,10 @@
               </div>
             </div>
           </div>
-        </template>
+        </div>
 
         <!-- ===== CLIENTS LIST VIEW ===== -->
-        <template x-if="currentView === 'clients'">
+        <div x-show="currentView === 'clients'" x-cloak>
           <div>
             <!-- Filters bar -->
             <div class="flex flex-wrap items-center gap-3 mb-5">
@@ -387,7 +388,7 @@
               </div>
             </div>
           </div>
-        </template>
+        </div>
 
       </main>
     </div>
