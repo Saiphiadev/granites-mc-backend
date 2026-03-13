@@ -161,9 +161,7 @@
                     href="/app/crm"
                     class="menu-dropdown-item group"
                     :class="page === 'crm' ? 'menu-dropdown-item-active' : 'menu-dropdown-item-inactive'"
-                  >
-                    eCommerce
-                  </a>
+                  >CRM</a>
                 </li>
               </ul>
             </div>
@@ -198,9 +196,7 @@
               <span
                 class="menu-item-text"
                 :class="sidebarToggle ? 'lg:hidden' : ''"
-              >
-                Calendar
-              </span>
+              >Calendrier</span>
             </a>
           </li>
           <!-- Menu Item Calendar -->
@@ -232,9 +228,7 @@
               <span
                 class="menu-item-text"
                 :class="sidebarToggle ? 'lg:hidden' : ''"
-              >
-                User Profile
-              </span>
+              >Fiche Client</span>
             </a>
           </li>
           <!-- Menu Item Profile -->
@@ -303,9 +297,7 @@
                     href="/app/crm/nouveau"
                     class="menu-dropdown-item group"
                     :class="page === 'formElements' ? 'menu-dropdown-item-active' : 'menu-dropdown-item-inactive'"
-                  >
-                    Form Elements
-                  </a>
+                  >Nouveau Client</a>
                 </li>
               </ul>
             </div>
@@ -377,9 +369,7 @@
                     href="/app/crm/clients"
                     class="menu-dropdown-item group"
                     :class="page === 'basicTables' ? 'menu-dropdown-item-active' : 'menu-dropdown-item-inactive'"
-                  >
-                    Basic Tables
-                  </a>
+                  >Liste Clients</a>
                 </li>
               </ul>
             </div>
@@ -1721,9 +1711,7 @@
   class="overflow-hidden rounded-2xl border border-gray-200 bg-white px-5 pt-5 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6 sm:pt-6"
 >
   <div class="flex items-center justify-between">
-    <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">
-      Monthly Sales
-    </h3>
+    <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Clients par territoire</h3>
 
     <div x-data="{openDropDown: false}" class="relative h-fit">
       <button
@@ -1786,9 +1774,7 @@
   >
     <div class="flex justify-between">
       <div>
-        <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">
-          Monthly Target
-        </h3>
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Répartition des scores</h3>
         <p class="mt-1 text-theme-sm text-gray-500 dark:text-gray-400">
           Target you’ve set for each month
         </p>
@@ -1842,7 +1828,7 @@
     <p
       class="mx-auto mt-1.5 w-full max-w-[380px] text-center text-sm text-gray-500 sm:text-base"
     >
-      You earn $3287 today, it's higher than last month. Keep up your good work!
+      Données calculées automatiquement depuis Odoo CRM.
     </p>
   </div>
 
@@ -2024,9 +2010,7 @@
 >
   <div class="flex justify-between">
     <div>
-      <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">
-        Customers Demographic
-      </h3>
+      <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Répartition par territoire</h3>
       <p class="mt-1 text-theme-sm text-gray-500 dark:text-gray-400">
         Number of customer based on country
       </p>
@@ -2156,9 +2140,7 @@
     class="flex flex-col gap-2 mb-4 sm:flex-row sm:items-center sm:justify-between"
   >
     <div>
-      <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">
-        Recent Orders
-      </h3>
+      <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Top Clients</h3>
     </div>
 
     <div class="flex items-center gap-3">

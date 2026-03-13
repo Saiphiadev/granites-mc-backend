@@ -60,37 +60,82 @@ const GMC = {
   },
 
   renderDashboardCharts(clients) {
-    // Wait for ApexCharts to be available
+    // Wait for ApexCharts to be available and for bundle.js charts to render first
     if (typeof ApexCharts === 'undefined') {
       setTimeout(() => GMC.renderDashboardCharts(clients), 500);
       return;
     }
 
-    // Territory bar chart — replace chart-12 (monthly revenue)
-    const terrCounts = {};
-    clients.forEach(c => {
-      const t = c.territoire || 'Non assigné';
-      terrCounts[t] = (terrCounts[t] || 0) + 1;
-    });
-    const terrLabels = Object.keys(terrCounts).sort((a, b) => terrCounts[b] - terrCounts[a]);
-    const terrValues = terrLabels.map(l => terrCounts[l]);
-
-    // Find and replace the main chart
-    const chartEl = document.getElementById('chartOne');
-    if (chartEl) {
-      chartEl.innerHTML = '';
-      const chart = new ApexCharts(chartEl, {
-        chart: { type: 'bar', height: 310, toolbar: { show: false }, fontFamily: 'Outfit, sans-serif' },
-        series: [{ name: 'Clients', data: terrValues }],
-        xaxis: { categories: terrLabels, labels: { style: { fontSize: '11px', colors: '#667085' } } },
-        yaxis: { labels: { style: { fontSize: '11px', colors: '#667085' } } },
-        colors: ['#c07a4a'],
-        plotOptions: { bar: { borderRadius: 4, columnWidth: '55%' } },
-        dataLabels: { enabled: false },
-        grid: { borderColor: '#e4e7ec', strokeDashArray: 4 },
+    // Small delay to let bundle.js charts initialize, then destroy & replace
+    setTimeout(() => {
+      // Territory bar chart — replace chartOne (monthly sales)
+      const terrCounts = {};
+      clients.forEach(c => {
+        const t = c.territoire || 'Non assigné';
+        terrCounts[t] = (terrCounts[t] || 0) + 1;
       });
-      chart.render();
-    }
+      const terrLabels = Object.keys(terrCounts).sort((a, b) => terrCounts[b] - terrCounts[a]);
+      const terrValues = terrLabels.map(l => terrCounts[l]);
+
+      const chartEl = document.getElementById('chartOne');
+      if (chartEl) {
+        // Destroy any existing ApexCharts instance
+        if (window.Apex && window.Apex._chartInstances) {
+          window.Apex._chartInstances.forEach(inst => {
+            if (inst.el === chartEl) inst.destroy();
+          });
+        }
+        // Also try ApexCharts.getChartByID
+        try {
+          const existing = ApexCharts.getChartByID('chartOne');
+          if (existing) existing.destroy();
+        } catch(e) {}
+
+        chartEl.innerHTML = '';
+        const chart = new ApexCharts(chartEl, {
+          chart: { id: 'gmc-terr', type: 'bar', height: 310, toolbar: { show: false }, fontFamily: 'Outfit, sans-serif' },
+          series: [{ name: 'Clients', data: terrValues }],
+          xaxis: { categories: terrLabels, labels: { style: { fontSize: '11px', colors: '#667085' } } },
+          yaxis: { labels: { style: { fontSize: '11px', colors: '#667085' } } },
+          colors: ['#c07a4a'],
+          plotOptions: { bar: { borderRadius: 4, columnWidth: '55%' } },
+          dataLabels: { enabled: false },
+          grid: { borderColor: '#e4e7ec', strokeDashArray: 4 },
+        });
+        chart.render();
+      }
+
+      // Score donut chart — replace chartTwo (monthly target donut)
+      const scoreCounts = { A: 0, B: 0, C: 0, Autre: 0 };
+      clients.forEach(c => {
+        const s = (c.x_score_client || '').toUpperCase();
+        if (scoreCounts.hasOwnProperty(s)) scoreCounts[s]++;
+        else scoreCounts['Autre']++;
+      });
+      const scoreLabels = Object.keys(scoreCounts).filter(k => scoreCounts[k] > 0);
+      const scoreValues = scoreLabels.map(l => scoreCounts[l]);
+      const scoreColors = { A: '#059669', B: '#3b82f6', C: '#f59e0b', Autre: '#98a2b3' };
+
+      const chartEl2 = document.getElementById('chartTwo');
+      if (chartEl2) {
+        try {
+          const existing2 = ApexCharts.getChartByID('chartTwo');
+          if (existing2) existing2.destroy();
+        } catch(e) {}
+
+        chartEl2.innerHTML = '';
+        const chart2 = new ApexCharts(chartEl2, {
+          chart: { id: 'gmc-scores', type: 'donut', height: 280, fontFamily: 'Outfit, sans-serif' },
+          series: scoreValues,
+          labels: scoreLabels.map(l => 'Score ' + l),
+          colors: scoreLabels.map(l => scoreColors[l] || '#98a2b3'),
+          legend: { position: 'bottom', fontSize: '13px' },
+          dataLabels: { enabled: true, style: { fontSize: '13px', fontWeight: 600 } },
+          plotOptions: { pie: { donut: { size: '55%' } } },
+        });
+        chart2.render();
+      }
+    }, 1500); // Wait for bundle.js to finish rendering
   },
 
   updateRecentOrdersTable(clients) {
