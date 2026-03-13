@@ -2179,3 +2179,136 @@ async def cleanup_imports():
         "total_errors": len(log["errors"]),
     }
     return log
+
+
+@router.post("/fix-competiteurs", summary="Fix x_competiteurs field type + re-import")
+async def fix_competiteurs():
+    """
+    Corrige le champ x_competiteurs (selection → text) et ré-importe les données.
+    1. Supprime le champ selection existant
+    2. Recrée en type text
+    3. Ré-écrit les compétiteurs pour tous les clients Isabelle
+    """
+    odoo = get_odoo_client()
+    log = {"steps": [], "errors": [], "updated": 0}
+
+    # Step 1: Find and delete the old field
+    try:
+        old_fields = await odoo.search_read(
+            "ir.model.fields",
+            [["name", "=", "x_competiteurs"], ["model", "=", "res.partner"]],
+            ["id", "ttype"],
+        )
+        if old_fields:
+            old_type = old_fields[0].get("ttype", "?")
+            log["steps"].append(f"Found x_competiteurs as type '{old_type}' (id={old_fields[0]['id']})")
+
+            if old_type != "text":
+                await odoo._call_kw(
+                    "ir.model.fields", "unlink", [[old_fields[0]["id"]]], {}
+                )
+                log["steps"].append("Deleted old selection field")
+
+                # Step 2: Recreate as text
+                model_ids = await odoo.search_read(
+                    "ir.model", [["model", "=", "res.partner"]], ["id"], limit=1
+                )
+                model_id = model_ids[0]["id"] if model_ids else None
+                if model_id:
+                    await odoo._call_kw(
+                        "ir.model.fields", "create",
+                        [{"name": "x_competiteurs", "field_description": "Compétiteurs",
+                          "model_id": model_id, "ttype": "text"}], {}
+                    )
+                    log["steps"].append("Recreated x_competiteurs as text")
+            else:
+                log["steps"].append("Already text type, skipping recreate")
+        else:
+            # Create it fresh
+            model_ids = await odoo.search_read(
+                "ir.model", [["model", "=", "res.partner"]], ["id"], limit=1
+            )
+            model_id = model_ids[0]["id"] if model_ids else None
+            if model_id:
+                await odoo._call_kw(
+                    "ir.model.fields", "create",
+                    [{"name": "x_competiteurs", "field_description": "Compétiteurs",
+                      "model_id": model_id, "ttype": "text"}], {}
+                )
+                log["steps"].append("Created x_competiteurs as text (was missing)")
+    except Exception as e:
+        log["errors"].append(f"Field fix: {str(e)}")
+        return log
+
+    # Also fix x_marques_interet if needed
+    try:
+        mi_fields = await odoo.search_read(
+            "ir.model.fields",
+            [["name", "=", "x_marques_interet"], ["model", "=", "res.partner"]],
+            ["id", "ttype"],
+        )
+        if mi_fields and mi_fields[0].get("ttype") != "text":
+            model_ids = await odoo.search_read(
+                "ir.model", [["model", "=", "res.partner"]], ["id"], limit=1
+            )
+            model_id = model_ids[0]["id"] if model_ids else None
+            await odoo._call_kw(
+                "ir.model.fields", "unlink", [[mi_fields[0]["id"]]], {}
+            )
+            if model_id:
+                await odoo._call_kw(
+                    "ir.model.fields", "create",
+                    [{"name": "x_marques_interet", "field_description": "Marques d'intérêt",
+                      "model_id": model_id, "ttype": "text"}], {}
+                )
+            log["steps"].append("Fixed x_marques_interet → text")
+    except Exception as e:
+        log["errors"].append(f"x_marques_interet fix: {str(e)}")
+
+    # Step 3: Re-import competitors from Isabelle data
+    try:
+        data_path = Path(__file__).parent.parent / "data" / "isabelle_clients.json"
+        with open(data_path, "r") as f:
+            isabelle_clients = json.load(f)
+
+        updated = 0
+        for client in isabelle_clients:
+            name = (client.get("name") or "").strip()
+            if not name:
+                continue
+
+            comps = client.get("competiteurs", [])
+            brands = client.get("brand_tracking", {})
+            if not comps and not brands:
+                continue
+
+            # Find partner
+            try:
+                partners = await odoo.search_read(
+                    "res.partner", [["name", "ilike", name], ["is_company", "=", True]],
+                    ["id"], limit=1,
+                )
+                if not partners:
+                    continue
+
+                vals = {}
+                if comps:
+                    vals["x_competiteurs"] = ", ".join(comps)
+                if brands:
+                    brand_list = []
+                    for brand, items in brands.items():
+                        brand_list.append(brand)
+                    vals["x_marques_interet"] = ", ".join(brand_list)
+
+                if vals:
+                    await odoo.write("res.partner", [partners[0]["id"]], vals)
+                    updated += 1
+            except Exception as e:
+                log["errors"].append(f"{name}: {str(e)}")
+
+        log["updated"] = updated
+        log["steps"].append(f"Re-imported competitors for {updated} clients")
+    except Exception as e:
+        log["errors"].append(f"Re-import: {str(e)}")
+
+    return log
