@@ -2119,3 +2119,52 @@ async def import_isabelle_data():
         "status": "completed_with_errors" if log["errors"] else "success",
     }
     return log
+
+
+# ─── Cleanup bad imports ───
+
+BAD_NAMES = [
+    "6mois 3ri", "6mois t03", "6mois sher", "6mois t04", "6mois t05",
+    "54 jours / 3 mois", "108 jours /6 mois", "48 semaines", "6mois",
+]
+
+
+@router.post("/cleanup-imports", summary="Cleanup bad imports")
+async def cleanup_imports():
+    """
+    Supprime les partenaires créés par erreur (noms = métadonnées Excel).
+    """
+    odoo = get_odoo_client()
+    log = {"deleted": [], "errors": []}
+
+    for bad_name in BAD_NAMES:
+        try:
+            partners = await odoo.search_read(
+                "res.partner",
+                [["name", "=", bad_name]],
+                ["id", "name"],
+            )
+            for p in partners:
+                try:
+                    await odoo._call_kw(
+                        "res.partner", "unlink", [[p["id"]]], {}
+                    )
+                    log["deleted"].append(f"{p['name']} (id={p['id']})")
+                except Exception as e:
+                    # If can't delete (has leads/activities), archive instead
+                    try:
+                        await odoo._call_kw(
+                            "res.partner", "write",
+                            [[p["id"]], {"active": False}], {}
+                        )
+                        log["deleted"].append(f"{p['name']} (id={p['id']}) — archived")
+                    except Exception as e2:
+                        log["errors"].append(f"{p['name']}: {str(e2)}")
+        except Exception as e:
+            log["errors"].append(f"Search {bad_name}: {str(e)}")
+
+    log["summary"] = {
+        "total_deleted": len(log["deleted"]),
+        "total_errors": len(log["errors"]),
+    }
+    return log
