@@ -3,6 +3,14 @@
  * Fetches real Odoo data via API and injects into TailAdmin pages.
  * This file is appended to each relevant page without modifying TailAdmin's core.
  */
+
+// Load ApexCharts from CDN (bundle.js encapsulates its own copy, not globally accessible)
+if (typeof ApexCharts === 'undefined') {
+  const script = document.createElement('script');
+  script.src = 'https://cdn.jsdelivr.net/npm/apexcharts@3.49.0/dist/apexcharts.min.js';
+  document.head.appendChild(script);
+}
+
 const GMC_API = window.location.origin;
 
 const GMC = {
@@ -135,7 +143,7 @@ const GMC = {
         });
         chart2.render();
       }
-    }, 1500); // Wait for bundle.js to finish rendering
+    }, 2500); // Wait for bundle.js + CDN ApexCharts to load
   },
 
   updateRecentOrdersTable(clients) {
