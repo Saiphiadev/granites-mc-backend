@@ -503,7 +503,14 @@
           return new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(val);
         },
 
+        _chartTerr: null,
+        _chartScores: null,
+
         renderCharts() {
+          // Destroy previous instances to prevent duplication
+          if (this._chartTerr) { this._chartTerr.destroy(); this._chartTerr = null; }
+          if (this._chartScores) { this._chartScores.destroy(); this._chartScores = null; }
+
           // Territory chart
           const terrCounts = {};
           this.allClients.forEach(c => {
@@ -513,8 +520,10 @@
           const terrLabels = Object.keys(terrCounts).sort((a, b) => terrCounts[b] - terrCounts[a]);
           const terrValues = terrLabels.map(l => terrCounts[l]);
 
-          if (document.getElementById('chart-territoires')) {
-            new ApexCharts(document.getElementById('chart-territoires'), {
+          const terrEl = document.getElementById('chart-territoires');
+          if (terrEl) {
+            terrEl.innerHTML = '';
+            this._chartTerr = new ApexCharts(terrEl, {
               chart: { type: 'bar', height: 280, toolbar: { show: false }, fontFamily: 'Outfit, sans-serif' },
               series: [{ name: 'Clients', data: terrValues }],
               xaxis: { categories: terrLabels, labels: { style: { fontSize: '11px', colors: '#667085' } } },
@@ -523,7 +532,8 @@
               plotOptions: { bar: { borderRadius: 4, columnWidth: '55%' } },
               dataLabels: { enabled: false },
               grid: { borderColor: '#e4e7ec', strokeDashArray: 4 },
-            }).render();
+            });
+            this._chartTerr.render();
           }
 
           // Score donut chart
@@ -537,8 +547,10 @@
           const scoreValues = scoreLabels.map(l => scoreCounts[l]);
           const scoreColors = { A: '#059669', B: '#3b82f6', C: '#f59e0b', D: '#ef4444', Autre: '#98a2b3' };
 
-          if (document.getElementById('chart-scores')) {
-            new ApexCharts(document.getElementById('chart-scores'), {
+          const scoreEl = document.getElementById('chart-scores');
+          if (scoreEl) {
+            scoreEl.innerHTML = '';
+            this._chartScores = new ApexCharts(scoreEl, {
               chart: { type: 'donut', height: 280, fontFamily: 'Outfit, sans-serif' },
               series: scoreValues,
               labels: scoreLabels.map(l => 'Score ' + l),
@@ -546,7 +558,8 @@
               legend: { position: 'bottom', fontSize: '13px' },
               dataLabels: { enabled: true, style: { fontSize: '13px', fontWeight: 600 } },
               plotOptions: { pie: { donut: { size: '55%' } } },
-            }).render();
+            });
+            this._chartScores.render();
           }
         }
       };
