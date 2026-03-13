@@ -82,6 +82,7 @@ class ClientBase(BaseModel):
     x_brands: Optional[str] = None
     x_specialties: Optional[str] = None
     x_hours: Optional[str] = None
+    x_ventes_total: Optional[float] = 0
 
 
 class ClientListItem(ClientBase):

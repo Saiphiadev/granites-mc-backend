@@ -119,7 +119,7 @@ async def list_clients(
         "x_facebook", "x_instagram", "x_linkedin", "x_google_maps",
         "x_description", "x_year_founded", "x_employees_estimate",
         "x_revenue_estimate", "x_req_number", "x_brands",
-        "x_specialties", "x_hours",
+        "x_specialties", "x_hours", "x_ventes_total",
     ]
 
     try:
@@ -176,6 +176,7 @@ async def list_clients(
             "x_brands": _s(c.get("x_brands")),
             "x_specialties": _s(c.get("x_specialties")),
             "x_hours": _s(c.get("x_hours")),
+            "x_ventes_total": float(c.get("x_ventes_total") or 0),
         })
 
     return ClientListResponse(

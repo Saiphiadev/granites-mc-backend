@@ -100,6 +100,12 @@ async def serve_contacts():
     return FileResponse(str(STATIC_DIR / "contacts.html"))
 
 
+@app.get("/app/crm", include_in_schema=False)
+async def serve_crm_dashboard():
+    """CRM Dashboard — TailAdmin moderne."""
+    return FileResponse(str(STATIC_DIR / "crm-dashboard.html"))
+
+
 @app.get("/app/fiche-client", include_in_schema=False)
 async def serve_fiche_client():
     """Fiche Client détaillée — vue Isabelle."""
